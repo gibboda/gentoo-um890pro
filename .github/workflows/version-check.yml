@@ -1,0 +1,69 @@
+name: Version & Changelog Validation
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  version-check:
+    name: Validate VERSION and CHANGELOG when VERSION changes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Determine changed files
+        id: determine
+        run: |
+          set -euo pipefail
+          changed=""
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            base_ref=$(jq -r .pull_request.base.ref < "$GITHUB_EVENT_PATH")
+            git fetch origin "$base_ref" --depth=1 || true
+            changed=$(git diff --name-only origin/"$base_ref"...HEAD || true)
+          else
+            # push event
+            changed=$(git diff --name-only $GITHUB_BEFORE..$GITHUB_SHA || true)
+          fi
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$changed" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Validate when VERSION changed
+        if: contains( steps.determine.outputs.changed_files, 'VERSION' )
+        run: |
+          set -euo pipefail
+          echo "VERSION was modified in this change set. Running validations..."
+
+          if [ ! -f VERSION ]; then
+            echo "ERROR: VERSION file missing." >&2
+            exit 1
+          fi
+
+          VERSION_VAL=$(cat VERSION | tr -d '\n' | tr -d '\r')
+          echo "Found VERSION=${VERSION_VAL}"
+
+          # Check CHANGELOG contains a header for this version
+          if ! grep -E "^## \[${VERSION_VAL}\]" -q CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION_VAL}." >&2
+            echo "Please add an entry under 'Unreleased' or run the bump script to update CHANGELOG.md." >&2
+            exit 1
+          fi
+
+          # Check optional tag presence (enforces tagging alongside version bump)
+          git fetch --tags || true
+          if ! git tag -l "v${VERSION_VAL}" | grep -q "v${VERSION_VAL}" ; then
+            echo "ERROR: Git tag v${VERSION_VAL} not found. Please create and push tag 'v${VERSION_VAL}' when releasing." >&2
+            exit 1
+          fi
+
+          echo "VERSION and CHANGELOG validation passed."
+
+      - name: Skip when VERSION not changed
+        if: !contains( steps.determine.outputs.changed_files, 'VERSION' )
+        run: |
+          echo "VERSION not changed; skipping validations."
