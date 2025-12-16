@@ -55,10 +55,14 @@ jobs:
           fi
 
           # Check optional tag presence (enforces tagging alongside version bump)
-          git fetch --tags || true
-          if ! git tag -l "v${VERSION_VAL}" | grep -q "v${VERSION_VAL}" ; then
-            echo "ERROR: Git tag v${VERSION_VAL} not found. Please create and push tag 'v${VERSION_VAL}' when releasing." >&2
-            exit 1
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            git fetch --tags || true
+            if ! git tag -l "v${VERSION_VAL}" | grep -q "v${VERSION_VAL}" ; then
+              echo "ERROR: Git tag v${VERSION_VAL} not found. Please create and push tag 'v${VERSION_VAL}' when releasing." >&2
+              exit 1
+            fi
+          else
+            echo "Skipping git tag check for non-push event (${GITHUB_EVENT_NAME})."
           fi
 
           echo "VERSION and CHANGELOG validation passed."
