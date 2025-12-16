@@ -1,0 +1,105 @@
+name: Automated Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (optional). If omitted, uses VERSION file.'
+        required: false
+      message:
+        description: 'Short changelog/release message (optional)'
+        required: false
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [labeled]
+
+jobs:
+  release:
+    name: Create release (bump + tag)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine release version
+        id: vars
+        run: |
+          set -euo pipefail
+          NEW_VERSION=""
+          EVENT="${GITHUB_EVENT_NAME}"
+
+          if [ "$EVENT" = "pull_request" ]; then
+            # Labeled event: extract the label name
+            LABEL_NAME=$(jq -r .label.name < "$GITHUB_EVENT_PATH") || true
+            echo "PR label: $LABEL_NAME"
+            if [[ "$LABEL_NAME" =~ ^release[: ]*v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              NEW_VERSION="${BASH_REMATCH[1]}"
+            fi
+          fi
+
+          if [ -z "$NEW_VERSION" ] && [ "$EVENT" = "workflow_dispatch" ]; then
+            NEW_VERSION=$(jq -r '.inputs.version // empty' < "$GITHUB_EVENT_PATH" || true)
+          fi
+
+          if [ -z "$NEW_VERSION" ]; then
+            if [ -f VERSION ]; then
+              NEW_VERSION=$(cat VERSION | tr -d '\n' | tr -d '\r')
+            fi
+          fi
+
+          if [ -z "$NEW_VERSION" ]; then
+            echo "No release version determined; aborting." >&2
+            exit 1
+          fi
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Run bump script for PR label releases
+        if: ${{ github.event_name == 'pull_request' && steps.vars.outputs.version != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NEW_VERSION="${{ steps.vars.outputs.version }}"
+          MSG=$(jq -r '.inputs.message // "Automated release"' < "$GITHUB_EVENT_PATH" 2>/dev/null || echo "Automated release")
+          echo "Running bump script for version $NEW_VERSION"
+          chmod +x ./scripts/bump-version.sh
+          ./scripts/bump-version.sh "$NEW_VERSION" "$MSG"
+          # push commit and tags
+          git push origin HEAD || true
+          git push origin --tags || true
+
+      - name: Tag release on pushes to main
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NEW_VERSION="${{ steps.vars.outputs.version }}"
+          if git tag -l "v${NEW_VERSION}" | grep -q "v${NEW_VERSION}"; then
+            echo "Tag v${NEW_VERSION} already exists; nothing to do."
+            exit 0
+          fi
+          echo "Creating tag v${NEW_VERSION} for current commit"
+          git tag -a "v${NEW_VERSION}" -m "Release ${NEW_VERSION} (automated)"
+          git push origin "v${NEW_VERSION}"
+
+      - name: Create GitHub Release (optional)
+        if: always()
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.vars.outputs.version }}
+          release_name: v${{ steps.vars.outputs.version }}
+          body: "Automated release: v${{ steps.vars.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
