@@ -1,5 +1,8 @@
 name: Automated Release
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -64,7 +67,7 @@ jobs:
 
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Run bump script for PR label releases
+          - name: Run bump script for PR label releases
         if: ${{ github.event_name == 'pull_request' && steps.vars.outputs.version != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,12 +97,46 @@ jobs:
           git tag -a "v${NEW_VERSION}" -m "Release ${NEW_VERSION} (automated)"
           git push origin "v${NEW_VERSION}"
 
-      - name: Create GitHub Release (optional)
+      - name: Prepare release body (changelog / PR notes)
+        id: prepare
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.vars.outputs.version }}"
+          BODY=""
+
+          # Extract changelog excerpt for version if present
+          if [ -f CHANGELOG.md ]; then
+            excerpt=$(awk -v ver="$VERSION" '
+              $0 ~ "^## \[" ver "\]" {found=1; next}
+              found && /^## / {exit}
+              found {print}
+            ' CHANGELOG.md || true)
+            if [ -n "$excerpt" ]; then
+              BODY="Changelog excerpt:\n\n$excerpt\n\n"
+            fi
+          fi
+
+          # Include PR title/body when run from a labeled PR
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            pr_title=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH" 2>/dev/null || true)
+            pr_body=$(jq -r .pull_request.body < "$GITHUB_EVENT_PATH" 2>/dev/null || true)
+            BODY="$BODY""PR: $pr_title\n\n$pr_body\n\n"
+          fi
+
+          if [ -z "$BODY" ]; then
+            BODY="Automated release: v$VERSION"
+          fi
+
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release (with body)
         if: always()
         uses: actions/create-release@v1
         with:
           tag_name: v${{ steps.vars.outputs.version }}
           release_name: v${{ steps.vars.outputs.version }}
-          body: "Automated release: v${{ steps.vars.outputs.version }}"
+          body: ${{ steps.prepare.outputs.release_body }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
