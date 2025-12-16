@@ -64,6 +64,6 @@ jobs:
           echo "VERSION and CHANGELOG validation passed."
 
       - name: Skip when VERSION not changed
-        if: !contains( steps.determine.outputs.changed_files, 'VERSION' )
+        if: ${{ !contains( steps.determine.outputs.changed_files, 'VERSION' ) }}
         run: |
           echo "VERSION not changed; skipping validations."
