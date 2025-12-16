@@ -94,3 +94,12 @@ Actions permissions & release label format
 	- The `CHANGELOG.md` excerpt for the released version.
 	- The PR title and PR body when triggered from a labeled PR.
 	- A short list of commits included in the PR or push (commit subject + short sha).
+
+Note about forked PRs and 'Resource not accessible by integration'
+
+- When a PR comes from a fork, GitHub runs workflows with a read-only token by default for security — the `GITHUB_TOKEN` will not have permission to push tags or write releases from forked PR workflow runs. In that case you will see errors like "Resource not accessible by integration." Options to resolve:
+	- Merge the PR then run the release workflow on the `main` branch (push) or use `workflow_dispatch` from a maintainer account.
+	- Provide a repository secret `REPO_PAT` (a Personal Access Token with `repo` scope) and set it in repository secrets; the workflow will use it to authenticate pushes/tags when available. Keep this PAT secret and restrict repo permissions appropriately.
+	- Alternatively, restrict automatic pushing in PR runs and have the workflow open a release PR or comment prompting a maintainer to trigger the release.
+
+The repository already supports `REPO_PAT` as a fallback in the release workflow; add a PAT to repository secrets if you need releases from fork workflows.

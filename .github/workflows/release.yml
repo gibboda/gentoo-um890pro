@@ -27,11 +27,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+        - name: Select token for pushes (use REPO_PAT if set)
+          id: choose-token
+          run: |
+            if [ -n "${{ secrets.REPO_PAT }}" ]; then
+              echo "token=${{ secrets.REPO_PAT }}" >> $GITHUB_OUTPUT
+            else
+              echo "token=${{ github.token }}" >> $GITHUB_OUTPUT
+            fi
           fetch-tags: true
 
       - name: Setup git author
         run: |
-          git config user.name "github-actions[bot]"
+            GITHUB_TOKEN: ${{ steps.choose-token.outputs.token }}
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Determine release version
@@ -40,13 +48,17 @@ jobs:
           set -euo pipefail
           NEW_VERSION=""
           EVENT="${GITHUB_EVENT_NAME}"
+            # If a PAT is provided, reconfigure origin for authenticated pushes
+            if [ -n "${{ secrets.REPO_PAT }}" ]; then
+              git remote set-url origin https://x-access-token:${{ secrets.REPO_PAT }}@github.com/${{ github.repository }}.git
+            fi
 
           if [ "$EVENT" = "pull_request" ]; then
             # Labeled event: extract the label name
             LABEL_NAME=$(jq -r .label.name < "$GITHUB_EVENT_PATH") || true
             echo "PR label: $LABEL_NAME"
             if [[ "$LABEL_NAME" =~ ^release[: ]*v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-              NEW_VERSION="${BASH_REMATCH[1]}"
+            GITHUB_TOKEN: ${{ steps.choose-token.outputs.token }}
             fi
           fi
 
@@ -55,6 +67,9 @@ jobs:
           fi
 
           if [ -z "$NEW_VERSION" ]; then
+            if [ -n "${{ secrets.REPO_PAT }}" ]; then
+              git remote set-url origin https://x-access-token:${{ secrets.REPO_PAT }}@github.com/${{ github.repository }}.git
+            fi
             if [ -f VERSION ]; then
               NEW_VERSION=$(cat VERSION | tr -d '\n' | tr -d '\r')
             fi
