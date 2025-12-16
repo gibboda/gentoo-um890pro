@@ -84,3 +84,13 @@ chmod +x scripts/bump-version.sh
 ```
 
 The helper will update `VERSION`, prepend a changelog entry under the `Unreleased` section (or append one if missing), and will commit & tag if the repository is a git working tree.
+
+Actions permissions & release label format
+
+- **Required permissions:** The release workflow needs `contents: write` permission so the `GITHUB_TOKEN` can create tags and push commits. In GitHub repository settings ensure workflow permissions allow write access for the token. If your organization restricts write access for the default token, create a Personal Access Token (PAT) with `repo` scope and store it in repository secrets (for example `REPO_PAT`), then update the workflow to use that secret when pushing tags.
+- **Release label format:** The automated release can be triggered by adding a label to a PR in the form `release: vX.Y.Z` or `release vX.Y.Z`. The workflow parses the label to extract `X.Y.Z`. When labeling a PR with that pattern the workflow will run `scripts/bump-version.sh`, push the commit & tag, and create a GitHub Release using the changelog excerpt, PR title/body and commit list.
+
+- **Release body contents:** The release body includes, when available:
+	- The `CHANGELOG.md` excerpt for the released version.
+	- The PR title and PR body when triggered from a labeled PR.
+	- A short list of commits included in the PR or push (commit subject + short sha).
