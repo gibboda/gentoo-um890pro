@@ -1,0 +1,145 @@
+name: Automated Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Optional version to release (vX.Y.Z or X.Y.Z)'
+        required: false
+      message:
+        description: 'Optional short changelog/release message'
+        required: false
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [labeled]
+
+jobs:
+  release:
+    name: Create release (bump + tag)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Choose token (prefer REPO_PAT)
+        id: choose_token
+        run: |
+          if [ -n "${{ secrets.REPO_PAT }}" ]; then
+            printf 'token=%s' "${{ secrets.REPO_PAT }}" >> "$GITHUB_OUTPUT"
+          else
+            printf 'token=%s' "${{ github.token }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine version
+        id: vars
+        run: |
+          set -euo pipefail
+          NEW_VERSION=""
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            LABEL_NAME=$(jq -r .label.name < "$GITHUB_EVENT_PATH" || true)
+            if printf '%s' "$LABEL_NAME" | grep -Eq '^release[: ]*v?([0-9]+\.[0-9]+\.[0-9]+)$'; then
+              NEW_VERSION=$(printf '%s' "$LABEL_NAME" | sed -E 's/^release[: ]*v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+            fi
+          fi
+          if [ -z "$NEW_VERSION" ] && [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            NEW_VERSION=$(jq -r '.inputs.version // empty' < "$GITHUB_EVENT_PATH" || true)
+            NEW_VERSION=${NEW_VERSION#v}
+          fi
+          if [ -z "$NEW_VERSION" ] && [ -f VERSION ]; then
+            NEW_VERSION=$(cat VERSION | tr -d '\r\n')
+          fi
+          if [ -z "$NEW_VERSION" ]; then
+            echo "No version determined" >&2
+            exit 1
+          fi
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Run bump script (PR label)
+        if: ${{ github.event_name == 'pull_request' && steps.vars.outputs.version != '' }}
+        env:
+          GIT_AUTH: ${{ steps.choose_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          NEW_VERSION="${{ steps.vars.outputs.version }}"
+          MSG=$(jq -r '.inputs.message // "Automated release"' < "$GITHUB_EVENT_PATH" 2>/dev/null || echo "Automated release")
+          chmod +x ./scripts/bump-version.sh
+          ./scripts/bump-version.sh "$NEW_VERSION" "$MSG"
+          if [ -n "$GIT_AUTH" ]; then
+            git remote set-url origin "https://x-access-token:${GIT_AUTH}@github.com/${GITHUB_REPOSITORY}.git"
+          fi
+          git push origin HEAD || true
+          git push origin --tags || true
+
+      - name: Tag on push to main
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GIT_AUTH: ${{ steps.choose_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          NEW_VERSION="${{ steps.vars.outputs.version }}"
+          if git tag -l "v${NEW_VERSION}" | grep -q "v${NEW_VERSION}"; then
+            echo "Tag exists; skipping"
+            exit 0
+          fi
+          if [ -n "$GIT_AUTH" ]; then
+            git remote set-url origin "https://x-access-token:${GIT_AUTH}@github.com/${GITHUB_REPOSITORY}.git"
+          fi
+          git tag -a "v${NEW_VERSION}" -m "Release ${NEW_VERSION}"
+          git push origin "v${NEW_VERSION}"
+
+      - name: Prepare release body
+        id: prepare
+        env:
+          GIT_TOKEN: ${{ steps.choose_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          VER="${{ steps.vars.outputs.version }}"
+          BODY=""
+          if [ -f CHANGELOG.md ]; then
+            excerpt=$(awk -v ver="$VER" '
+              $0 ~ "^## \[" ver "\]" {found=1; next}
+              found && /^## / {exit}
+              found {print}
+            ' CHANGELOG.md || true)
+            if [ -n "$excerpt" ]; then
+              BODY="Changelog excerpt:\n\n$excerpt\n\n"
+            fi
+          fi
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            pr_title=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH" 2>/dev/null || true)
+            pr_body=$(jq -r .pull_request.body < "$GITHUB_EVENT_PATH" 2>/dev/null || true)
+            BODY="$BODY""PR: $pr_title\n\n$pr_body\n\n"
+            commits_url=$(jq -r .pull_request.commits_url < "$GITHUB_EVENT_PATH" 2>/dev/null || true)
+            if [ -n "$commits_url" ]; then
+              commits_json=$(curl -s -H "Authorization: token $GIT_TOKEN" "$commits_url" || true)
+              pr_commits=$(printf '%s' "$commits_json" | jq -r '.[] | "- " + ((.commit.message|split("\n")[0]) // "(no message)") + " (" + (.sha[0:7]) + ")"' || true)
+              if [ -n "$pr_commits" ]; then
+                BODY="$BODY""Commits:\n$pr_commits\n\n"
+              fi
+            fi
+          fi
+          if [ -z "$BODY" ]; then
+            BODY="Automated release: v$VER"
+          fi
+          printf 'release_body<<EOF\n%s\nEOF\n' "$BODY" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.vars.outputs.version }}
+          release_name: v${{ steps.vars.outputs.version }}
+          body: ${{ steps.prepare.outputs.release_body }}
+          token: ${{ steps.choose_token.outputs.token }}
