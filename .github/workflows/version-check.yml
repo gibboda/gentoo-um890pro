@@ -30,9 +30,15 @@ jobs:
             git fetch origin "$base_ref" --depth=1 || true
             changed=$(git diff --name-only origin/"$base_ref"...HEAD || true)
           else
-            # push event
-            changed=$(git diff --name-only "$GITHUB_BEFORE".."$GITHUB_SHA" || true)
+            # push event - only run git diff if both variables are present
+            if [ -n "${GITHUB_BEFORE:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
+              changed=$(git diff --name-only "${GITHUB_BEFORE}".."${GITHUB_SHA}" || true)
+            else
+              # fallback to last commit diff
+              changed=$(git diff --name-only HEAD~1..HEAD || true)
+            fi
           fi
+
           echo "changed_files<<EOF" >> $GITHUB_OUTPUT
           echo "$changed" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
