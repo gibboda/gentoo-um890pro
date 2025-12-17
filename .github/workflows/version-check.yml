@@ -31,6 +31,104 @@ jobs:
             changed=$(git diff --name-only origin/"$base_ref"...HEAD || true)
           else
             # push event
+            changed=$(git diff --name-only "$GITHUB_BEFORE".."$GITHUB_SHA" || true)
+          fi
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$changed" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Basic VERSION/CHANGELOG validation
+        run: |
+          set -euo pipefail
+          if [ ! -f VERSION ]; then
+            echo "ERROR: VERSION file missing" >&2
+            exit 1
+          fi
+          VER=$(cat VERSION | tr -d '\r\n')
+          echo "Found VERSION: $VER"
+          if ! echo "$VER" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: VERSION must be in X.Y.Z semantic version format" >&2
+            exit 1
+          fi
+          if [ ! -f CHANGELOG.md ]; then
+            echo "ERROR: CHANGELOG.md missing" >&2
+            exit 1
+          fi
+
+      - name: Validate when VERSION changed
+        if: contains( steps.determine.outputs.changed_files, 'VERSION' )
+        run: |
+          set -euo pipefail
+          echo "VERSION was modified in this change set. Running validations..."
+
+          VERSION_VAL=$(cat VERSION | tr -d '\n' | tr -d '\r')
+          echo "Found VERSION=${VERSION_VAL}"
+
+          # Ensure CHANGELOG was modified in the patch
+          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^CHANGELOG.md$' ; then
+            # Fallback: inspect git diff
+            if ! git diff --name-only | grep -q '^CHANGELOG.md$'; then
+              echo "ERROR: VERSION changed but CHANGELOG.md was not modified" >&2
+              exit 1
+            fi
+          fi
+
+          # Ensure CHANGELOG contains header for this version
+          if ! grep -q "^## \[${VERSION_VAL}\]" CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION_VAL}" >&2
+            exit 1
+          fi
+
+          # If this is a push to main, require tag presence
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            git fetch --tags || true
+            if ! git tag -l "v${VERSION_VAL}" | grep -q "v${VERSION_VAL}" ; then
+              echo "ERROR: Git tag v${VERSION_VAL} not found. Please create and push tag 'v${VERSION_VAL}' when releasing." >&2
+              exit 1
+            fi
+          else
+            echo "Skipping git tag check for non-push event (${GITHUB_EVENT_NAME})."
+          fi
+
+          echo "VERSION and CHANGELOG validation passed."
+
+      - name: Skip when VERSION not changed
+        if: ${{ !contains( steps.determine.outputs.changed_files, 'VERSION' ) }}
+        run: |
+          echo "VERSION not changed; skipping validations."
+name: Version & Changelog Check
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  version-check:
+    name: Validate VERSION and CHANGELOG when VERSION changes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Determine changed files
+        id: determine
+        run: |
+          set -euo pipefail
+          changed=""
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            base_ref=$(jq -r .pull_request.base.ref < "$GITHUB_EVENT_PATH")
+            git fetch origin "$base_ref" --depth=1 || true
+            changed=$(git diff --name-only origin/"$base_ref"...HEAD || true)
+          else
+            # push event
             changed=$(git diff --name-only $GITHUB_BEFORE..$GITHUB_SHA || true)
           fi
           echo "changed_files<<EOF" >> $GITHUB_OUTPUT
