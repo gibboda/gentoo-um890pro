@@ -1,37 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./scripts/bump-version.sh <new-version> "Short changelog entry"
-
-NEWVER="$1"
-MSG="${2-}" 
-
-if [ -z "$NEWVER" ]; then
-  echo "Usage: $0 <new-version> [changelog entry]"
-  exit 1
-fi
-
-echo "$NEWVER" > VERSION
-
-if [ -n "$MSG" ]; then
-  sed -i "1s/^/## [$NEWVER] - $(date +%F)\n- $MSG\n\n/" CHANGELOG.md
-fi
-
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git add VERSION CHANGELOG.md || true
-  git commit -m "chore(release): bump version to $NEWVER" || true
-  git tag -a "v$NEWVER" -m "Release $NEWVER" || true
-fi
-
-echo "Bumped version to $NEWVER"
-#!/usr/bin/env bash
-set -euo pipefail
-
-# Usage: ./scripts/bump-version.sh <new-version> "Short changelog entry"
-# Example: ./scripts/bump-version.sh 0.1.1 "Fix partition detection"
+# Usage:
+#   ./scripts/bump-version.sh <new-version> "Short changelog entry"
+# Example:
+#   ./scripts/bump-version.sh 0.1.1 "Fix partition detection"
 
 if [[ ${#} -lt 2 ]]; then
-  echo "Usage: $0 <new-version> \"Short changelog entry\""
+  echo "Usage: $0 <new-version> \"Short changelog entry\"" >&2
   exit 1
 fi
 
@@ -41,43 +17,60 @@ MSG="$*"
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION_FILE="$ROOT_DIR/VERSION"
-CHANGELOG="$ROOT_DIR/CHANGELOG.md"
+CHANGELOG_FILE="$ROOT_DIR/CHANGELOG.md"
 
-if [[ ! -f "$VERSION_FILE" ]]; then
-  echo "0.0.0" > "$VERSION_FILE"
-fi
-
-OLD_VERSION=$(cat "$VERSION_FILE" | tr -d '\n')
-
-# Update VERSION file
 echo "$NEW_VERSION" > "$VERSION_FILE"
 
 date_str=$(date -u +"%Y-%m-%d")
 
-# Prepend changelog entry under Unreleased
-if grep -q "^## Unreleased" "$CHANGELOG" 2>/dev/null; then
+if [[ -f "$CHANGELOG_FILE" ]]; then
   tmpfile=$(mktemp)
   awk -v d="$date_str" -v v="$NEW_VERSION" -v m="$MSG" '
-    BEGIN{printed=0}
-    /^## Unreleased/ { print; print ""; print "## [" v "] - " d; print "- " m; print ""; printed=1; next }
+    BEGIN { inserted=0 }
+    # Insert immediately after the first Unreleased header (supports "## [Unreleased]" or "## Unreleased")
+    inserted==0 && ($0 ~ /^##[[:space:]]+\[?Unreleased\]?/) {
+      print
+      print ""
+      print "## [" v "] - " d
+      print "- " m
+      print ""
+      inserted=1
+      next
+    }
     { print }
-  ' "$CHANGELOG" > "$tmpfile" && mv "$tmpfile" "$CHANGELOG"
+  ' "$CHANGELOG_FILE" > "$tmpfile"
+
+  if grep -Eq '^##[[:space:]]+\[?Unreleased\]?' "$CHANGELOG_FILE"; then
+    mv "$tmpfile" "$CHANGELOG_FILE"
+  else
+    # Prepend entry to the top if no Unreleased section exists.
+    tmpfile2=$(mktemp)
+    {
+      echo "## [$NEW_VERSION] - $date_str"
+      echo "- $MSG"
+      echo ""
+      cat "$CHANGELOG_FILE"
+    } > "$tmpfile2"
+    mv "$tmpfile2" "$CHANGELOG_FILE"
+    rm -f "$tmpfile"
+  fi
 else
-  # Fallback: append to top
-  tmpfile=$(mktemp)
-  echo "## [$NEW_VERSION] - $date_str" > "$tmpfile"
-  echo "- $MSG" >> "$tmpfile"
-  echo "" >> "$tmpfile"
-  cat "$CHANGELOG" >> "$tmpfile"
-  mv "$tmpfile" "$CHANGELOG"
+  {
+    echo "# Changelog"
+    echo ""
+    echo "## [Unreleased]"
+    echo ""
+    echo "## [$NEW_VERSION] - $date_str"
+    echo "- $MSG"
+    echo ""
+  } > "$CHANGELOG_FILE"
 fi
 
-# Commit & tag if in a git repo
 if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG"
+  git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
   git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG" || true
   git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG" || true
   echo "Committed and tagged v$NEW_VERSION"
-else
-  echo "Updated $VERSION_FILE and $CHANGELOG (not a git repo)."
 fi
+
+echo "Bumped version to $NEW_VERSION"
