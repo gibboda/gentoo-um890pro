@@ -12,7 +12,7 @@ set -euo pipefail
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="0.1.0"
+VERSION="2025.1.8"
 HOSTNAME="um890-gentoo"
 
 # Pick which disk is OS and which disk is ZFS data.
