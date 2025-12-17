@@ -70,8 +70,10 @@ After reboot, ZFS datasets are mounted under `ZFS_MNT_BASE` (default `/data`).
 
 ```bash
 chmod +x scripts/bump-version.sh
-./scripts/bump-version.sh 0.1.1 "Short summary of changes"
+./scripts/bump-version.sh 0.1.2 "Short summary of changes"
 ```
+
+Note: `VERSION` is enforced as `X.Y.Z` semver by CI.
 
 ## GitHub Actions: permissions & releases
 

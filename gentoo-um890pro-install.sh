@@ -12,7 +12,7 @@ set -euo pipefail
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="2025.12.16"
+VERSION="0.1.1"
 
 # If a repository VERSION file exists alongside this script, prefer it.
 # This keeps the script version in sync when run from a cloned checkout,
