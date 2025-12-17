@@ -32,9 +32,11 @@ jobs:
       - name: Choose token (prefer REPO_PAT)
         id: choose_token
         env:
-          TOKEN: ${{ secrets.REPO_PAT || github.token }}
+          GIT_TOKEN: ${{ secrets.REPO_PAT || github.token }}
+          API_TOKEN: ${{ github.token }}
         run: |
-          printf 'token=%s' "$TOKEN" >> "$GITHUB_OUTPUT"
+          printf 'git_token=%s\n' "$GIT_TOKEN" >> "$GITHUB_OUTPUT"
+          printf 'api_token=%s\n' "$API_TOKEN" >> "$GITHUB_OUTPUT"
 
       - name: Setup git
         run: |
@@ -68,7 +70,7 @@ jobs:
       - name: Run bump script (PR label)
         if: ${{ github.event_name == 'pull_request' && steps.vars.outputs.version != '' }}
         env:
-          GIT_AUTH: ${{ steps.choose_token.outputs.token }}
+          GIT_AUTH: ${{ steps.choose_token.outputs.git_token }}
         run: |
           set -euo pipefail
           NEW_VERSION="${{ steps.vars.outputs.version }}"
@@ -84,7 +86,7 @@ jobs:
       - name: Tag on push to main
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         env:
-          GIT_AUTH: ${{ steps.choose_token.outputs.token }}
+          GIT_AUTH: ${{ steps.choose_token.outputs.git_token }}
         run: |
           set -euo pipefail
           NEW_VERSION="${{ steps.vars.outputs.version }}"
@@ -101,7 +103,7 @@ jobs:
       - name: Prepare release body
         id: prepare
         env:
-          GIT_TOKEN: ${{ steps.choose_token.outputs.token }}
+          GIT_TOKEN: ${{ steps.choose_token.outputs.api_token }}
         run: |
           set -euo pipefail
           VER="${{ steps.vars.outputs.version }}"
@@ -137,7 +139,7 @@ jobs:
       - name: Check existing GitHub release
         id: release_check
         env:
-          GITHUB_TOKEN: ${{ steps.choose_token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.choose_token.outputs.api_token }}
         run: |
           set -euo pipefail
           TAG="v${{ steps.vars.outputs.version }}"
@@ -162,7 +164,7 @@ jobs:
           RELEASE_NAME: v${{ steps.vars.outputs.version }}
           RELEASE_BODY: ${{ steps.prepare.outputs.release_body }}
         with:
-          github-token: ${{ steps.choose_token.outputs.token }}
+          github-token: ${{ steps.choose_token.outputs.api_token }}
           script: |
             const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
             const release_id = Number(process.env.RELEASE_ID);
@@ -178,7 +180,7 @@ jobs:
         if: ${{ steps.release_check.outputs.exists != 'true' }}
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ steps.choose_token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.choose_token.outputs.api_token }}
         with:
           tag_name: v${{ steps.vars.outputs.version }}
           release_name: v${{ steps.vars.outputs.version }}
