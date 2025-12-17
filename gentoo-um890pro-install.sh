@@ -12,6 +12,7 @@ set -euo pipefail
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
+VERSION="0.1.0"
 HOSTNAME="um890-gentoo"
 
 # Pick which disk is OS and which disk is ZFS data.
@@ -374,6 +375,8 @@ finalize_users_passwords() {
 main() {
   require_root
   require_uefi
+
+  echo "gentoo-um890pro-installer version: ${VERSION}"
 
   for c in lsblk blkid awk sed; do
     need_cmd "$c" || { echo "ERROR: missing required command: $c"; exit 1; }
