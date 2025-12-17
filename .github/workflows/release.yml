@@ -31,12 +31,10 @@ jobs:
 
       - name: Choose token (prefer REPO_PAT)
         id: choose_token
+        env:
+          TOKEN: ${{ secrets.REPO_PAT || github.token }}
         run: |
-          token="${{ secrets.REPO_PAT }}"
-          if [ -z "$token" ]; then
-            token="${{ github.token }}"
-          fi
-          printf 'token=%s' "$token" >> "$GITHUB_OUTPUT"
+          printf 'token=%s' "$TOKEN" >> "$GITHUB_OUTPUT"
 
       - name: Setup git
         run: |
