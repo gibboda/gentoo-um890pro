@@ -39,9 +39,7 @@ jobs:
             fi
           fi
 
-          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$changed" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          printf 'changed_files<<EOF\n%s\nEOF\n' "$changed" >> "$GITHUB_OUTPUT"
 
       - name: Basic VERSION/CHANGELOG validation
         run: |
