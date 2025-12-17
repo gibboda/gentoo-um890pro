@@ -15,6 +15,11 @@ NEW_VERSION="$1"
 shift
 MSG="$*"
 
+if ! echo "$NEW_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  echo "ERROR: version must be in X.Y.Z semantic version format (got: $NEW_VERSION)" >&2
+  exit 1
+fi
+
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION_FILE="$ROOT_DIR/VERSION"
 CHANGELOG_FILE="$ROOT_DIR/CHANGELOG.md"
