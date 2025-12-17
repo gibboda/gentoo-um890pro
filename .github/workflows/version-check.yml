@@ -4,6 +4,93 @@ permissions:
   contents: read
 
 on:
+  pull_request:
+    paths:
+      - 'VERSION'
+      - 'CHANGELOG.md'
+  push:
+    branches: [ main ]
+    paths:
+      - 'VERSION'
+      - 'CHANGELOG.md'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Determine changed files
+        id: determine
+        run: |
+          set -euo pipefail
+          changed=""
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            base_ref=$(jq -r .pull_request.base.ref < "$GITHUB_EVENT_PATH")
+            git fetch origin "$base_ref" --depth=1 || true
+            changed=$(git diff --name-only origin/"$base_ref"...HEAD || true)
+          else
+            changed=$(git diff --name-only ${GITHUB_BEFORE:-}..${GITHUB_SHA:-} || true)
+          fi
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$changed" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Basic presence & format checks
+        run: |
+          set -euo pipefail
+          if [ ! -f VERSION ]; then
+            echo "ERROR: VERSION file missing" >&2
+            exit 1
+          fi
+          VER=$(cat VERSION | tr -d '\r\n')
+          echo "Found VERSION: $VER"
+          if ! echo "$VER" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: VERSION must be in X.Y.Z semantic version format" >&2
+            exit 1
+          fi
+          if [ ! -f CHANGELOG.md ]; then
+            echo "ERROR: CHANGELOG.md missing" >&2
+            exit 1
+          fi
+
+      - name: Validate when VERSION changed
+        if: contains( steps.determine.outputs.changed_files, 'VERSION' )
+        run: |
+          set -euo pipefail
+          VERSION_VAL=$(cat VERSION | tr -d '\r\n')
+          echo "VERSION changed to ${VERSION_VAL}; verifying CHANGELOG.md and tag"
+
+          if ! grep -E "^## \[${VERSION_VAL}\]" -q CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION_VAL}." >&2
+            exit 1
+          fi
+
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            git fetch --tags || true
+            if ! git tag -l "v${VERSION_VAL}" | grep -q "v${VERSION_VAL}" ; then
+              echo "ERROR: Git tag v${VERSION_VAL} not found. Please create and push tag 'v${VERSION_VAL}' when releasing." >&2
+              exit 1
+            fi
+          else
+            echo "Skipping git tag check for non-push event (${GITHUB_EVENT_NAME})."
+          fi
+
+      - name: Skip when VERSION not changed
+        if: ${{ !contains( steps.determine.outputs.changed_files, 'VERSION' ) }}
+        run: |
+          echo "VERSION not changed; basic validation completed."
+name: Version & Changelog Check
+
+permissions:
+  contents: read
+
+on:
   push:
     branches: [ main ]
   pull_request:
