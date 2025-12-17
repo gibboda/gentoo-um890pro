@@ -2,6 +2,32 @@
 set -euo pipefail
 
 # Usage: ./scripts/bump-version.sh <new-version> "Short changelog entry"
+
+NEWVER="$1"
+MSG="${2-}" 
+
+if [ -z "$NEWVER" ]; then
+  echo "Usage: $0 <new-version> [changelog entry]"
+  exit 1
+fi
+
+echo "$NEWVER" > VERSION
+
+if [ -n "$MSG" ]; then
+  sed -i "1s/^/## [$NEWVER] - $(date +%F)\n- $MSG\n\n/" CHANGELOG.md
+fi
+
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git add VERSION CHANGELOG.md || true
+  git commit -m "chore(release): bump version to $NEWVER" || true
+  git tag -a "v$NEWVER" -m "Release $NEWVER" || true
+fi
+
+echo "Bumped version to $NEWVER"
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage: ./scripts/bump-version.sh <new-version> "Short changelog entry"
 # Example: ./scripts/bump-version.sh 0.1.1 "Fix partition detection"
 
 if [[ ${#} -lt 2 ]]; then
