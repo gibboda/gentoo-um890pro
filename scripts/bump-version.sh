@@ -18,8 +18,23 @@ MSG="$*"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION_FILE="$ROOT_DIR/VERSION"
 CHANGELOG_FILE="$ROOT_DIR/CHANGELOG.md"
+INSTALLER_FILE="$ROOT_DIR/gentoo-um890pro-install.sh"
 
 echo "$NEW_VERSION" > "$VERSION_FILE"
+
+if [[ -f "$INSTALLER_FILE" ]]; then
+  tmpfile_installer=$(mktemp)
+  awk -v v="$NEW_VERSION" '
+    BEGIN { updated=0 }
+    updated==0 && $0 ~ /^VERSION="[^"]*"/ {
+      print "VERSION=\"" v "\""
+      updated=1
+      next
+    }
+    { print }
+  ' "$INSTALLER_FILE" > "$tmpfile_installer"
+  mv "$tmpfile_installer" "$INSTALLER_FILE"
+fi
 
 date_str=$(date -u +"%Y-%m-%d")
 
@@ -67,7 +82,11 @@ else
 fi
 
 if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
+  if [[ -f "$INSTALLER_FILE" ]]; then
+    git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE" "$INSTALLER_FILE"
+  else
+    git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
+  fi
   git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG" || true
   git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG" || true
   echo "Committed and tagged v$NEW_VERSION"

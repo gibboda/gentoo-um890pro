@@ -12,7 +12,15 @@ set -euo pipefail
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="2025.1.8"
+VERSION="2025.12.16"
+
+# If a repository VERSION file exists alongside this script, prefer it.
+# This keeps the script version in sync when run from a cloned checkout,
+# while still working when the script is copied standalone.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${SCRIPT_DIR}/VERSION" ]]; then
+  VERSION="$(tr -d '\r\n' < "${SCRIPT_DIR}/VERSION")"
+fi
 HOSTNAME="um890-gentoo"
 
 # Pick which disk is OS and which disk is ZFS data.
