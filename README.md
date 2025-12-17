@@ -83,23 +83,11 @@ chmod +x scripts/bump-version.sh
 ./scripts/bump-version.sh 0.1.1 "Short summary of changes"
 ```
 
+
 The helper will update `VERSION`, prepend a changelog entry under the `Unreleased` section (or append one if missing), and will commit & tag if the repository is a git working tree.
 
-Actions permissions & release label format
+Actions / releases
 
-- **Required permissions:** The release workflow needs `contents: write` permission so the `GITHUB_TOKEN` can create tags and push commits. In GitHub repository settings ensure workflow permissions allow write access for the token. If your organization restricts write access for the default token, create a Personal Access Token (PAT) with `repo` scope and store it in repository secrets (for example `REPO_PAT`), then update the workflow to use that secret when pushing tags.
-- **Release label format:** The automated release can be triggered by adding a label to a PR in the form `release: vX.Y.Z` or `release vX.Y.Z`. The workflow parses the label to extract `X.Y.Z`. When labeling a PR with that pattern the workflow will run `scripts/bump-version.sh`, push the commit & tag, and create a GitHub Release using the changelog excerpt, PR title/body and commit list.
+- **Note:** This repository no longer includes an automated release workflow. Releases, tagging and changelog publishing should be done manually or via an external CI you configure.
 
-- **Release body contents:** The release body includes, when available:
-	- The `CHANGELOG.md` excerpt for the released version.
-	- The PR title and PR body when triggered from a labeled PR.
-	- A short list of commits included in the PR or push (commit subject + short sha).
-
-Note about forked PRs and 'Resource not accessible by integration'
-
-- When a PR comes from a fork, GitHub runs workflows with a read-only token by default for security — the `GITHUB_TOKEN` will not have permission to push tags or write releases from forked PR workflow runs. In that case you will see errors like "Resource not accessible by integration." Options to resolve:
-	- Merge the PR then run the release workflow on the `main` branch (push) or use `workflow_dispatch` from a maintainer account.
-	- Provide a repository secret `REPO_PAT` (a Personal Access Token with `repo` scope) and set it in repository secrets; the workflow will use it to authenticate pushes/tags when available. Keep this PAT secret and restrict repo permissions appropriately.
-	- Alternatively, restrict automatic pushing in PR runs and have the workflow open a release PR or comment prompting a maintainer to trigger the release.
-
-The repository already supports `REPO_PAT` as a fallback in the release workflow; add a PAT to repository secrets if you need releases from fork workflows.
+If you'd like, I can scaffold a new GitHub Actions release workflow (with an option to use `GITHUB_TOKEN` or an optional `REPO_PAT` secret) — tell me and I will add it.
