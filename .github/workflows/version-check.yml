@@ -1,8 +1,12 @@
-name: Version & Changelog Validation
+name: Version & Changelog Check
+
+permissions:
+  contents: read
 
 on:
   pull_request:
   push:
+    branches: [ main ]
 
 jobs:
   version-check:
@@ -27,11 +31,29 @@ jobs:
             changed=$(git diff --name-only origin/"$base_ref"...HEAD || true)
           else
             # push event
-            changed=$(git diff --name-only $GITHUB_BEFORE..$GITHUB_SHA || true)
+            changed=$(git diff --name-only "$GITHUB_BEFORE".."$GITHUB_SHA" || true)
           fi
           echo "changed_files<<EOF" >> $GITHUB_OUTPUT
           echo "$changed" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Basic VERSION/CHANGELOG validation
+        run: |
+          set -euo pipefail
+          if [ ! -f VERSION ]; then
+            echo "ERROR: VERSION file missing" >&2
+            exit 1
+          fi
+          VER=$(cat VERSION | tr -d '\r\n')
+          echo "Found VERSION: $VER"
+          if ! echo "$VER" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: VERSION must be in X.Y.Z semantic version format" >&2
+            exit 1
+          fi
+          if [ ! -f CHANGELOG.md ]; then
+            echo "ERROR: CHANGELOG.md missing" >&2
+            exit 1
+          fi
 
       - name: Validate when VERSION changed
         if: contains( steps.determine.outputs.changed_files, 'VERSION' )
@@ -39,22 +61,25 @@ jobs:
           set -euo pipefail
           echo "VERSION was modified in this change set. Running validations..."
 
-          if [ ! -f VERSION ]; then
-            echo "ERROR: VERSION file missing." >&2
-            exit 1
-          fi
-
           VERSION_VAL=$(cat VERSION | tr -d '\n' | tr -d '\r')
           echo "Found VERSION=${VERSION_VAL}"
 
-          # Check CHANGELOG contains a header for this version
-          if ! grep -E "^## \[${VERSION_VAL}\]" -q CHANGELOG.md; then
-            echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION_VAL}." >&2
-            echo "Please add an entry under 'Unreleased' or run the bump script to update CHANGELOG.md." >&2
+          # Ensure CHANGELOG was modified in the patch
+          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^CHANGELOG.md$' ; then
+            # Fallback: inspect git diff
+            if ! git diff --name-only | grep -q '^CHANGELOG.md$'; then
+              echo "ERROR: VERSION changed but CHANGELOG.md was not modified" >&2
+              exit 1
+            fi
+          fi
+
+          # Ensure CHANGELOG contains header for this version
+          if ! grep -q "^## \[${VERSION_VAL}\]" CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION_VAL}" >&2
             exit 1
           fi
 
-          # Check optional tag presence (enforces tagging alongside version bump)
+          # If this is a push to main, require tag presence
           if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
             git fetch --tags || true
             if ! git tag -l "v${VERSION_VAL}" | grep -q "v${VERSION_VAL}" ; then
