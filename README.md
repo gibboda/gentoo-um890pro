@@ -187,3 +187,20 @@ Note about forked PRs and 'Resource not accessible by integration'
 	- Alternatively, restrict automatic pushing in PR runs and have the workflow open a release PR or comment prompting a maintainer to trigger the release.
 
 The repository already supports `REPO_PAT` as a fallback in the release workflow; add a PAT to repository secrets if you need releases from fork workflows.
+
+### CI badge
+
+Version/check workflow status:
+
+![version-check](https://github.com/gibboda/gentoo-um890pro/actions/workflows/version-check.yml/badge.svg)
+
+### REPO_PAT and permissions (how to set up)
+
+- Create a Personal Access Token (PAT) with `repo` scope (for private repos) or `public_repo` for public repos.
+- In the repository, go to Settings → Secrets → Actions and add a new secret named `REPO_PAT` with the token value.
+- The `release.yml` workflow will prefer `REPO_PAT` when present and use it to push tags and create releases. For security, only grant this PAT to a machine or user you trust.
+
+### Label format for automated releases
+
+- To trigger a release from a PR, add a label matching `release: vX.Y.Z` or `release vX.Y.Z` (for example `release: v0.2.0`). The release workflow extracts the semantic version and runs the bump script, tags the repo and creates a GitHub Release.
+
