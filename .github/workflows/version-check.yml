@@ -1,3 +1,42 @@
+name: Version & Changelog Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    paths:
+      - 'VERSION'
+      - 'CHANGELOG.md'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate VERSION and CHANGELOG.md
+        run: |
+          set -euo pipefail
+          if [ ! -f VERSION ]; then
+            echo "ERROR: VERSION file missing" >&2
+            exit 1
+          fi
+          VER=$(cat VERSION | tr -d '\r\n')
+          echo "Found VERSION: $VER"
+          if ! echo "$VER" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: VERSION must be in X.Y.Z semantic version format" >&2
+            exit 1
+          fi
+          if [ ! -f CHANGELOG.md ]; then
+            echo "ERROR: CHANGELOG.md missing" >&2
+            exit 1
+          fi
+          if ! grep -q "## \[$VER\]" CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md does not contain a header for version $VER" >&2
+            exit 1
+          fi
+          echo "VERSION and CHANGELOG.md validation passed."
 name: Version & Changelog Validation
 
 on:
