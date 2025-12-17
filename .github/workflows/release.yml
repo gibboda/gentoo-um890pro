@@ -32,11 +32,7 @@ jobs:
       - name: Choose token (prefer REPO_PAT)
         id: choose_token
         run: |
-          if [ -n "${{ secrets.REPO_PAT }}" ]; then
-            printf 'token=%s' "${{ secrets.REPO_PAT }}" >> "$GITHUB_OUTPUT"
-          else
-            printf 'token=%s' "${{ github.token }}" >> "$GITHUB_OUTPUT"
-          fi
+          printf 'token=%s' "${{ github.token }}" >> "$GITHUB_OUTPUT"
 
       - name: Setup git
         run: |
@@ -138,8 +134,9 @@ jobs:
 
       - name: Create GitHub release
         uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ steps.choose_token.outputs.token }}
         with:
           tag_name: v${{ steps.vars.outputs.version }}
           release_name: v${{ steps.vars.outputs.version }}
           body: ${{ steps.prepare.outputs.release_body }}
-          token: ${{ steps.choose_token.outputs.token }}
