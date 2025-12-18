@@ -10,9 +10,19 @@ Script: [gentoo-um890pro-install.sh](gentoo-um890pro-install.sh)
 
 - OS disk: EFI System Partition (FAT32) + Btrfs root with subvolumes (`@`, `@home`, `@var`, `@snapshots`).
 - Data disk: single-partition ZFS pool with datasets under `ZFS_MNT_BASE` (default `/data`).
-- Init system: `systemd` or `openrc` (controlled by `INIT_SYSTEM`).
+- Init system: `openrc` (default) or `systemd` (controlled by `INIT_SYSTEM`).
 - Kernel: installs `gentoo-kernel-bin` when `USE_BINARY_KERNEL=yes`, otherwise builds from source.
 - Interactive: requires typed confirmation (`WIPE-AND-INSTALL`), prompts for root password, optional user creation.
+
+### OpenRC zram swap (AI-friendly)
+
+If `INIT_SYSTEM="openrc"`, the installer sets up a simple OpenRC-managed zram swap device.
+
+- Service: `/etc/init.d/zram` (enabled in the `boot` runlevel)
+- Config: `/etc/conf.d/zram`
+- Defaults: zram size = RAM/4, compression = `zstd` (if supported), swap priority = `100`
+
+This is intended to keep the system “feeling like Gentoo” while still providing a fast compressed swap buffer that helps with bursty AI workloads.
 
 ## Requirements (live environment)
 
@@ -45,11 +55,27 @@ chmod +x gentoo-um890pro-install.sh
 - `ESP_SIZE_MIB` — size of the EFI partition.
 - `BTRFS_LABEL`, `ESP_LABEL` — filesystem labels.
 - `MNT`, `ESP_MNT`, `ZFS_MNT_BASE` — mountpoints used during install.
-- `INIT_SYSTEM` — `systemd` or `openrc`.
+- `INIT_SYSTEM` — `openrc` (default) or `systemd`.
 - `USE_BINARY_KERNEL` — `yes` to install `gentoo-kernel-bin`.
 - `ZPOOL` — name of the ZFS pool created (default `tank`).
 - `COMMON_FLAGS` — compile flags written to `make.conf`.
 - `TIMEZONE`, `LOCALE` — timezone/locale written into the installed system.
+
+### Tuning zram (OpenRC)
+
+If you use OpenRC, tune zram by editing `/etc/conf.d/zram` in the installed system:
+
+- `ZRAM_SIZE` — set an explicit size like `"24G"` (leave empty for RAM/4)
+- `ZRAM_COMP_ALGO` — e.g. `zstd`, `lz4`, `lzo` (only applied if the kernel supports it)
+- `ZRAM_SWAP_PRIORITY` — higher prefers zram over disk swap
+
+Manage it like any other OpenRC service:
+
+```bash
+rc-service zram start
+rc-service zram stop
+rc-update add zram boot
+```
 
 ## After installation
 

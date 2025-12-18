@@ -12,7 +12,7 @@ set -euo pipefail
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="0.1.1"
+VERSION="0.1.2"
 
 # If a repository VERSION file exists alongside this script, prefer it.
 # This keeps the script version in sync when run from a cloned checkout,
@@ -38,9 +38,9 @@ MNT="/mnt/gentoo"
 ESP_MNT="${MNT}/boot"
 ZFS_MNT_BASE="/data"    # ZFS pool mount base inside the installed OS
 
-# Gentoo profile choice (systemd recommended for easier zram-generator)
-# "systemd" or "openrc"
-INIT_SYSTEM="systemd"
+# Gentoo profile / init system choice
+# "openrc" (default; includes an OpenRC zram swap service) or "systemd"
+INIT_SYSTEM="openrc"
 
 # Use a binary kernel for speed/simplicity (recommended)
 USE_BINARY_KERNEL="yes"  # yes/no
@@ -322,6 +322,120 @@ EOF
   else
     # OpenRC
     chroot_run "rc-update add dhcpcd default"
+
+    # zram swap via an OpenRC service (keeps Gentoo feeling like Gentoo)
+    # Defaults: size=RAM/4, compression=zstd (if supported), high priority.
+    cat > "${MNT}/etc/conf.d/zram" <<'EOF'
+# /etc/conf.d/zram
+# zram swap device configuration
+
+# Set to an absolute size like "24G", or leave empty for auto (RAM/4).
+ZRAM_SIZE=""
+
+# Preferred compression algorithm (if supported by the kernel): zstd, lz4, lzo, etc.
+ZRAM_COMP_ALGO="zstd"
+
+# Swap priority for zram swap (higher = preferred over disk swap)
+ZRAM_SWAP_PRIORITY="100"
+
+# Extra swapon options (rarely needed)
+ZRAM_SWAPON_OPTS=""
+EOF
+
+    cat > "${MNT}/etc/init.d/zram" <<'EOF'
+#!/sbin/openrc-run
+
+description="Compressed RAM-backed swap (zram)"
+
+command="/sbin/modprobe"
+command_args="zram num_devices=1"
+command_background="no"
+
+depend() {
+  need localmount
+  after modules
+  before swap
+}
+
+_mem_kib() {
+  awk '/^MemTotal:/ {print $2; exit}' /proc/meminfo
+}
+
+_size_bytes_auto() {
+  # Default to RAM/4
+  local mem_kib
+  mem_kib="$(_mem_kib)"
+  echo $(( (mem_kib * 1024) / 4 ))
+}
+
+_size_bytes_from_human() {
+  # Accept forms like 24G, 4096M, 1048576K, or raw bytes.
+  local s="$1"
+  [[ -z "$s" ]] && return 1
+
+  case "$s" in
+    *[Gg]) echo $(( ${s%[Gg]} * 1024 * 1024 * 1024 )) ;;
+    *[Mm]) echo $(( ${s%[Mm]} * 1024 * 1024 )) ;;
+    *[Kk]) echo $(( ${s%[Kk]} * 1024 )) ;;
+    *[0-9]) echo "$s" ;;
+    *) return 1 ;;
+  esac
+}
+
+start_pre() {
+  checkpath -d -m 0755 /run
+}
+
+start() {
+  ebegin "Setting up zram swap"
+
+  if ! /sbin/modprobe zram num_devices=1 2>/dev/null; then
+    eend 1 "Failed to load zram module"
+    return 1
+  fi
+
+  if [[ ! -b /dev/zram0 ]]; then
+    eend 1 "/dev/zram0 not present"
+    return 1
+  fi
+
+  local size_bytes
+  if [[ -n "${ZRAM_SIZE:-}" ]]; then
+    size_bytes="$(_size_bytes_from_human "${ZRAM_SIZE}")" || size_bytes=""
+  fi
+  [[ -z "${size_bytes:-}" ]] && size_bytes="$(_size_bytes_auto)"
+
+  # If supported, set compression algorithm.
+  if [[ -n "${ZRAM_COMP_ALGO:-}" && -w /sys/block/zram0/comp_algorithm ]]; then
+    # Write preferred algo if kernel supports it; otherwise ignore.
+    if grep -qw "${ZRAM_COMP_ALGO}" /sys/block/zram0/comp_algorithm 2>/dev/null; then
+      echo "${ZRAM_COMP_ALGO}" > /sys/block/zram0/comp_algorithm 2>/dev/null || true
+    fi
+  fi
+
+  echo "${size_bytes}" > /sys/block/zram0/disksize
+
+  /sbin/mkswap -f /dev/zram0 >/dev/null
+  /sbin/swapon -p "${ZRAM_SWAP_PRIORITY:-100}" ${ZRAM_SWAPON_OPTS:-} /dev/zram0
+
+  eend 0
+}
+
+stop() {
+  ebegin "Tearing down zram swap"
+  /sbin/swapoff /dev/zram0 2>/dev/null || true
+
+  # Best-effort reset (kernel-dependent)
+  if [[ -w /sys/block/zram0/reset ]]; then
+    echo 1 > /sys/block/zram0/reset 2>/dev/null || true
+  fi
+
+  eend 0
+}
+EOF
+
+    chmod +x "${MNT}/etc/init.d/zram"
+    chroot_run "rc-update add zram boot"
   fi
 }
 
