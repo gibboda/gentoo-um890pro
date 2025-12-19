@@ -3,7 +3,21 @@
 set -Eeuo pipefail
 
 # Error context (works best with `set -E`/errtrace enabled above).
-trap 'rc=$?; echo "ERROR: command failed (exit=${rc}) at ${BASH_SOURCE[0]}:${LINENO}: ${BASH_COMMAND}" >&2; exit ${rc}' ERR
+on_err() {
+  local rc=$?
+
+  # If errexit is currently disabled (e.g. inside a best-effort `set +e` block),
+  # do not treat failures as fatal.
+  [[ "$-" == *e* ]] || return 0
+
+  local src line cmd
+  src="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+  line="${BASH_LINENO[0]:-${LINENO}}"
+  cmd="${BASH_COMMAND}"
+  echo "ERROR: command failed (exit=${rc}) at ${src}:${line}: ${cmd}" >&2
+  exit "${rc}"
+}
+trap on_err ERR
 
 ###############################################################################
 # Gentoo install bootstrap for Minisforum EliteMini UM890 Pro (UEFI, 2x NVMe)
