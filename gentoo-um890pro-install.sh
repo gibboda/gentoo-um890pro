@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-set -euo pipefail
+set -Eeuo pipefail
+
+# Error context (works best with `set -E`/errtrace enabled above).
+trap 'rc=$?; echo "ERROR: command failed (exit=${rc}) at ${BASH_SOURCE[0]}:${LINENO}: ${BASH_COMMAND}" >&2; exit ${rc}' ERR
 
 ###############################################################################
 # Gentoo install bootstrap for Minisforum EliteMini UM890 Pro (UEFI, 2x NVMe)
@@ -14,6 +17,16 @@ set -euo pipefail
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
 VERSION="0.1.3"
+
+# Logging
+# By default, the script writes a timestamped log capturing stdout+stderr.
+# - Set LOG_ENABLED="no" to disable.
+# - Set LOG_FILE to force a specific path (recommended: somewhere persistent).
+LOG_ENABLED="yes"   # yes/no
+LOG_FILE=""         # e.g. /root/gentoo-um890pro-install.log
+
+# Enable bash xtrace debugging (very verbose). Best used with logging.
+DEBUG="no"          # yes/no
 
 # If a repository VERSION file exists alongside this script, prefer it.
 # This keeps the script version in sync when run from a cloned checkout,
@@ -66,6 +79,43 @@ LOCALE="en_US.UTF-8 UTF-8"
 
 
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+init_logging() {
+  [[ "${LOG_ENABLED}" == "yes" ]] || return 0
+
+  need_cmd tee || { echo "ERROR: tee not found; cannot enable logging." >&2; exit 1; }
+  need_cmd date || { echo "ERROR: date not found; cannot enable logging." >&2; exit 1; }
+
+  if [[ -z "${LOG_FILE}" ]]; then
+    local ts log_dir
+    ts="$(date +%Y%m%d-%H%M%S)"
+    log_dir="/root"
+    [[ -w "${log_dir}" ]] || log_dir="/tmp"
+    LOG_FILE="${log_dir}/gentoo-um890pro-install-${ts}.log"
+  fi
+
+  # Ensure the log file can be created.
+  touch "${LOG_FILE}" || { echo "ERROR: cannot write log file: ${LOG_FILE}" >&2; exit 1; }
+
+  # Tell the user where the log is, even after we redirect output.
+  if [[ -w /dev/tty ]]; then
+    echo "Logging to: ${LOG_FILE}" > /dev/tty
+  else
+    echo "Logging to: ${LOG_FILE}" >&2
+  fi
+
+  # Capture both stdout+stderr to the log while still showing output live.
+  exec > >(tee -a "${LOG_FILE}") 2>&1
+}
+
+enable_debug_trace() {
+  [[ "${DEBUG}" == "yes" ]] || return 0
+
+  # Helpful trace prefix: file:line, func, and source line.
+  # Note: requires bash.
+  export PS4='+(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]:-main}: '
+  set -x
+}
 
 require_root() {
   if [[ "${EUID}" -ne 0 ]]; then
@@ -580,6 +630,14 @@ EOF
 finalize_users_passwords() {
   echo "Setting root password and creating a user..."
 
+  # If DEBUG tracing is enabled, temporarily disable xtrace while we do
+  # interactive steps to keep logs cleaner.
+  local _trace_was_on="no"
+  if [[ "$-" == *x* ]]; then
+    _trace_was_on="yes"
+    set +x
+  fi
+
   chroot_run "passwd"  # interactive
 
   read -r -p "Create a non-root user now? (y/n): " yn
@@ -590,11 +648,16 @@ finalize_users_passwords() {
     # Allow wheel sudo
     chroot_run "sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers"
   fi
+
+  [[ "${_trace_was_on}" == "yes" ]] && set -x
 }
 
 main() {
   require_root
   require_uefi
+
+  init_logging
+  enable_debug_trace
 
   echo "gentoo-um890pro-installer version: ${VERSION}"
 
