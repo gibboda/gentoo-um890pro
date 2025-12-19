@@ -37,7 +37,7 @@ VERSION="0.1.3"
 # - Set LOG_ENABLED="no" to disable.
 # - Set LOG_FILE to force a specific path (recommended: somewhere persistent).
 LOG_ENABLED="yes"   # yes/no
-LOG_FILE=""         # e.g. /root/gentoo-um890pro-install.log
+LOG_FILE="~/gentoo-um890pro-install.log"         # e.g. /root/gentoo-um890pro-install.log
 
 # Enable bash xtrace debugging (very verbose). Best used with logging.
 DEBUG="no"          # yes/no
