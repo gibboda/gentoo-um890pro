@@ -1,4 +1,7 @@
 {
   "snyk.features.openSourceSecurity": false,
-  "snyk.advanced.autoScanOpenSourceSecurity": false
+  "snyk.advanced.autoScanOpenSourceSecurity": false,
+  "snyk.features.codeSecurityEnabled": false,
+  "snyk.features.codeSecurity": false,
+  "snyk.scanningMode": "manual"
 }
