@@ -42,16 +42,6 @@ ZFS_MNT_BASE="/data"    # ZFS pool mount base inside the installed OS
 # "openrc" (default; includes an OpenRC zram swap service) or "systemd"
 INIT_SYSTEM="openrc"
 
-# Target architecture
-# - "no" = multilib-capable amd64
-# - "yes" = pure 64-bit (no multilib)
-PURE_64BIT="yes"
-
-# Bootloader
-# - For this machine and this script's layout (/boot is the ESP), rEFInd is the default.
-# - If you switch INIT_SYSTEM to systemd you may prefer GRUB; the script supports both.
-BOOTLOADER="refind"  # refind/grub
-
 # Use a binary kernel for speed/simplicity (recommended)
 USE_BINARY_KERNEL="yes"  # yes/no
 
@@ -61,6 +51,12 @@ ZPOOL="tank"
 # CPU flags: Ryzen 8000/Zen4-ish; use znver4 as a safe default for this class
 COMMON_FLAGS="-O2 -pipe -march=znver4"
 
+# Desktop
+INSTALL_KDE_PLASMA_WAYLAND="yes"  # yes/no
+
+# Pure 64-bit (no multilib). The script will try to pick a no-multilib profile.
+PURE_64BIT="yes"  # yes/no
+
 # Timezone/locale
 TIMEZONE="America/Chicago"
 LOCALE="en_US.UTF-8 UTF-8"
@@ -69,39 +65,6 @@ LOCALE="en_US.UTF-8 UTF-8"
 
 
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
-
-resolve_part() {
-  # Resolve a disk + partition number to an existing block device.
-  # Handles: /dev/nvme0n1p1, /dev/sda1, /dev/disk/by-id/...-part1
-  local disk="$1"
-  local partnum="$2"
-
-  local candidates=(
-    "${disk}p${partnum}"
-    "${disk}${partnum}"
-    "${disk}-part${partnum}"
-  )
-
-  local cand
-  for cand in "${candidates[@]}"; do
-    if [[ -b "${cand}" ]]; then
-      echo "${cand}"
-      return 0
-    fi
-  done
-
-  # Last resort: ask lsblk for children (helps when disk is a symlink)
-  if need_cmd lsblk; then
-    local base
-    base="$(readlink -f -- "${disk}" 2>/dev/null || true)"
-    if [[ -n "${base}" && -b "${base}" ]]; then
-      lsblk -nrpo NAME "${base}" 2>/dev/null | awk -v n="${partnum}" 'NR>1 && $1 ~ ("(" n "|p" n ")$") {print $1; exit}'
-      return 0
-    fi
-  fi
-
-  return 1
-}
 
 require_root() {
   if [[ "${EUID}" -ne 0 ]]; then
@@ -118,6 +81,17 @@ require_uefi() {
 }
 
 confirm_disks() {
+  if [[ "${OS_DISK}" == "${DATA_DISK}" ]]; then
+    echo "ERROR: OS_DISK and DATA_DISK must be different devices."
+    exit 1
+  fi
+  if [[ ! -b "${OS_DISK}" || ! -b "${DATA_DISK}" ]]; then
+    echo "ERROR: One or both disks are not block devices:"
+    echo "  OS_DISK=${OS_DISK}"
+    echo "  DATA_DISK=${DATA_DISK}"
+    exit 1
+  fi
+
   echo "About to WIPE and install to:"
   echo "  OS_DISK   = ${OS_DISK}  (Btrfs root + EFI)"
   echo "  DATA_DISK = ${DATA_DISK} (ZFS pool)"
@@ -156,13 +130,9 @@ partition_disks() {
   sgdisk -n 1:1MiB:0 -t 1:BF00 -c 1:"ZFS-${ZPOOL}" "${DATA_DISK}"
   partprobe "${DATA_DISK}"
 
-  OS_ESP="$(resolve_part "${OS_DISK}" 1 || true)"
-  OS_ROOT="$(resolve_part "${OS_DISK}" 2 || true)"
-  DATA_PART="$(resolve_part "${DATA_DISK}" 1 || true)"
-
-  [[ -n "${OS_ESP}" && -b "${OS_ESP}" ]] || { echo "ERROR: could not resolve OS ESP partition device."; exit 1; }
-  [[ -n "${OS_ROOT}" && -b "${OS_ROOT}" ]] || { echo "ERROR: could not resolve OS root partition device."; exit 1; }
-  [[ -n "${DATA_PART}" && -b "${DATA_PART}" ]] || { echo "ERROR: could not resolve DATA partition device."; exit 1; }
+  OS_ESP="${OS_DISK}p1"
+  OS_ROOT="${OS_DISK}p2"
+  DATA_PART="${DATA_DISK}p1"
 
   echo "OS_ESP  = ${OS_ESP}"
   echo "OS_ROOT = ${OS_ROOT}"
@@ -210,21 +180,8 @@ fetch_stage3_and_prep() {
 
   # Use Gentoo's "latest stage3" redirect (works in practice). If your live env lacks SSL CA certs, fix that first.
   # You can swap this out for a pinned URL if you prefer.
-  local stage3_suffix=""
-  if [[ "${PURE_64BIT}" == "yes" ]]; then
-    stage3_suffix="-nomultilib"
-  fi
-
-  STAGE3_TXT_URL="https://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-${INIT_SYSTEM}${stage3_suffix}.txt"
-  if ! wget -O /tmp/latest-stage3.txt "${STAGE3_TXT_URL}"; then
-    if [[ -n "${stage3_suffix}" ]]; then
-      echo "WARNING: no-multilib stage3 not found for ${INIT_SYSTEM}; falling back to standard stage3." >&2
-      STAGE3_TXT_URL="https://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-${INIT_SYSTEM}.txt"
-      wget -O /tmp/latest-stage3.txt "${STAGE3_TXT_URL}"
-    else
-      exit 1
-    fi
-  fi
+  STAGE3_TXT_URL="https://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-${INIT_SYSTEM}.txt"
+  wget -O /tmp/latest-stage3.txt "${STAGE3_TXT_URL}"
 
   STAGE3_PATH="$(awk '/stage3-amd64/ && $1 ~ /\.tar\.xz$/ {print $1; exit}' /tmp/latest-stage3.txt)"
   [[ -n "${STAGE3_PATH}" ]] || { echo "ERROR: could not parse stage3 path."; exit 1; }
@@ -253,15 +210,16 @@ MAKEOPTS="-j$(nproc)"
 FEATURES="parallel-fetch buildpkg"
 EMERGE_DEFAULT_OPTS="--ask=n --verbose --keep-going"
 
-# Pure 64-bit (no multilib)
-ABI_X86="64"
+# For ZFS + system tools
+# Desktop target: KDE Plasma + Wayland
+USE="btrfs zfs X wayland kde plasma elogind -gnome"
 
-# Desktop defaults for this hardware (AMD iGPU + KDE Plasma/Wayland)
+# GPU/input for this platform
 VIDEO_CARDS="amdgpu radeonsi"
 INPUT_DEVICES="libinput"
 
-# For ZFS + base system + KDE Plasma/Wayland
-USE="zfs btrfs kde plasma wayland elogind -gnome"
+# Prefer pure 64-bit when using a no-multilib profile
+ABI_X86="64"
 EOF
 
   # Mount chroot binds
@@ -277,6 +235,15 @@ chroot_run() {
   chroot "${MNT}" /bin/bash -lc "$*"
 }
 
+chroot_run_maybe() {
+  # Like chroot_run, but does not abort the outer script.
+  set +e
+  chroot "${MNT}" /bin/bash -lc "$*"
+  local rc=$?
+  set -e
+  return $rc
+}
+
 install_base_system() {
   echo "Installing base system inside chroot..."
 
@@ -285,20 +252,20 @@ install_base_system() {
   chroot_run "emerge --sync"
 
   # Select profile
+  # Prefer no-multilib profiles when PURE_64BIT=yes.
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    # Pick a systemd desktop/server profile; choose the first systemd profile found (simple + robust).
     chroot_run "eselect profile list | sed -n '1,200p'"
     if [[ "${PURE_64BIT}" == "yes" ]]; then
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && /systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -n \"\${PROFILE_ID}\" ]]; then eselect profile set \"\${PROFILE_ID}\"; else echo 'WARNING: no-multilib systemd profile not found; selecting first systemd profile.'; PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); eselect profile set \"\${PROFILE_ID}\"; fi"
+      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     else
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     fi
   else
     chroot_run "eselect profile list | sed -n '1,200p'"
     if [[ "${PURE_64BIT}" == "yes" ]]; then
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && /no-multilib/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -n \"\${PROFILE_ID}\" ]]; then eselect profile set \"\${PROFILE_ID}\"; else echo 'WARNING: no-multilib profile not found; selecting first non-systemd amd64 profile.'; PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); eselect profile set \"\${PROFILE_ID}\"; fi"
+      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     else
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     fi
   fi
 
@@ -324,7 +291,7 @@ EOF
   chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd"
 
   # Filesystems + boot essentials
-  chroot_run "emerge sys-fs/btrfs-progs sys-boot/efibootmgr"
+  chroot_run "emerge sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
 
   # Init-system-specific baseline
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -345,7 +312,7 @@ install_kernel() {
 }
 
 configure_fstab_bootloader() {
-  echo "Configuring fstab + bootloader..."
+  echo "Configuring fstab + rEFInd..."
 
   # Get UUIDs from the live environment (outside chroot) for accuracy
   ESP_UUID="$(blkid -s UUID -o value "${OS_ESP}")"
@@ -360,38 +327,16 @@ UUID=${ROOT_UUID}                      /.snapshots    btrfs   noatime,compress=z
 UUID=${ESP_UUID}                       /boot          vfat    noatime                                                          0 2
 EOF
 
-  if [[ "${BOOTLOADER}" == "refind" ]]; then
-    echo "Installing rEFInd..."
-    chroot_run "emerge sys-boot/refind sys-boot/efibootmgr"
+  # Install rEFInd to the mounted ESP (/boot)
+  # refind-install will copy EFI binaries and create a NVRAM entry via efibootmgr.
+  chroot_run "refind-install"
 
-    # Install to the mounted ESP (/boot) and register an NVRAM entry.
-    # NOTE: refind-install relies on efivarfs being available (normal when booted in UEFI mode).
-    chroot_run "refind-install --alldrivers"
-
-    # Provide kernel options for Btrfs subvol=@ root. rEFInd will apply these to detected kernels.
-    # If an initramfs exists on /boot, prefer the newest one.
-    local initrd_basename=""
-    if ls -1 "${MNT}/boot"/initramfs* "${MNT}/boot"/initrd* >/dev/null 2>&1; then
-      initrd_basename="$(basename "$(ls -1 "${MNT}/boot"/initramfs* "${MNT}/boot"/initrd* 2>/dev/null | sort | tail -n1)")"
-    fi
-
-    if [[ -n "${initrd_basename}" ]]; then
-      cat > "${MNT}/boot/refind_linux.conf" <<EOF
-    "Gentoo (Btrfs @)"  "root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@ rw initrd=\\${initrd_basename}"
-    EOF
-    else
-      cat > "${MNT}/boot/refind_linux.conf" <<EOF
-"Gentoo (Btrfs @)"  "root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@ rw"
+  # Provide kernel options for rEFInd's Linux auto-detection.
+  # rEFInd looks for refind_linux.conf next to the kernel image in /boot.
+  # dist-kernel installs /boot/vmlinuz-* and /boot/initramfs-*.
+  cat > "${MNT}/boot/refind_linux.conf" <<EOF
+\"Gentoo (Btrfs subvol=@)\"  \"root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active\"
 EOF
-    fi
-
-  else
-    echo "Installing GRUB..."
-    chroot_run "emerge sys-boot/grub sys-boot/efibootmgr"
-    chroot_run "sed -i 's/^#\\?GRUB_DISABLE_OS_PROBER=.*/GRUB_DISABLE_OS_PROBER=true/' /etc/default/grub || true"
-    chroot_run "grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Gentoo --recheck"
-    chroot_run "grub-mkconfig -o /boot/grub/grub.cfg"
-  fi
 }
 
 enable_network_and_services() {
@@ -546,9 +491,20 @@ install_zfs_and_create_pool() {
   echo "Installing ZFS + creating pool/datasets..."
 
   # ZFS packages
-  # NOTE: sys-fs/zfs pulls in kernel module build; with gentoo-kernel-bin this usually works,
-  # but if your kernel config/module building fails, you may need to switch to gentoo-kernel or custom kernel.
-  chroot_run "emerge sys-fs/zfs sys-fs/zfs-kmod"
+  # NOTE: sys-fs/zfs-kmod builds kernel modules. On some setups (notably when only a binary kernel is installed),
+  # module builds can fail due to missing kernel build trees/configs. We attempt a best-effort fallback.
+  if ! chroot_run_maybe "emerge sys-fs/zfs sys-fs/zfs-kmod"; then
+    if [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
+      echo "WARN: ZFS kernel module build failed with USE_BINARY_KERNEL=yes."
+      echo "      Installing a buildable kernel (sys-kernel/gentoo-kernel) and retrying ZFS..."
+      chroot_run "emerge sys-kernel/gentoo-kernel"
+      chroot_run "emerge sys-fs/zfs sys-fs/zfs-kmod"
+    else
+      echo "ERROR: Failed to install ZFS kernel modules (sys-fs/zfs-kmod)."
+      echo "       Ensure your kernel build tree/config is available, then retry."
+      exit 1
+    fi
+  fi
 
   # Ensure ZFS services
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -580,6 +536,44 @@ install_zfs_and_create_pool() {
 
   # Ensure mountpoint exists in rootfs
   mkdir -p "${MNT}${ZFS_MNT_BASE}"
+}
+
+install_kde_plasma_wayland() {
+  [[ "${INSTALL_KDE_PLASMA_WAYLAND}" == "yes" ]] || return 0
+
+  echo "Installing KDE Plasma (Wayland)..."
+
+  # Base desktop plumbing
+  if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
+    chroot_run "emerge sys-apps/dbus net-misc/networkmanager"
+    chroot_run "systemctl enable dbus NetworkManager"
+  else
+    # OpenRC desktops need elogind to provide logind
+    chroot_run "emerge sys-apps/dbus sys-auth/elogind net-misc/networkmanager"
+    chroot_run "rc-update add dbus default"
+    chroot_run "rc-update add elogind default"
+    chroot_run "rc-update add NetworkManager default"
+  fi
+
+  # Audio/video session stack (Wayland-friendly)
+  chroot_run "emerge media-video/pipewire media-video/wireplumber"
+
+  # KDE Plasma + Wayland session + portals
+  chroot_run "emerge kde-plasma/plasma-meta kde-plasma/plasma-wayland-session gui-libs/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde"
+
+  # Display manager
+  chroot_run "emerge kde-plasma/sddm"
+  if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
+    chroot_run "systemctl enable sddm"
+  else
+    # Use the standard xdm OpenRC service and point it at SDDM
+    chroot_run "emerge x11-apps/xdm"
+    cat > "${MNT}/etc/conf.d/xdm" <<'EOF'
+# /etc/conf.d/xdm
+DISPLAYMANAGER="sddm"
+EOF
+    chroot_run "rc-update add xdm default"
+  fi
 }
 
 finalize_users_passwords() {
@@ -619,6 +613,7 @@ main() {
   install_kernel
   configure_fstab_bootloader
   enable_network_and_services
+  install_kde_plasma_wayland
   install_zfs_and_create_pool
   finalize_users_passwords
 
