@@ -124,4 +124,4 @@ Optional `REPO_PAT`: if you add a PAT secret named `REPO_PAT`, the release workf
 
 ## License
 
-No license is included. Treat this repository as sample automation — use at your own risk and adapt for your environment.
+Licensed under the GNU General Public License v3.0 (GPL-3.0-only). See [LICENSE](LICENSE).
