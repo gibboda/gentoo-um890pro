@@ -440,15 +440,38 @@ install_base_system() {
 127.0.1.1   ${HOSTNAME}.localdomain ${HOSTNAME}
 EOF
 
-  # Firmware, essentials, filesystems + boot essentials in batched emerge
-  # Batch multiple emerge calls to reduce chroot overhead
-  # NOTE: linux-firmware is a large package and may take several minutes to download/install
+  # Configure package.license for linux-firmware
+  mkdir -p "${MNT}/etc/portage/package.license"
+  cat > "${MNT}/etc/portage/package.license/linux-firmware" <<EOF
+# Accept licenses for firmware packages
+sys-kernel/linux-firmware linux-fw-redistributable no-source-code
+EOF
+
+  # Optionally accept keywords if needed
+  mkdir -p "${MNT}/etc/portage/package.accept_keywords"
+  cat > "${MNT}/etc/portage/package.accept_keywords/linux-firmware" <<EOF
+sys-kernel/linux-firmware ~amd64
+EOF
+
+  # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
   echo "Installing firmware and essential system packages..."
   echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
+
+  echo "Installing linux-firmware..."
+  chroot_run "emerge sys-kernel/linux-firmware"
+
+  echo "Installing system utilities..."
+  chroot_run "emerge sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd"
+
+  echo "Installing filesystem and boot tools..."
+  chroot_run "emerge sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
+
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind sys-apps/systemd"
+    echo "Installing systemd..."
+    chroot_run "emerge sys-apps/systemd"
   else
-    chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind sys-apps/openrc"
+    echo "Installing openrc..."
+    chroot_run "emerge sys-apps/openrc"
   fi
 }
 
