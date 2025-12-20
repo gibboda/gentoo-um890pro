@@ -81,9 +81,17 @@ is_protected() {
 # Function to delete local branch
 delete_local_branch() {
     local branch=$1
+    local force=${2:-false}
+    
     if git show-ref --verify --quiet "refs/heads/${branch}"; then
         print_info "Deleting local branch: ${branch}"
-        git branch -D "${branch}" 2>/dev/null || print_warning "Local branch ${branch} not found or already deleted"
+        if [[ "$force" == "true" ]]; then
+            # Force delete for closed branches
+            git branch -D "${branch}" 2>/dev/null || print_warning "Local branch ${branch} not found or already deleted"
+        else
+            # Safe delete for merged branches (will fail if not merged)
+            git branch -d "${branch}" 2>/dev/null || print_warning "Local branch ${branch} not merged or already deleted"
+        fi
     else
         print_warning "Local branch ${branch} does not exist"
     fi
@@ -94,9 +102,12 @@ delete_remote_branch() {
     local branch=$1
     if git ls-remote --exit-code --heads origin "${branch}" >/dev/null 2>&1; then
         print_info "Deleting remote branch: origin/${branch}"
-        git push origin --delete "${branch}" 2>/dev/null || print_error "Failed to delete remote branch ${branch}"
+        if ! git push origin --delete "${branch}" 2>/dev/null; then
+            print_error "Failed to delete remote branch ${branch}. Check network connection and push permissions."
+            return 1
+        fi
     else
-        print_warning "Remote branch ${branch} does not exist"
+        print_warning "Remote branch ${branch} does not exist or remote is not accessible"
     fi
 }
 
@@ -136,7 +147,7 @@ cleanup_branches() {
         if [[ "$dry_run" == "true" ]]; then
             print_info "[DRY RUN] Would delete: ${branch}"
         else
-            delete_local_branch "$branch"
+            delete_local_branch "$branch" false  # Use safe delete for merged branches
             delete_remote_branch "$branch"
         fi
     done
@@ -159,7 +170,7 @@ cleanup_branches() {
         if [[ "$dry_run" == "true" ]]; then
             print_info "[DRY RUN] Would delete: ${branch}"
         else
-            delete_local_branch "$branch"
+            delete_local_branch "$branch" true  # Force delete for closed branches
             delete_remote_branch "$branch"
         fi
     done
