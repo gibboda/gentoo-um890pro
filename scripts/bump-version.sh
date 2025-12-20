@@ -58,21 +58,20 @@ if [[ -f "$CHANGELOG_FILE" ]]; then
       next
     }
     { print }
+    END { exit (inserted ? 0 : 1) }
   ' "$CHANGELOG_FILE" > "$tmpfile"
 
-  if grep -Eq '^##[[:space:]]+\[?Unreleased\]?' "$CHANGELOG_FILE"; then
+  if [ $? -eq 0 ]; then
     mv "$tmpfile" "$CHANGELOG_FILE"
   else
     # Prepend entry to the top if no Unreleased section exists.
-    tmpfile2=$(mktemp)
     {
       echo "## [$NEW_VERSION] - $date_str"
       echo "- $MSG"
       echo ""
       cat "$CHANGELOG_FILE"
-    } > "$tmpfile2"
-    mv "$tmpfile2" "$CHANGELOG_FILE"
-    rm -f "$tmpfile"
+    } > "$tmpfile"
+    mv "$tmpfile" "$CHANGELOG_FILE"
   fi
 else
   {

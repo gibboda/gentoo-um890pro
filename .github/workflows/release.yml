@@ -50,8 +50,9 @@ jobs:
           NEW_VERSION=""
           if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
             LABEL_NAME=$(jq -r .label.name < "$GITHUB_EVENT_PATH" || true)
-            if printf '%s' "$LABEL_NAME" | grep -Eq '^release[: ]*v?([0-9]+\.[0-9]+\.[0-9]+)$'; then
-              NEW_VERSION=$(printf '%s' "$LABEL_NAME" | sed -E 's/^release[: ]*v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+            # Extract version from label in one pass
+            if [[ "$LABEL_NAME" =~ ^release[[:space:]]*:?[[:space:]]*v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              NEW_VERSION="${BASH_REMATCH[1]}"
             fi
           fi
           if [ -z "$NEW_VERSION" ] && [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
@@ -59,7 +60,7 @@ jobs:
             NEW_VERSION=${NEW_VERSION#v}
           fi
           if [ -z "$NEW_VERSION" ] && [ -f VERSION ]; then
-            NEW_VERSION=$(cat VERSION | tr -d '\r\n')
+            NEW_VERSION=$(tr -d '\r\n' < VERSION)
           fi
           if [ -z "$NEW_VERSION" ]; then
             echo "No version determined" >&2
@@ -90,7 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           NEW_VERSION="${{ steps.vars.outputs.version }}"
-          if git tag -l "v${NEW_VERSION}" | grep -q "v${NEW_VERSION}"; then
+          if git tag -l "v${NEW_VERSION}" | grep -qF "v${NEW_VERSION}"; then
             echo "Tag exists; skipping"
             exit 0
           fi

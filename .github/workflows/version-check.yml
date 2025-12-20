@@ -48,7 +48,7 @@ jobs:
             echo "ERROR: VERSION file missing" >&2
             exit 1
           fi
-          VER=$(cat VERSION | tr -d '\r\n')
+          VER=$(tr -d '\r\n' < VERSION)
           echo "Found VERSION: $VER"
           if ! echo "$VER" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "ERROR: VERSION must be in X.Y.Z semantic version format" >&2
@@ -65,16 +65,13 @@ jobs:
           set -euo pipefail
           echo "VERSION was modified in this change set. Running validations..."
 
-          VERSION_VAL=$(cat VERSION | tr -d '\n' | tr -d '\r')
+          VERSION_VAL=$(tr -d '\r\n' < VERSION)
           echo "Found VERSION=${VERSION_VAL}"
 
           # Ensure CHANGELOG was modified in the patch
-          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^CHANGELOG.md$' ; then
-            # Fallback: inspect git diff
-            if ! git diff --name-only | grep -q '^CHANGELOG.md$'; then
-              echo "ERROR: VERSION changed but CHANGELOG.md was not modified" >&2
-              exit 1
-            fi
+          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -qF 'CHANGELOG.md' ; then
+            echo "ERROR: VERSION changed but CHANGELOG.md was not modified" >&2
+            exit 1
           fi
 
           # Ensure CHANGELOG contains header for this version
@@ -86,7 +83,7 @@ jobs:
           # If this is a push to main, require tag presence
           if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
             git fetch --tags || true
-            if ! git tag -l "v${VERSION_VAL}" | grep -q "v${VERSION_VAL}" ; then
+            if ! git tag -l "v${VERSION_VAL}" | grep -qF "v${VERSION_VAL}" ; then
               echo "ERROR: Git tag v${VERSION_VAL} not found. Please create and push tag 'v${VERSION_VAL}' when releasing." >&2
               exit 1
             fi

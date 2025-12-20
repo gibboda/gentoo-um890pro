@@ -309,7 +309,7 @@ fetch_stage3_and_prep() {
   STAGE3_TXT_URL="https://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-${INIT_SYSTEM}.txt"
   wget -O /tmp/latest-stage3.txt "${STAGE3_TXT_URL}"
 
-  STAGE3_PATH="$(awk '/stage3-amd64/ && $1 ~ /\.tar\.xz$/ {print $1; exit}' /tmp/latest-stage3.txt)"
+  STAGE3_PATH="$(awk '/stage3-amd64/ && $1 ~ /\.tar\.xz$/ {print $1; exit}' < /tmp/latest-stage3.txt)"
   [[ -n "${STAGE3_PATH}" ]] || { echo "ERROR: could not parse stage3 path."; exit 1; }
 
   STAGE3_URL="https://distfiles.gentoo.org/releases/amd64/autobuilds/${STAGE3_PATH}"
@@ -410,7 +410,7 @@ install_base_system() {
   fi
 
   # Locale/time
-  echo "${LOCALE}" > "${MNT}/etc/locale.gen"
+  printf '%s\n' "${LOCALE}" > "${MNT}/etc/locale.gen"
   chroot_run "locale-gen"
   chroot_run "eselect locale set en_US.utf8 || true"
   chroot_run "env-update && source /etc/profile"
