@@ -45,35 +45,32 @@ date_str=$(date -u +"%Y-%m-%d")
 
 if [[ -f "$CHANGELOG_FILE" ]]; then
   tmpfile=$(mktemp)
-  awk -v d="$date_str" -v v="$NEW_VERSION" -v m="$MSG" '
-    BEGIN { inserted=0 }
-    # Insert immediately after the first Unreleased header (supports "## [Unreleased]" or "## Unreleased")
-    inserted==0 && ($0 ~ /^##[[:space:]]+\[?Unreleased\]?/) {
-      print
-      print ""
-      print "## [" v "] - " d
-      print "- " m
-      print ""
-      inserted=1
-      next
-    }
-    { print }
-  ' "$CHANGELOG_FILE" > "$tmpfile"
-
   if grep -Eq '^##[[:space:]]+\[?Unreleased\]?' "$CHANGELOG_FILE"; then
-    mv "$tmpfile" "$CHANGELOG_FILE"
+    # Insert after Unreleased header
+    awk -v d="$date_str" -v v="$NEW_VERSION" -v m="$MSG" '
+      BEGIN { inserted=0 }
+      # Insert immediately after the first Unreleased header (supports "## [Unreleased]" or "## Unreleased")
+      inserted==0 && ($0 ~ /^##[[:space:]]+\[?Unreleased\]?/) {
+        print
+        print ""
+        print "## [" v "] - " d
+        print "- " m
+        print ""
+        inserted=1
+        next
+      }
+      { print }
+    ' "$CHANGELOG_FILE" > "$tmpfile"
   else
-    # Prepend entry to the top if no Unreleased section exists.
-    tmpfile2=$(mktemp)
+    # Prepend entry to the top if no Unreleased section exists
     {
       echo "## [$NEW_VERSION] - $date_str"
       echo "- $MSG"
       echo ""
       cat "$CHANGELOG_FILE"
-    } > "$tmpfile2"
-    mv "$tmpfile2" "$CHANGELOG_FILE"
-    rm -f "$tmpfile"
+    } > "$tmpfile"
   fi
+  mv "$tmpfile" "$CHANGELOG_FILE"
 else
   {
     echo "# Changelog"

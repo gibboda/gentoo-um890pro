@@ -52,7 +52,7 @@ VERSION="0.1.3"
 # - Set LOG_ENABLED="no" to disable.
 # - Set LOG_FILE to force a specific path (recommended: somewhere persistent).
 LOG_ENABLED="yes"   # yes/no
-LOG_FILE="~/gentoo-um890pro-install.log"         # e.g. /root/gentoo-um890pro-install.log
+LOG_FILE="${HOME:-/root}/gentoo-um890pro-install.log"         # e.g. /root/gentoo-um890pro-install.log
 
 # Enable bash xtrace debugging (very verbose). Best used with logging.
 DEBUG="no"          # yes/no
@@ -115,21 +115,12 @@ init_logging() {
   need_cmd tee || { echo "ERROR: tee not found; cannot enable logging." >&2; exit 1; }
   need_cmd date || { echo "ERROR: date not found; cannot enable logging." >&2; exit 1; }
 
-  # Expand ~ in LOG_FILE (tilde expansion does not occur inside quotes).
-  # Also strip accidental surrounding quotes if the user pasted them.
+  # Strip accidental surrounding quotes if the user pasted them.
   if [[ -n "${LOG_FILE}" ]]; then
-    local home_dir
-    home_dir="${HOME:-/root}"
-
     # Strip one layer of surrounding quotes (single or double), if present.
     if [[ ( "${LOG_FILE:0:1}" == "\"" && "${LOG_FILE: -1}" == "\"" ) || ( "${LOG_FILE:0:1}" == "'" && "${LOG_FILE: -1}" == "'" ) ]]; then
       LOG_FILE="${LOG_FILE:1:${#LOG_FILE}-2}"
     fi
-
-    case "${LOG_FILE}" in
-      "~")   LOG_FILE="${home_dir}" ;;
-      "~/"*) LOG_FILE="${home_dir}/${LOG_FILE#~/}" ;;
-    esac
   fi
 
   if [[ -z "${LOG_FILE}" ]]; then
@@ -393,31 +384,28 @@ install_base_system() {
 
   # Select profile
   # Prefer no-multilib profiles when PURE_64BIT=yes.
+  # Optimize by: 1) Getting profile list once 2) Processing selection logic in single chroot call
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "eselect profile list | sed -n '1,200p'"
     if [[ "${PURE_64BIT}" == "yes" ]]; then
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "eselect profile list | sed -n '1,200p' && PROFILE_ID=\$(eselect profile list | awk '/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     else
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "eselect profile list | sed -n '1,200p' && PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     fi
   else
-    chroot_run "eselect profile list | sed -n '1,200p'"
     if [[ "${PURE_64BIT}" == "yes" ]]; then
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "eselect profile list | sed -n '1,200p' && PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     else
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "eselect profile list | sed -n '1,200p' && PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     fi
   fi
 
-  # Locale/time
+  # Locale/time - combine locale commands into single chroot call
   echo "${LOCALE}" > "${MNT}/etc/locale.gen"
-  chroot_run "locale-gen"
-  chroot_run "eselect locale set en_US.utf8 || true"
-  chroot_run "env-update && source /etc/profile"
+  chroot_run "locale-gen && eselect locale set en_US.utf8 || true && env-update && source /etc/profile"
 
+  # Timezone - combine timezone setup into single chroot call
   echo "${TIMEZONE}" > "${MNT}/etc/timezone"
-  chroot_run "emerge --noreplace sys-libs/timezone-data"
-  chroot_run "ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime"
+  chroot_run "emerge --noreplace sys-libs/timezone-data && ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime"
 
   # Hostname + hosts
   echo "${HOSTNAME}" > "${MNT}/etc/hostname"
@@ -427,17 +415,12 @@ install_base_system() {
 127.0.1.1   ${HOSTNAME}.localdomain ${HOSTNAME}
 EOF
 
-  # Firmware + essentials
-  chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd"
-
-  # Filesystems + boot essentials
-  chroot_run "emerge sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
-
-  # Init-system-specific baseline
+  # Firmware, essentials, filesystems + boot essentials in batched emerge
+  # Batch multiple emerge calls to reduce chroot overhead
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "emerge sys-apps/systemd"
+    chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind sys-apps/systemd"
   else
-    chroot_run "emerge sys-apps/openrc"
+    chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind sys-apps/openrc"
   fi
 }
 
@@ -484,8 +467,8 @@ enable_network_and_services() {
 
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     # systemd-networkd + resolved is straightforward in minimal builds
-    chroot_run "systemctl enable systemd-networkd systemd-resolved"
-    chroot_run "ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || true"
+    # Combine service enable and symlink in single chroot call
+    chroot_run "systemctl enable systemd-networkd systemd-resolved && ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || true"
 
     # Simple DHCP on all ethernet
     mkdir -p "${MNT}/etc/systemd/network"
@@ -498,7 +481,6 @@ DHCP=yes
 EOF
 
     # zram (recommended for 96GB systems; reduces swap IO and helps spikes)
-    chroot_run "emerge sys-block/zram-generator"
     mkdir -p "${MNT}/etc/systemd"
     cat > "${MNT}/etc/systemd/zram-generator.conf" <<'EOF'
 [zram0]
@@ -506,7 +488,8 @@ zram-size = ram / 4
 compression-algorithm = zstd
 swap-priority = 100
 EOF
-    chroot_run "systemctl enable systemd-zram-setup@zram0.service || true"
+    # Batch emerge and service enable
+    chroot_run "emerge sys-block/zram-generator && systemctl enable systemd-zram-setup@zram0.service || true"
   else
     # OpenRC
     chroot_run "rc-update add dhcpcd default"
@@ -650,29 +633,24 @@ install_zfs_and_create_pool() {
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     chroot_run "systemctl enable zfs-import-cache zfs-mount zfs.target"
   else
-    chroot_run "rc-update add zfs-import boot"
-    chroot_run "rc-update add zfs-mount default"
+    # Combine rc-update calls
+    chroot_run "rc-update add zfs-import boot && rc-update add zfs-mount default"
   fi
 
   # Create pool and datasets (inside chroot, but uses /dev from bind mount)
   # We set mountpoints under ${ZFS_MNT_BASE}
+  # Note: Batched into single chroot call for performance (reduces overhead).
+  # The && chain ensures any failure stops the sequence (errexit behavior).
   chroot_run "zpool create -f -o ashift=12 \
     -O atime=off -O xattr=sa -O acltype=posixacl -O compression=zstd \
     -O normalization=formD -O mountpoint=${ZFS_MNT_BASE} \
-    ${ZPOOL} ${DATA_PART}"
-
-  # Datasets
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/data ${ZPOOL}/data"
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/backup ${ZPOOL}/backup"
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/ai-models ${ZPOOL}/ai-models"
-
-  # Nice defaults for big model files/datasets:
-  # - recordsize larger can help sequential workloads; keep conservative at 1M
-  chroot_run "zfs set recordsize=1M ${ZPOOL}/ai-models"
-  chroot_run "zfs set recordsize=1M ${ZPOOL}/data"
-
-  # Cachefile so import works at boot
-  chroot_run "zpool set cachefile=/etc/zfs/zpool.cache ${ZPOOL}"
+    ${ZPOOL} ${DATA_PART} && \
+    zfs create -o mountpoint=${ZFS_MNT_BASE}/data ${ZPOOL}/data && \
+    zfs create -o mountpoint=${ZFS_MNT_BASE}/backup ${ZPOOL}/backup && \
+    zfs create -o mountpoint=${ZFS_MNT_BASE}/ai-models ${ZPOOL}/ai-models && \
+    zfs set recordsize=1M ${ZPOOL}/ai-models && \
+    zfs set recordsize=1M ${ZPOOL}/data && \
+    zpool set cachefile=/etc/zfs/zpool.cache ${ZPOOL}"
 
   # Ensure mountpoint exists in rootfs
   mkdir -p "${MNT}${ZFS_MNT_BASE}"
@@ -685,29 +663,21 @@ install_kde_plasma_wayland() {
 
   # Base desktop plumbing
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "emerge sys-apps/dbus net-misc/networkmanager"
-    chroot_run "systemctl enable dbus NetworkManager"
+    # Batch emerge and service enable in single chroot call
+    chroot_run "emerge sys-apps/dbus net-misc/networkmanager && systemctl enable dbus NetworkManager"
   else
     # OpenRC desktops need elogind to provide logind
-    chroot_run "emerge sys-apps/dbus sys-auth/elogind net-misc/networkmanager"
-    chroot_run "rc-update add dbus default"
-    chroot_run "rc-update add elogind default"
-    chroot_run "rc-update add NetworkManager default"
+    # Batch emerge and rc-update in single chroot call
+    chroot_run "emerge sys-apps/dbus sys-auth/elogind net-misc/networkmanager && rc-update add dbus default && rc-update add elogind default && rc-update add NetworkManager default"
   fi
 
-  # Audio/video session stack (Wayland-friendly)
-  chroot_run "emerge media-video/pipewire media-video/wireplumber"
-
-  # KDE Plasma + Wayland session + portals
-  chroot_run "emerge kde-plasma/plasma-meta kde-plasma/plasma-wayland-session gui-libs/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde"
-
-  # Display manager
-  chroot_run "emerge kde-plasma/sddm"
+  # Audio/video session stack + KDE Plasma + Display manager
+  # Note: Batched emerge for performance. All packages are inter-related desktop components,
+  # so if any fails, the desktop won't work anyway. The && chain ensures proper error handling.
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "systemctl enable sddm"
+    chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-wayland-session gui-libs/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde kde-plasma/sddm && systemctl enable sddm"
   else
-    # Use the standard xdm OpenRC service and point it at SDDM
-    chroot_run "emerge x11-apps/xdm"
+    chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-wayland-session gui-libs/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde kde-plasma/sddm x11-apps/xdm"
     cat > "${MNT}/etc/conf.d/xdm" <<'EOF'
 # /etc/conf.d/xdm
 DISPLAYMANAGER="sddm"
