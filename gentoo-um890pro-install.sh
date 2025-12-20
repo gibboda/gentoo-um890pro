@@ -161,18 +161,13 @@ init_logging() {
   
   # Test if process substitution works in this environment
   local _ps_works="yes"
-  if ! (echo "test" > >(cat > /dev/null)) 2>/dev/null; then
+  if ! { echo test | tee >(cat >/dev/null) >/dev/null; } 2>/dev/null; then
     _ps_works="no"
   fi
   
   if [[ "${_ps_works}" == "yes" ]]; then
     # Use process substitution with tee for live output + logging
-    # Unbuffer stdout to ensure immediate writes
     exec > >(tee -a "${LOG_FILE}") 2>&1
-    # Disable stdout buffering for more immediate log writes
-    if [[ -t 1 ]]; then
-      stty -F /dev/stdout -icanon 2>/dev/null || true
-    fi
   else
     # Process substitution not available - use file-only logging
     exec >>"${LOG_FILE}" 2>&1
