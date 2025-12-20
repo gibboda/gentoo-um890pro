@@ -50,9 +50,11 @@ VERSION="0.1.4"
 # Logging
 # By default, the script writes a timestamped log capturing stdout+stderr.
 # - Set LOG_ENABLED="no" to disable.
-# - Set LOG_FILE to force a specific path (recommended: somewhere persistent).
+# - LOG_FILE defaults to /tmp for Live CD compatibility (tmpfs is always writable).
+#   You can override by setting LOG_FILE environment variable before running the script
+#   (e.g., export LOG_FILE=/mnt/usb/install.log for persistent storage).
 LOG_ENABLED="yes"   # yes/no
-LOG_FILE="${HOME:-/root}/gentoo-um890pro-install.log"         # e.g. /root/gentoo-um890pro-install.log
+LOG_FILE="${LOG_FILE:-/tmp/gentoo-um890pro-install.log}"
 
 # Enable bash xtrace debugging (very verbose). Best used with logging.
 DEBUG="no"          # yes/no
