@@ -467,8 +467,8 @@ enable_network_and_services() {
 
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     # systemd-networkd + resolved is straightforward in minimal builds
-    chroot_run "systemctl enable systemd-networkd systemd-resolved"
-    chroot_run "ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || true"
+    # Combine service enable and symlink in single chroot call
+    chroot_run "systemctl enable systemd-networkd systemd-resolved && ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || true"
 
     # Simple DHCP on all ethernet
     mkdir -p "${MNT}/etc/systemd/network"
@@ -481,7 +481,6 @@ DHCP=yes
 EOF
 
     # zram (recommended for 96GB systems; reduces swap IO and helps spikes)
-    chroot_run "emerge sys-block/zram-generator"
     mkdir -p "${MNT}/etc/systemd"
     cat > "${MNT}/etc/systemd/zram-generator.conf" <<'EOF'
 [zram0]
@@ -489,7 +488,8 @@ zram-size = ram / 4
 compression-algorithm = zstd
 swap-priority = 100
 EOF
-    chroot_run "systemctl enable systemd-zram-setup@zram0.service || true"
+    # Batch emerge and service enable
+    chroot_run "emerge sys-block/zram-generator && systemctl enable systemd-zram-setup@zram0.service || true"
   else
     # OpenRC
     chroot_run "rc-update add dhcpcd default"
@@ -633,29 +633,23 @@ install_zfs_and_create_pool() {
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     chroot_run "systemctl enable zfs-import-cache zfs-mount zfs.target"
   else
-    chroot_run "rc-update add zfs-import boot"
-    chroot_run "rc-update add zfs-mount default"
+    # Combine rc-update calls
+    chroot_run "rc-update add zfs-import boot && rc-update add zfs-mount default"
   fi
 
   # Create pool and datasets (inside chroot, but uses /dev from bind mount)
   # We set mountpoints under ${ZFS_MNT_BASE}
+  # Combine dataset creation and configuration into fewer chroot calls
   chroot_run "zpool create -f -o ashift=12 \
     -O atime=off -O xattr=sa -O acltype=posixacl -O compression=zstd \
     -O normalization=formD -O mountpoint=${ZFS_MNT_BASE} \
-    ${ZPOOL} ${DATA_PART}"
-
-  # Datasets
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/data ${ZPOOL}/data"
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/backup ${ZPOOL}/backup"
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/ai-models ${ZPOOL}/ai-models"
-
-  # Nice defaults for big model files/datasets:
-  # - recordsize larger can help sequential workloads; keep conservative at 1M
-  chroot_run "zfs set recordsize=1M ${ZPOOL}/ai-models"
-  chroot_run "zfs set recordsize=1M ${ZPOOL}/data"
-
-  # Cachefile so import works at boot
-  chroot_run "zpool set cachefile=/etc/zfs/zpool.cache ${ZPOOL}"
+    ${ZPOOL} ${DATA_PART} && \
+    zfs create -o mountpoint=${ZFS_MNT_BASE}/data ${ZPOOL}/data && \
+    zfs create -o mountpoint=${ZFS_MNT_BASE}/backup ${ZPOOL}/backup && \
+    zfs create -o mountpoint=${ZFS_MNT_BASE}/ai-models ${ZPOOL}/ai-models && \
+    zfs set recordsize=1M ${ZPOOL}/ai-models && \
+    zfs set recordsize=1M ${ZPOOL}/data && \
+    zpool set cachefile=/etc/zfs/zpool.cache ${ZPOOL}"
 
   # Ensure mountpoint exists in rootfs
   mkdir -p "${MNT}${ZFS_MNT_BASE}"
@@ -668,29 +662,19 @@ install_kde_plasma_wayland() {
 
   # Base desktop plumbing
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "emerge sys-apps/dbus net-misc/networkmanager"
-    chroot_run "systemctl enable dbus NetworkManager"
+    # Batch emerge and service enable in single chroot call
+    chroot_run "emerge sys-apps/dbus net-misc/networkmanager && systemctl enable dbus NetworkManager"
   else
     # OpenRC desktops need elogind to provide logind
-    chroot_run "emerge sys-apps/dbus sys-auth/elogind net-misc/networkmanager"
-    chroot_run "rc-update add dbus default"
-    chroot_run "rc-update add elogind default"
-    chroot_run "rc-update add NetworkManager default"
+    # Batch emerge and rc-update in single chroot call
+    chroot_run "emerge sys-apps/dbus sys-auth/elogind net-misc/networkmanager && rc-update add dbus default && rc-update add elogind default && rc-update add NetworkManager default"
   fi
 
-  # Audio/video session stack (Wayland-friendly)
-  chroot_run "emerge media-video/pipewire media-video/wireplumber"
-
-  # KDE Plasma + Wayland session + portals
-  chroot_run "emerge kde-plasma/plasma-meta kde-plasma/plasma-wayland-session gui-libs/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde"
-
-  # Display manager
-  chroot_run "emerge kde-plasma/sddm"
+  # Audio/video session stack + KDE Plasma + Display manager - batch all emerges
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "systemctl enable sddm"
+    chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-wayland-session gui-libs/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde kde-plasma/sddm && systemctl enable sddm"
   else
-    # Use the standard xdm OpenRC service and point it at SDDM
-    chroot_run "emerge x11-apps/xdm"
+    chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-wayland-session gui-libs/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde kde-plasma/sddm x11-apps/xdm"
     cat > "${MNT}/etc/conf.d/xdm" <<'EOF'
 # /etc/conf.d/xdm
 DISPLAYMANAGER="sddm"
