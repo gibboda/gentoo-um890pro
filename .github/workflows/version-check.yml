@@ -69,7 +69,7 @@ jobs:
           echo "Found VERSION=${VERSION_VAL}"
 
           # Ensure CHANGELOG was modified in the patch
-          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -qF 'CHANGELOG.md' ; then
+          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -qFx 'CHANGELOG.md' ; then
             echo "ERROR: VERSION changed but CHANGELOG.md was not modified" >&2
             exit 1
           fi

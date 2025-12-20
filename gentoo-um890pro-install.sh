@@ -658,9 +658,9 @@ install_zfs_and_create_pool() {
     ${ZPOOL} ${DATA_PART}"
 
   # Datasets
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/data ${ZPOOL}/data && \
-    zfs create -o mountpoint=${ZFS_MNT_BASE}/backup ${ZPOOL}/backup && \
-    zfs create -o mountpoint=${ZFS_MNT_BASE}/ai-models ${ZPOOL}/ai-models"
+  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/data ${ZPOOL}/data"
+  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/backup ${ZPOOL}/backup"
+  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/ai-models ${ZPOOL}/ai-models"
 
   # Nice defaults for big model files/datasets:
   # - recordsize larger can help sequential workloads; keep conservative at 1M
