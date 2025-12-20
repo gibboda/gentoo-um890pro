@@ -157,19 +157,24 @@ init_logging() {
 
   # Capture both stdout+stderr to the log while still showing output live.
   # Some minimal/live environments can lack working process-substitution
-  # plumbing (e.g., /dev/fd). Fall back to file-only logging if needed.
-  local _redir_rc=0
-  set +e
-  exec > >(tee -a "${LOG_FILE}") 2>&1
-  _redir_rc=$?
-  set -e
-  if [[ ${_redir_rc} -ne 0 ]]; then
-    # File-only fallback (still better than losing all output).
+  # plumbing (e.g., /dev/fd). Test if it works before using it.
+  
+  # Test if process substitution works in this environment
+  local _ps_works="yes"
+  if ! { echo test | tee >(cat >/dev/null) >/dev/null; } 2>/dev/null; then
+    _ps_works="no"
+  fi
+  
+  if [[ "${_ps_works}" == "yes" ]]; then
+    # Use process substitution with tee for live output + logging
+    exec > >(tee -a "${LOG_FILE}") 2>&1
+  else
+    # Process substitution not available - use file-only logging
     exec >>"${LOG_FILE}" 2>&1
     if [[ -w /dev/tty ]]; then
-      echo "WARN: live logging via tee/process-substitution failed; logging to file only: ${LOG_FILE}" > /dev/tty
+      echo "WARN: live logging via tee/process-substitution not available; logging to file only: ${LOG_FILE}" > /dev/tty
     else
-      echo "WARN: live logging via tee/process-substitution failed; logging to file only: ${LOG_FILE}" >&2
+      echo "WARN: live logging via tee/process-substitution not available; logging to file only: ${LOG_FILE}" >&2
     fi
   fi
 }
@@ -351,6 +356,9 @@ chroot_run() {
   # Run a command inside the chroot
   local cmd="$*"
   echo ">>> chroot: ${cmd}"
+  
+  # Flush any pending output to log before running the command
+  sync 2>/dev/null || true
 
   if [[ ! -d "${MNT}" ]]; then
     echo "ERROR: chroot root not found: ${MNT}" >&2
@@ -362,16 +370,31 @@ chroot_run() {
   fi
 
   chroot "${MNT}" /bin/bash -lc "${cmd}"
+  
+  # Log completion for long-running commands
+  echo ">>> chroot completed: ${cmd}"
 }
 
 chroot_run_maybe() {
   # Like chroot_run, but does not abort the outer script.
   local cmd="$*"
   echo ">>> chroot(maybe): ${cmd}"
+  
+  # Flush any pending output to log before running the command
+  sync 2>/dev/null || true
+  
   set +e
   chroot "${MNT}" /bin/bash -lc "${cmd}"
   local rc=$?
   set -e
+  
+  # Log completion status
+  if [[ ${rc} -eq 0 ]]; then
+    echo ">>> chroot(maybe) completed successfully: ${cmd}"
+  else
+    echo ">>> chroot(maybe) failed with exit code ${rc}: ${cmd}"
+  fi
+  
   return $rc
 }
 
@@ -417,6 +440,9 @@ EOF
 
   # Firmware, essentials, filesystems + boot essentials in batched emerge
   # Batch multiple emerge calls to reduce chroot overhead
+  # NOTE: linux-firmware is a large package and may take several minutes to download/install
+  echo "Installing firmware and essential system packages..."
+  echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind sys-apps/systemd"
   else
