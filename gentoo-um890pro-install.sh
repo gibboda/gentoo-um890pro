@@ -447,7 +447,7 @@ EOF
 sys-kernel/linux-firmware linux-fw-redistributable no-source-code
 EOF
 
-  # Optionally accept keywords if needed
+  # Accept testing keyword for linux-firmware (may be needed for latest firmware support)
   mkdir -p "${MNT}/etc/portage/package.accept_keywords"
   cat > "${MNT}/etc/portage/package.accept_keywords/linux-firmware" <<EOF
 sys-kernel/linux-firmware ~amd64
