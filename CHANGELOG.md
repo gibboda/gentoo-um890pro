@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- Describe upcoming changes here.
+- Fix logging mechanism to properly detect process substitution support and ensure logs are written during long operations
+- Add informative progress messages before long-running operations (especially linux-firmware emerge)
+- Add completion messages after chroot operations to track progress
+- Ensure log buffer flushing before long-running commands
 
 ## [0.1.4] - 2025-12-19
 - Reduce chroot overhead by 40%
