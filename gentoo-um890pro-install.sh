@@ -100,6 +100,16 @@ init_logging() {
   need_cmd tee || { echo "ERROR: tee not found; cannot enable logging." >&2; exit 1; }
   need_cmd date || { echo "ERROR: date not found; cannot enable logging." >&2; exit 1; }
 
+  # Expand ~ in LOG_FILE (tilde expansion does not occur inside quotes).
+  if [[ -n "${LOG_FILE}" ]]; then
+    local home_dir
+    home_dir="${HOME:-/root}"
+    case "${LOG_FILE}" in
+      ~/*) LOG_FILE="${home_dir}/${LOG_FILE#~/}" ;;
+      ~)   LOG_FILE="${home_dir}" ;;
+    esac
+  fi
+
   if [[ -z "${LOG_FILE}" ]]; then
     local ts log_dir
     ts="$(date +%Y%m%d-%H%M%S)"
@@ -107,6 +117,9 @@ init_logging() {
     [[ -w "${log_dir}" ]] || log_dir="/tmp"
     LOG_FILE="${log_dir}/gentoo-um890pro-install-${ts}.log"
   fi
+
+  # Ensure the log directory exists.
+  mkdir -p "$(dirname -- "${LOG_FILE}")" || { echo "ERROR: cannot create log directory for: ${LOG_FILE}" >&2; exit 1; }
 
   # Ensure the log file can be created.
   touch "${LOG_FILE}" || { echo "ERROR: cannot write log file: ${LOG_FILE}" >&2; exit 1; }
@@ -297,13 +310,27 @@ EOF
 
 chroot_run() {
   # Run a command inside the chroot
-  chroot "${MNT}" /bin/bash -lc "$*"
+  local cmd="$*"
+  echo ">>> chroot: ${cmd}"
+
+  if [[ ! -d "${MNT}" ]]; then
+    echo "ERROR: chroot root not found: ${MNT}" >&2
+    exit 1
+  fi
+  if [[ ! -x "${MNT}/bin/bash" ]]; then
+    echo "ERROR: ${MNT}/bin/bash not found; stage3 may not be extracted." >&2
+    exit 1
+  fi
+
+  chroot "${MNT}" /bin/bash -lc "${cmd}"
 }
 
 chroot_run_maybe() {
   # Like chroot_run, but does not abort the outer script.
+  local cmd="$*"
+  echo ">>> chroot(maybe): ${cmd}"
   set +e
-  chroot "${MNT}" /bin/bash -lc "$*"
+  chroot "${MNT}" /bin/bash -lc "${cmd}"
   local rc=$?
   set -e
   return $rc
