@@ -50,7 +50,7 @@ VERSION="0.1.4"
 # Logging
 # By default, the script writes a timestamped log capturing stdout+stderr.
 # - Set LOG_ENABLED="no" to disable.
-# - LOG_FILE defaults to /tmp for Live CD compatibility (tmpfs is always writable).
+# - LOG_FILE defaults to /tmp for Live CD compatibility (typically writable in live environments).
 #   You can override by setting LOG_FILE environment variable before running the script
 #   (e.g., export LOG_FILE=/mnt/usb/install.log for persistent storage).
 LOG_ENABLED="yes"   # yes/no
