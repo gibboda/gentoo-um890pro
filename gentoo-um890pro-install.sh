@@ -442,7 +442,7 @@ EOF
   # Batch multiple emerge calls to reduce chroot overhead
   # NOTE: linux-firmware is a large package and may take several minutes to download/install
   echo "Installing firmware and essential system packages..."
-  echo "This may take several minutes (especially sys-kernel/linux-firmware which is ~350MB)..."
+  echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind sys-apps/systemd"
   else
