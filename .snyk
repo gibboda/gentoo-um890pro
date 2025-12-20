@@ -41,20 +41,10 @@ exclude:
   - '*.log'
 
 # Code scanning specific exclusions
+# Note: The 'exclude' section above handles most exclusions.
+# This section is for Snyk Code-specific patterns that need different syntax.
 code:
   # Exclude specific file patterns from code analysis
   ignorePatterns:
-    # Backup files
-    - '**/*.bak'
-    - '**/*.backup'
-    
-    # Temporary files
-    - '**/*.tmp'
-    - '**/*.temp'
-    
-    # Version control
-    - '.git/**'
+    # Agent instruction files (not part of the main codebase)
     - '.github/instructions/**'
-    
-    # IDE directories
-    - '.vscode/**'
