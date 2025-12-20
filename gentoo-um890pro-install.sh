@@ -427,11 +427,8 @@ install_base_system() {
 127.0.1.1   ${HOSTNAME}.localdomain ${HOSTNAME}
 EOF
 
-  # Firmware + essentials
-  chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd"
-
-  # Filesystems + boot essentials
-  chroot_run "emerge sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
+  # Firmware + essentials + filesystems + boot essentials
+  chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
 
   # Init-system-specific baseline
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -650,8 +647,7 @@ install_zfs_and_create_pool() {
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     chroot_run "systemctl enable zfs-import-cache zfs-mount zfs.target"
   else
-    chroot_run "rc-update add zfs-import boot"
-    chroot_run "rc-update add zfs-mount default"
+    chroot_run "rc-update add zfs-import boot && rc-update add zfs-mount default"
   fi
 
   # Create pool and datasets (inside chroot, but uses /dev from bind mount)
@@ -662,14 +658,13 @@ install_zfs_and_create_pool() {
     ${ZPOOL} ${DATA_PART}"
 
   # Datasets
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/data ${ZPOOL}/data"
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/backup ${ZPOOL}/backup"
-  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/ai-models ${ZPOOL}/ai-models"
+  chroot_run "zfs create -o mountpoint=${ZFS_MNT_BASE}/data ${ZPOOL}/data && \
+    zfs create -o mountpoint=${ZFS_MNT_BASE}/backup ${ZPOOL}/backup && \
+    zfs create -o mountpoint=${ZFS_MNT_BASE}/ai-models ${ZPOOL}/ai-models"
 
   # Nice defaults for big model files/datasets:
   # - recordsize larger can help sequential workloads; keep conservative at 1M
-  chroot_run "zfs set recordsize=1M ${ZPOOL}/ai-models"
-  chroot_run "zfs set recordsize=1M ${ZPOOL}/data"
+  chroot_run "zfs set recordsize=1M ${ZPOOL}/ai-models ${ZPOOL}/data"
 
   # Cachefile so import works at boot
   chroot_run "zpool set cachefile=/etc/zfs/zpool.cache ${ZPOOL}"
@@ -690,9 +685,7 @@ install_kde_plasma_wayland() {
   else
     # OpenRC desktops need elogind to provide logind
     chroot_run "emerge sys-apps/dbus sys-auth/elogind net-misc/networkmanager"
-    chroot_run "rc-update add dbus default"
-    chroot_run "rc-update add elogind default"
-    chroot_run "rc-update add NetworkManager default"
+    chroot_run "rc-update add dbus default && rc-update add elogind default && rc-update add NetworkManager default"
   fi
 
   # Audio/video session stack (Wayland-friendly)

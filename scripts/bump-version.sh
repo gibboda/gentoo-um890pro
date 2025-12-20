@@ -45,7 +45,7 @@ date_str=$(date -u +"%Y-%m-%d")
 
 if [[ -f "$CHANGELOG_FILE" ]]; then
   tmpfile=$(mktemp)
-  awk -v d="$date_str" -v v="$NEW_VERSION" -v m="$MSG" '
+  if awk -v d="$date_str" -v v="$NEW_VERSION" -v m="$MSG" '
     BEGIN { inserted=0 }
     # Insert immediately after the first Unreleased header (supports "## [Unreleased]" or "## Unreleased")
     inserted==0 && ($0 ~ /^##[[:space:]]+\[?Unreleased\]?/) {
@@ -59,9 +59,7 @@ if [[ -f "$CHANGELOG_FILE" ]]; then
     }
     { print }
     END { exit (inserted ? 0 : 1) }
-  ' "$CHANGELOG_FILE" > "$tmpfile"
-
-  if [ $? -eq 0 ]; then
+  ' "$CHANGELOG_FILE" > "$tmpfile"; then
     mv "$tmpfile" "$CHANGELOG_FILE"
   else
     # Prepend entry to the top if no Unreleased section exists.
