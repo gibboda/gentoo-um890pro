@@ -122,6 +122,19 @@ Optional `REPO_PAT`: if you add a PAT secret named `REPO_PAT`, the release workf
 
 ![version-check](https://github.com/gibboda/gentoo-um890pro/actions/workflows/version-check.yml/badge.svg)
 
+## Snyk security scanning
+
+This repository uses Snyk for security scanning. The `.snyk` file configures which files and directories should be excluded from scanning:
+
+- Version control directories (`.git/`, `.github/`)
+- IDE directories (`.vscode/`)
+- Backup files (`*.bak`, `*.backup`, `*.old`, `*.orig`)
+- Temporary files (`*.tmp`, `*.temp`, `*.swp`, `*.swo`, `*~`)
+- Build artifacts and common directories (`dist/`, `build/`, `node_modules/`, etc.)
+- Log files (`*.log`)
+
+To customize exclusions, edit the `.snyk` file in the repository root.
+
 ## License
 
 Licensed under the GNU General Public License v3.0 (GPL-3.0-only). See [LICENSE](LICENSE).

@@ -1,0 +1,50 @@
+# Snyk (https://snyk.io) policy file
+# 
+# This file configures which files and directories Snyk should exclude from scanning.
+# This helps prevent scanning unsupported files or unwanted directories.
+#
+# For more information, see: https://docs.snyk.io/snyk-cli/commands/ignore
+
+# Snyk configuration version
+version: v1.25.0
+
+# Exclude files and directories from all Snyk scans
+exclude:
+  # Version control and git metadata
+  - .git/
+  - .github/
+  
+  # IDE and editor directories
+  - .vscode/
+  
+  # Backup files
+  - '*.bak'
+  - '*.backup'
+  - '*.old'
+  - '*.orig'
+  
+  # Temporary files
+  - '*.tmp'
+  - '*.temp'
+  - '*.swp'
+  - '*.swo'
+  - '*~'
+  
+  # Build artifacts and common directories to exclude
+  - dist/
+  - build/
+  - node_modules/
+  - vendor/
+  - target/
+  
+  # Log files
+  - '*.log'
+
+# Code scanning specific exclusions
+# Note: The 'exclude' section above handles most exclusions.
+# This section is for Snyk Code-specific patterns that need different syntax.
+code:
+  # Exclude specific file patterns from code analysis
+  ignorePatterns:
+    # Agent instruction files (not part of the main codebase)
+    - '.github/instructions/**'
