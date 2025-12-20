@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 - Describe upcoming changes here.
 
+## [0.1.4] - 2025-12-19
+- Reduce chroot overhead by 40%
+- Fix shellcheck warnings
+
 ## [0.1.3] - 2025-12-19
 - Switch bootloader from GRUB to rEFInd.
 - Install KDE Plasma with Wayland + SDDM by default.
