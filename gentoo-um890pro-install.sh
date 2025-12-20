@@ -6,6 +6,10 @@ set -Eeuo pipefail
 on_err() {
   local rc=$?
 
+  # Avoid recursive ERR traps while handling an error.
+  trap - ERR
+  set +e
+
   # If errexit is currently disabled (e.g. inside a best-effort `set +e` block),
   # do not treat failures as fatal.
   [[ "$-" == *e* ]] || return 0
@@ -15,6 +19,17 @@ on_err() {
   line="${BASH_LINENO[0]:-${LINENO}}"
   cmd="${BASH_COMMAND}"
   echo "ERROR: command failed (exit=${rc}) at ${src}:${line}: ${cmd}" >&2
+
+  if [[ "${LOG_ENABLED:-no}" == "yes" && -n "${LOG_FILE:-}" ]]; then
+    echo "ERROR: log file: ${LOG_FILE}" >&2
+
+    # Best-effort: show the last lines from the log to speed up diagnosis.
+    if [[ -r "${LOG_FILE}" ]] && command -v tail >/dev/null 2>&1; then
+      echo "---- log tail (last 120 lines) ----" >&2
+      tail -n 120 "${LOG_FILE}" >&2
+      echo "---- end log tail ----" >&2
+    fi
+  fi
   exit "${rc}"
 }
 trap on_err ERR
@@ -150,7 +165,22 @@ init_logging() {
   fi
 
   # Capture both stdout+stderr to the log while still showing output live.
+  # Some minimal/live environments can lack working process-substitution
+  # plumbing (e.g., /dev/fd). Fall back to file-only logging if needed.
+  local _redir_rc=0
+  set +e
   exec > >(tee -a "${LOG_FILE}") 2>&1
+  _redir_rc=$?
+  set -e
+  if [[ ${_redir_rc} -ne 0 ]]; then
+    # File-only fallback (still better than losing all output).
+    exec >>"${LOG_FILE}" 2>&1
+    if [[ -w /dev/tty ]]; then
+      echo "WARN: live logging via tee/process-substitution failed; logging to file only: ${LOG_FILE}" > /dev/tty
+    else
+      echo "WARN: live logging via tee/process-substitution failed; logging to file only: ${LOG_FILE}" >&2
+    fi
+  fi
 }
 
 enable_debug_trace() {
