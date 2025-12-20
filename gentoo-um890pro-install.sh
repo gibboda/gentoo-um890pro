@@ -639,7 +639,8 @@ install_zfs_and_create_pool() {
 
   # Create pool and datasets (inside chroot, but uses /dev from bind mount)
   # We set mountpoints under ${ZFS_MNT_BASE}
-  # Combine dataset creation and configuration into fewer chroot calls
+  # Note: Batched into single chroot call for performance (reduces overhead).
+  # The && chain ensures any failure stops the sequence (errexit behavior).
   chroot_run "zpool create -f -o ashift=12 \
     -O atime=off -O xattr=sa -O acltype=posixacl -O compression=zstd \
     -O normalization=formD -O mountpoint=${ZFS_MNT_BASE} \
@@ -670,7 +671,9 @@ install_kde_plasma_wayland() {
     chroot_run "emerge sys-apps/dbus sys-auth/elogind net-misc/networkmanager && rc-update add dbus default && rc-update add elogind default && rc-update add NetworkManager default"
   fi
 
-  # Audio/video session stack + KDE Plasma + Display manager - batch all emerges
+  # Audio/video session stack + KDE Plasma + Display manager
+  # Note: Batched emerge for performance. All packages are inter-related desktop components,
+  # so if any fails, the desktop won't work anyway. The && chain ensures proper error handling.
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-wayland-session gui-libs/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde kde-plasma/sddm && systemctl enable sddm"
   else
