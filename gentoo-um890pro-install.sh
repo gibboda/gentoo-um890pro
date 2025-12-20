@@ -101,12 +101,19 @@ init_logging() {
   need_cmd date || { echo "ERROR: date not found; cannot enable logging." >&2; exit 1; }
 
   # Expand ~ in LOG_FILE (tilde expansion does not occur inside quotes).
+  # Also strip accidental surrounding quotes if the user pasted them.
   if [[ -n "${LOG_FILE}" ]]; then
     local home_dir
     home_dir="${HOME:-/root}"
+
+    # Strip one layer of surrounding quotes (single or double), if present.
+    if [[ ( "${LOG_FILE:0:1}" == "\"" && "${LOG_FILE: -1}" == "\"" ) || ( "${LOG_FILE:0:1}" == "'" && "${LOG_FILE: -1}" == "'" ) ]]; then
+      LOG_FILE="${LOG_FILE:1:${#LOG_FILE}-2}"
+    fi
+
     case "${LOG_FILE}" in
-      ~/*) LOG_FILE="${home_dir}/${LOG_FILE#~/}" ;;
-      ~)   LOG_FILE="${home_dir}" ;;
+      "~")   LOG_FILE="${home_dir}" ;;
+      "~/"*) LOG_FILE="${home_dir}/${LOG_FILE#~/}" ;;
     esac
   fi
 
@@ -118,11 +125,22 @@ init_logging() {
     LOG_FILE="${log_dir}/gentoo-um890pro-install-${ts}.log"
   fi
 
-  # Ensure the log directory exists.
-  mkdir -p "$(dirname -- "${LOG_FILE}")" || { echo "ERROR: cannot create log directory for: ${LOG_FILE}" >&2; exit 1; }
-
-  # Ensure the log file can be created.
-  touch "${LOG_FILE}" || { echo "ERROR: cannot write log file: ${LOG_FILE}" >&2; exit 1; }
+  # Ensure the log directory exists and the log file can be created.
+  # If the configured location isn't writable/valid, fall back to /tmp.
+  local log_dir
+  log_dir="$(dirname -- "${LOG_FILE}")"
+  if ! mkdir -p "${log_dir}" 2>/dev/null || ! touch "${LOG_FILE}" 2>/dev/null; then
+    local ts
+    ts="$(date +%Y%m%d-%H%M%S)"
+    LOG_FILE="/tmp/gentoo-um890pro-install-${ts}.log"
+    mkdir -p "$(dirname -- "${LOG_FILE}")" || { echo "ERROR: cannot create fallback log directory for: ${LOG_FILE}" >&2; exit 1; }
+    touch "${LOG_FILE}" || { echo "ERROR: cannot write fallback log file: ${LOG_FILE}" >&2; exit 1; }
+    if [[ -w /dev/tty ]]; then
+      echo "WARN: configured LOG_FILE was not writable; using fallback: ${LOG_FILE}" > /dev/tty
+    else
+      echo "WARN: configured LOG_FILE was not writable; using fallback: ${LOG_FILE}" >&2
+    fi
+  fi
 
   # Tell the user where the log is, even after we redirect output.
   if [[ -w /dev/tty ]]; then
