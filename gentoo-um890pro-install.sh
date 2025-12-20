@@ -127,8 +127,8 @@ init_logging() {
     fi
 
     case "${LOG_FILE}" in
-      "~")   LOG_FILE="${home_dir}" ;;
-      "~/"*) LOG_FILE="${home_dir}/${LOG_FILE#~/}" ;;
+      "~")   LOG_FILE="${HOME}" ;;
+      "~/"*) LOG_FILE="${HOME}/${LOG_FILE#~/}" ;;
     esac
   fi
 
