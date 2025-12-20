@@ -52,7 +52,7 @@ VERSION="0.1.3"
 # - Set LOG_ENABLED="no" to disable.
 # - Set LOG_FILE to force a specific path (recommended: somewhere persistent).
 LOG_ENABLED="yes"   # yes/no
-LOG_FILE="~/gentoo-um890pro-install.log"         # e.g. /root/gentoo-um890pro-install.log
+LOG_FILE="${HOME:-/root}/gentoo-um890pro-install.log"         # e.g. /root/gentoo-um890pro-install.log
 
 # Enable bash xtrace debugging (very verbose). Best used with logging.
 DEBUG="no"          # yes/no
@@ -115,21 +115,12 @@ init_logging() {
   need_cmd tee || { echo "ERROR: tee not found; cannot enable logging." >&2; exit 1; }
   need_cmd date || { echo "ERROR: date not found; cannot enable logging." >&2; exit 1; }
 
-  # Expand ~ in LOG_FILE (tilde expansion does not occur inside quotes).
-  # Also strip accidental surrounding quotes if the user pasted them.
+  # Strip accidental surrounding quotes if the user pasted them.
   if [[ -n "${LOG_FILE}" ]]; then
-    local home_dir
-    home_dir="${HOME:-/root}"
-
     # Strip one layer of surrounding quotes (single or double), if present.
     if [[ ( "${LOG_FILE:0:1}" == "\"" && "${LOG_FILE: -1}" == "\"" ) || ( "${LOG_FILE:0:1}" == "'" && "${LOG_FILE: -1}" == "'" ) ]]; then
       LOG_FILE="${LOG_FILE:1:${#LOG_FILE}-2}"
     fi
-
-    case "${LOG_FILE}" in
-      "~")   LOG_FILE="${home_dir}" ;;
-      "~/"*) LOG_FILE="${home_dir}/${LOG_FILE#~/}" ;;
-    esac
   fi
 
   if [[ -z "${LOG_FILE}" ]]; then
@@ -393,31 +384,28 @@ install_base_system() {
 
   # Select profile
   # Prefer no-multilib profiles when PURE_64BIT=yes.
+  # Optimize by: 1) Getting profile list once 2) Processing selection logic in single chroot call
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "eselect profile list | sed -n '1,200p'"
     if [[ "${PURE_64BIT}" == "yes" ]]; then
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "eselect profile list | sed -n '1,200p' && PROFILE_ID=\$(eselect profile list | awk '/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     else
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "eselect profile list | sed -n '1,200p' && PROFILE_ID=\$(eselect profile list | awk '/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     fi
   else
-    chroot_run "eselect profile list | sed -n '1,200p'"
     if [[ "${PURE_64BIT}" == "yes" ]]; then
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "eselect profile list | sed -n '1,200p' && PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ && /no-multilib/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); if [[ -z \"\${PROFILE_ID}\" ]]; then PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); fi; [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     else
-      chroot_run "PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
+      chroot_run "eselect profile list | sed -n '1,200p' && PROFILE_ID=\$(eselect profile list | awk '/default\\/linux\\/amd64/ && !/systemd/ {gsub(/\\[|\\]/,\"\",\$1); print \$1; exit}'); [[ -n \"\${PROFILE_ID}\" ]] && eselect profile set \"\${PROFILE_ID}\""
     fi
   fi
 
-  # Locale/time
+  # Locale/time - combine locale commands into single chroot call
   echo "${LOCALE}" > "${MNT}/etc/locale.gen"
-  chroot_run "locale-gen"
-  chroot_run "eselect locale set en_US.utf8 || true"
-  chroot_run "env-update && source /etc/profile"
+  chroot_run "locale-gen && eselect locale set en_US.utf8 || true && env-update && source /etc/profile"
 
+  # Timezone - combine timezone setup into single chroot call
   echo "${TIMEZONE}" > "${MNT}/etc/timezone"
-  chroot_run "emerge --noreplace sys-libs/timezone-data"
-  chroot_run "ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime"
+  chroot_run "emerge --noreplace sys-libs/timezone-data && ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime"
 
   # Hostname + hosts
   echo "${HOSTNAME}" > "${MNT}/etc/hostname"
@@ -427,17 +415,12 @@ install_base_system() {
 127.0.1.1   ${HOSTNAME}.localdomain ${HOSTNAME}
 EOF
 
-  # Firmware + essentials
-  chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd"
-
-  # Filesystems + boot essentials
-  chroot_run "emerge sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
-
-  # Init-system-specific baseline
+  # Firmware, essentials, filesystems + boot essentials in batched emerge
+  # Batch multiple emerge calls to reduce chroot overhead
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "emerge sys-apps/systemd"
+    chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind sys-apps/systemd"
   else
-    chroot_run "emerge sys-apps/openrc"
+    chroot_run "emerge sys-kernel/linux-firmware sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind sys-apps/openrc"
   fi
 }
 
