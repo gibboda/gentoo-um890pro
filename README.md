@@ -135,6 +135,22 @@ This repository uses Snyk for security scanning. The `.snyk` file configures whi
 
 To customize exclusions, edit the `.snyk` file in the repository root.
 
+## Branch cleanup
+
+This repository includes a script to help clean up merged and stale Git branches. After PRs are merged or closed, their associated branches can be safely deleted to keep the repository organized.
+
+To clean up branches:
+
+```bash
+# First, do a dry run to see what would be deleted
+./scripts/cleanup-branches.sh --dry-run
+
+# Execute the cleanup (requires confirmation)
+./scripts/cleanup-branches.sh --execute
+```
+
+For more details, see [BRANCH_CLEANUP.md](BRANCH_CLEANUP.md).
+
 ## License
 
 Licensed under the GNU General Public License v3.0 (GPL-3.0-only). See [LICENSE](LICENSE).
