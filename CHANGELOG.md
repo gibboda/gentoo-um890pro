@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.1.7] - 2025-12-21
+- Switch default kernel from binary (gentoo-kernel-bin) to source-based (gentoo-kernel)
+- Version bump to 0.1.7
+
 ## [0.1.6] - 2025-12-20
 - Fix linux-firmware license acceptance
 - Improve emerge error visibility
