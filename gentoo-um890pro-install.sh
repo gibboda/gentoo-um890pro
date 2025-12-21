@@ -467,6 +467,16 @@ sys-kernel/installkernel dracut
 EOF
   fi
 
+  # Configure package.use for KDE Plasma dependencies
+  cat > "${MNT}/etc/portage/package.use/kde-plasma" <<EOF
+# Required USE flags for KDE Plasma + Wayland
+net-wireless/wpa_supplicant dbus
+dev-qt/qt5compat qml
+app-text/xmlto text
+dev-qt/qtbase libproxy icu opengl
+kde-frameworks/kconfig dbus qml
+EOF
+
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
   echo "Installing firmware and essential system packages..."
   echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
