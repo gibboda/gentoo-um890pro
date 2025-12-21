@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Fix linux-firmware license acceptance
+- Improve emerge error visibility
 
 ## [0.1.5] - 2025-12-20
 - Fix logging mechanism to properly detect process substitution support and ensure logs are written during long operations
