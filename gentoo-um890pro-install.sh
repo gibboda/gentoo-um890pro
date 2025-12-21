@@ -45,7 +45,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="0.1.4"
+VERSION="0.1.7"
 
 # Logging
 # By default, the script writes a timestamped log capturing stdout+stderr.
@@ -88,7 +88,7 @@ ZFS_MNT_BASE="/data"    # ZFS pool mount base inside the installed OS
 INIT_SYSTEM="openrc"
 
 # Use a binary kernel for speed/simplicity (recommended)
-USE_BINARY_KERNEL="yes"  # yes/no
+USE_BINARY_KERNEL="no"  # yes/no
 
 # ZFS pool name + datasets
 ZPOOL="tank"
