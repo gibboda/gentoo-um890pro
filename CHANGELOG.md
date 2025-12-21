@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Add package.use configuration for KDE Plasma dependencies to resolve USE flag conflicts
 - Add package.use configuration for installkernel dracut USE flag
 
 ## [0.1.7] - 2025-12-21
