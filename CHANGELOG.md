@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - Add package.use configuration for KDE Plasma dependencies to resolve USE flag conflicts
 - Add package.use configuration for installkernel dracut USE flag
 - Fix Qt USE flags mismatch for qttools and qtbase
+- Fix qt5compat USE flags to include icu for qtbase-6.9.3 compatibility
 
 ## [0.1.7] - 2025-12-21
 - Switch default kernel from binary (gentoo-kernel-bin) to source-based (gentoo-kernel)
