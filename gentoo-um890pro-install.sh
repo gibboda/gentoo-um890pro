@@ -471,7 +471,7 @@ EOF
   cat > "${MNT}/etc/portage/package.use/kde-plasma" <<EOF
 # Required USE flags for KDE Plasma + Wayland
 net-wireless/wpa_supplicant dbus
-dev-qt/qt5compat qml
+dev-qt/qt5compat qml icu
 app-text/xmlto text
 dev-qt/qtbase libproxy icu opengl
 dev-qt/qttools opengl
