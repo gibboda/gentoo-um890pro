@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.5] - 2025-12-20
 - Fix logging mechanism to properly detect process substitution support and ensure logs are written during long operations
 - Add informative progress messages before long-running operations (especially linux-firmware emerge)
 - Add completion messages after chroot operations to track progress
