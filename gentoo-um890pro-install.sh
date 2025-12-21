@@ -453,6 +453,20 @@ EOF
 sys-kernel/linux-firmware ~amd64
 EOF
 
+  # Configure package.use for installkernel based on selected init system
+  mkdir -p "${MNT}/etc/portage/package.use"
+  if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
+    cat > "${MNT}/etc/portage/package.use/installkernel" <<EOF
+# Enable systemd integration for installkernel
+sys-kernel/installkernel systemd
+EOF
+  else
+    cat > "${MNT}/etc/portage/package.use/installkernel" <<EOF
+# Enable dracut for initramfs generation
+sys-kernel/installkernel dracut
+EOF
+  fi
+
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
   echo "Installing firmware and essential system packages..."
   echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
