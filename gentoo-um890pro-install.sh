@@ -479,6 +479,12 @@ dev-qt/qttools opengl
 kde-frameworks/kconfig dbus qml
 EOF
 
+  # Disable ModemManager in NetworkManager (no modem present in UM890 Pro)
+  cat > "${MNT}/etc/portage/package.use/networkmanager" <<EOF
+# Disable ModemManager support - no modem hardware present
+net-misc/networkmanager -modemmanager
+EOF
+
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
   echo "Installing firmware and essential system packages..."
   echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
