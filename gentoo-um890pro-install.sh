@@ -97,7 +97,7 @@ ZPOOL="tank"
 COMMON_FLAGS="-O2 -pipe -march=znver4"
 
 # Desktop
-INSTALL_KDE_PLASMA_WAYLAND="yes"  # yes/no
+INSTALL_KDE_PLASMA="yes"  # yes/no
 
 # Pure 64-bit (no multilib). The script will try to pick a no-multilib profile.
 PURE_64BIT="yes"  # yes/no
@@ -335,7 +335,7 @@ FEATURES="parallel-fetch buildpkg"
 EMERGE_DEFAULT_OPTS="--ask=n --verbose --keep-going"
 
 # For ZFS + system tools
-# Desktop target: KDE Plasma + Wayland
+# Desktop target: KDE Plasma 6 + Wayland
 USE="btrfs zfs X wayland kde plasma elogind -gnome"
 
 # GPU/input for this platform
@@ -469,7 +469,7 @@ EOF
 
   # Configure package.use for KDE Plasma dependencies
   cat > "${MNT}/etc/portage/package.use/kde-plasma" <<EOF
-# Required USE flags for KDE Plasma + Wayland
+# Required USE flags for KDE Plasma 6 + Wayland
 net-wireless/wpa_supplicant dbus
 dev-qt/qt5compat qml icu
 app-text/xmlto text
@@ -733,10 +733,10 @@ install_zfs_and_create_pool() {
   mkdir -p "${MNT}${ZFS_MNT_BASE}"
 }
 
-install_kde_plasma_wayland() {
-  [[ "${INSTALL_KDE_PLASMA_WAYLAND}" == "yes" ]] || return 0
+install_kde_plasma() {
+  [[ "${INSTALL_KDE_PLASMA}" == "yes" ]] || return 0
 
-  echo "Installing KDE Plasma (Wayland)..."
+  echo "Installing KDE Plasma 6 (with Wayland support)..."
 
   # Base desktop plumbing
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -813,7 +813,7 @@ main() {
   install_kernel
   configure_fstab_bootloader
   enable_network_and_services
-  install_kde_plasma_wayland
+  install_kde_plasma
   install_zfs_and_create_pool
   finalize_users_passwords
 

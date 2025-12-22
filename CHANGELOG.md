@@ -3,10 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Rename function `install_kde_plasma_wayland()` to `install_kde_plasma()` and rename variable `INSTALL_KDE_PLASMA_WAYLAND` to `INSTALL_KDE_PLASMA`
+- Update documentation to clarify that Plasma 6 is installed (the latest major version available in Gentoo)
 - Replace `kde-plasma/plasma-wayland-session` with `kde-plasma/plasma-login-sessions` to fix emerge error
-- Add package.use configuration for KDE Plasma dependencies to resolve USE flag conflicts
+- Add package.use configuration for KDE Plasma 6 dependencies to resolve USE flag conflicts
 - Add package.use configuration for installkernel dracut USE flag
-- Fix Qt USE flags mismatch for qttools and qtbase
+- Fix Qt 6 USE flags mismatch for qttools and qtbase
 - Fix qt5compat USE flags to include icu for qtbase-6.9.3 compatibility
 - Fix qtdeclarative USE flags conflict by adding opengl flag to match qtbase-6.9.3 requirements
 
