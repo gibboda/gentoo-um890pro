@@ -13,7 +13,7 @@ Script: [gentoo-um890pro-install.sh](gentoo-um890pro-install.sh)
 - Init system: `openrc` (default) or `systemd` (controlled by `INIT_SYSTEM`).
 - Kernel: installs `gentoo-kernel-bin` when `USE_BINARY_KERNEL=yes`, otherwise builds from source.
 - Bootloader: rEFInd (UEFI).
-- Desktop: KDE Plasma with Wayland (controlled by `INSTALL_KDE_PLASMA_WAYLAND`).
+- Desktop: KDE Plasma 6 with Wayland (controlled by `INSTALL_KDE_PLASMA`).
 - Interactive: requires typed confirmation (`WIPE-AND-INSTALL`), prompts for root password, optional user creation.
 
 ### OpenRC zram swap (AI-friendly)
@@ -59,7 +59,7 @@ chmod +x gentoo-um890pro-install.sh
 - `MNT`, `ESP_MNT`, `ZFS_MNT_BASE` — mountpoints used during install.
 - `INIT_SYSTEM` — `openrc` (default) or `systemd`.
 - `USE_BINARY_KERNEL` — `yes` to install `gentoo-kernel-bin`.
-- `INSTALL_KDE_PLASMA_WAYLAND` — `yes` to install KDE Plasma + Wayland + SDDM.
+- `INSTALL_KDE_PLASMA` — `yes` to install KDE Plasma 6 + Wayland + SDDM.
 - `ZPOOL` — name of the ZFS pool created (default `tank`).
 - `COMMON_FLAGS` — compile flags written to `make.conf`.
 - `TIMEZONE`, `LOCALE` — timezone/locale written into the installed system.
