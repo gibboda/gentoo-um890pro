@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - Add package.use configuration for installkernel dracut USE flag
 - Fix Qt USE flags mismatch for qttools and qtbase
 - Fix qt5compat USE flags to include icu for qtbase-6.9.3 compatibility
+- Fix qtdeclarative USE flags conflict by adding opengl flag to match qtbase-6.9.3 requirements
 
 ## [0.1.7] - 2025-12-21
 - Switch default kernel from binary (gentoo-kernel-bin) to source-based (gentoo-kernel)

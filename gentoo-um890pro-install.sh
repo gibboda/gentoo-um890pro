@@ -474,6 +474,7 @@ net-wireless/wpa_supplicant dbus
 dev-qt/qt5compat qml icu
 app-text/xmlto text
 dev-qt/qtbase libproxy icu opengl
+dev-qt/qtdeclarative opengl
 dev-qt/qttools opengl
 kde-frameworks/kconfig dbus qml
 EOF
