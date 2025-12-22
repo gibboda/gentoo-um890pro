@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Replace deprecated `kde-plasma/plasma-wayland-session` with `kde-plasma/plasma-login-sessions` to fix emerge error
 - Add package.use configuration for KDE Plasma dependencies to resolve USE flag conflicts
 - Add package.use configuration for installkernel dracut USE flag
 - Fix Qt USE flags mismatch for qttools and qtbase
