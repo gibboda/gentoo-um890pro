@@ -473,8 +473,8 @@ EOF
 net-wireless/wpa_supplicant dbus
 dev-qt/qt5compat qml icu
 app-text/xmlto text
-# Enable OpenGL and disable Vulkan for qtbase-6.9.3 compatibility
-dev-qt/qtbase libproxy icu cups opengl -vulkan
+# Enable both OpenGL and Vulkan for qtbase-6.9.3 (both required to avoid USE flag loops)
+dev-qt/qtbase libproxy icu cups opengl vulkan
 dev-qt/qtdeclarative opengl
 dev-qt/qttools opengl
 dev-qt/qtmultimedia qml
