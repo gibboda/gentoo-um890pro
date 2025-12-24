@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Fix dev-qt/qtbase USE flags looping issue: enable both opengl and vulkan for qtbase-6.9.3 to prevent circular dependency conflicts
 - Fix dev-qt/qtbase USE flags: enable opengl and disable vulkan for qtbase-6.9.3 compatibility
 - Fix SDDM package name: replace `kde-plasma/sddm` (non-existent) with `x11-misc/sddm` and add `kde-plasma/sddm-kcm` for KDE configuration module
 - Fix xdg-desktop-portal package name: replace `gui-libs/xdg-desktop-portal` with `sys-apps/xdg-desktop-portal`
