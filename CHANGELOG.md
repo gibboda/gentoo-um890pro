@@ -3,18 +3,16 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- Fix dev-qt/qtbase USE flags looping issue: enable both opengl and vulkan for qtbase-6.9.3 to prevent circular dependency conflicts
-- Fix SDDM package name: replace `kde-plasma/sddm` (non-existent) with `x11-misc/sddm` and add `kde-plasma/sddm-kcm` for KDE configuration module
-- Fix xdg-desktop-portal package name: replace `gui-libs/xdg-desktop-portal` with `sys-apps/xdg-desktop-portal`
-- Rename function `install_kde_plasma_wayland()` to `install_kde_plasma()` and rename variable `INSTALL_KDE_PLASMA_WAYLAND` to `INSTALL_KDE_PLASMA`
-- Update documentation to clarify that Plasma 6 is installed (the latest major version available in Gentoo)
-- Replace `kde-plasma/plasma-wayland-session` with `kde-plasma/plasma-login-sessions` to fix emerge error
-- Add package.use configuration for KDE Plasma 6 dependencies to resolve USE flag conflicts
-- Add package.use configuration for installkernel dracut USE flag
-- Fix Qt 6 USE flags mismatch for qttools and qtbase
-- Fix qt5compat USE flags to include icu for qtbase-6.9.3 compatibility
-- Fix qtdeclarative USE flags conflict by adding opengl flag to match qtbase-6.9.3 requirements
-- Disable ModemManager in NetworkManager to fix boot hang on systems without modem hardware
+- Separate KDE Plasma 6 package.use configuration into modular components for better maintainability
+  - Split into separate files: qt-base, qt-modules, kde-frameworks, kde-plasma, graphics, blender
+  - Allows independent management of different dependency groups
+- Add version constraint `>=dev-qt/qtbase-6.9.3` to explicitly target newer qtbase versions
+- Enhance qtbase configuration with detailed comments explaining why both OpenGL and Vulkan are required
+- Add Blender 3D creation suite installation support via `INSTALL_BLENDER` configuration variable
+- Configure Blender with comprehensive USE flags: opengl, vulkan, cycles, openvdb, embree, and more
+- Add media-libs/mesa with vulkan USE flag to ensure Vulkan support for graphics applications
+- Document modular package.use approach in inline comments for future maintainability
+- Update README.md to document the new `INSTALL_BLENDER` configuration variable
 
 ## [0.1.7] - 2025-12-21
 - Switch default kernel from binary (gentoo-kernel-bin) to source-based (gentoo-kernel)

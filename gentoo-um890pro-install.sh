@@ -98,6 +98,7 @@ COMMON_FLAGS="-O2 -pipe -march=znver4"
 
 # Desktop
 INSTALL_KDE_PLASMA="yes"  # yes/no
+INSTALL_BLENDER="yes"     # yes/no - Install Blender 3D creation suite
 
 # Pure 64-bit (no multilib). The script will try to pick a no-multilib profile.
 PURE_64BIT="yes"  # yes/no
@@ -467,28 +468,57 @@ sys-kernel/installkernel dracut
 EOF
   fi
 
-  # Configure package.use for KDE Plasma dependencies
-  cat > "${MNT}/etc/portage/package.use/kde-plasma" <<EOF
-# Required USE flags for KDE Plasma 6 + Wayland
-net-wireless/wpa_supplicant dbus
+  # Configure package.use for Qt base packages (modular approach for better maintainability)
+  # Separate configuration files allow independent management of different component groups
+  
+  # Qt 6 Core Packages - Graphics Backend Configuration
+  # Both OpenGL and Vulkan are required for qtbase-6.9.3+ to prevent circular dependencies
+  # This configuration supports KDE Plasma 6, Wayland, and applications like Blender
+  cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
+# Qt 6 base library with both OpenGL and Vulkan support
+# Note: Both backends are needed to avoid USE flag dependency loops in qtbase-6.9.3+
+# This also ensures compatibility with graphics applications (Blender, games, etc.)
+>=dev-qt/qtbase-6.9.3 libproxy icu cups opengl vulkan
 dev-qt/qt5compat qml icu
 app-text/xmlto text
-# Enable both OpenGL and Vulkan for qtbase-6.9.3 (both required to avoid USE flag loops)
-dev-qt/qtbase libproxy icu cups opengl vulkan
-dev-qt/qtdeclarative opengl
-dev-qt/qttools opengl
+sys-libs/zlib minizip
+EOF
+
+  # Qt 6 Additional Modules
+  cat > "${MNT}/etc/portage/package.use/qt-modules" <<EOF
+# Qt declarative (QML) requires OpenGL to match qtbase configuration
+>=dev-qt/qtdeclarative-6.9.3 opengl
+# Qt tools (Designer, Linguist, etc.) need OpenGL support
+>=dev-qt/qttools-6.9.3 opengl
+# Qt multimedia for audio/video in KDE applications
 dev-qt/qtmultimedia qml
+EOF
+
+  # KDE Frameworks - Core libraries used by KDE Plasma
+  cat > "${MNT}/etc/portage/package.use/kde-frameworks" <<EOF
+# KDE Frameworks dependencies
 kde-frameworks/kconfig dbus qml
 kde-frameworks/kcoreaddons dbus
 kde-frameworks/prison qml
 kde-frameworks/sonnet qml
+dev-libs/qcoro dbus
+EOF
+
+  # KDE Plasma - Desktop environment specific settings
+  cat > "${MNT}/etc/portage/package.use/kde-plasma" <<EOF
+# KDE Plasma 6 + Wayland desktop environment
 kde-plasma/kwin lock
 kde-plasma/kwin-x11 lock
-# Enable DRM support and hardware acceleration for AMD Radeon 780M iGPU
+net-wireless/wpa_supplicant dbus
+EOF
+
+  # Graphics and Display - Hardware acceleration and Wayland support
+  cat > "${MNT}/etc/portage/package.use/graphics" <<EOF
+# AMD Radeon 780M iGPU support (UM890 Pro integrated graphics)
+# Enable DRM for direct rendering and hardware acceleration
 x11-libs/libdrm video_cards_radeon
+# Wayland display server support with libei for input emulation
 x11-base/xwayland libei
-dev-libs/qcoro dbus
-sys-libs/zlib minizip
 EOF
 
   # Disable ModemManager in NetworkManager (no modem present in UM890 Pro)
@@ -497,6 +527,38 @@ EOF
 net-misc/networkmanager -modemmanager
 EOF
 
+  # Blender 3D - Graphics application requiring OpenGL and Vulkan
+  # This configuration ensures Blender has all necessary graphics backends and features
+  cat > "${MNT}/etc/portage/package.use/blender" <<EOF
+# Blender 3D creation suite with full feature set
+# GPU Rendering: opengl vulkan cycles embree openpgl openimagedenoise oslray
+# 3D Libraries: openvdb bullet opensubdiv tbb
+# Media Formats: openexr ffmpeg fftw jack jpeg2k openimageio
+# Import/Export: alembic collada
+# UI/Documentation: color-management man nls
+# Utilities: pugixml potrace
+media-gfx/blender opengl vulkan cycles openexr openvdb bullet ffmpeg fftw jack jpeg2k openimageio \
+  openpgl opensubdiv oslray embree tbb color-management man nls alembic collada \
+  openimagedenoise pugixml potrace
+
+# Blender dependencies - ensure proper graphics support
+media-libs/openimageio opengl
+# Note: opencl enables OpenCL rendering; opengl for viewport; ptex for texture mapping
+media-libs/opensubdiv opencl opengl ptex tbb
+dev-cpp/tbb malloc-proxy
+media-libs/opencolorio opengl
+media-libs/embree tbb
+sci-libs/openvdb abi8-compat blosc numpy openvdb-compression python zlib
+
+# Additional media libraries for Blender
+media-video/ffmpeg x264 x265 vpx opus mp3 theora vorbis
+media-libs/mesa vulkan
+EOF
+
+  # If Blender is not requested, remove the Blender-specific package.use file
+  if [[ "${INSTALL_BLENDER:-no}" != "yes" ]]; then
+    rm -f /mnt/gentoo/etc/portage/package.use/blender
+  fi
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
   echo "Installing firmware and essential system packages..."
   echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
@@ -781,6 +843,20 @@ EOF
   fi
 }
 
+install_blender() {
+  [[ "${INSTALL_BLENDER}" == "yes" ]] || return 0
+
+  echo "Installing Blender 3D creation suite..."
+  echo "This will take 1-2 hours depending on CPU performance and network speed."
+  echo "Blender will be configured with OpenGL and Vulkan support for GPU rendering."
+
+  # Blender has many dependencies and takes time to compile
+  # We install it separately to provide clear progress feedback
+  chroot_run "emerge media-gfx/blender"
+  
+  echo "Blender installation complete."
+}
+
 finalize_users_passwords() {
   echo "Setting root password and creating a user..."
 
@@ -832,6 +908,7 @@ main() {
   configure_fstab_bootloader
   enable_network_and_services
   install_kde_plasma
+  install_blender
   install_zfs_and_create_pool
   finalize_users_passwords
 

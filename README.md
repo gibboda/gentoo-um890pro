@@ -60,6 +60,7 @@ chmod +x gentoo-um890pro-install.sh
 - `INIT_SYSTEM` — `openrc` (default) or `systemd`.
 - `USE_BINARY_KERNEL` — `yes` to install `gentoo-kernel-bin`.
 - `INSTALL_KDE_PLASMA` — `yes` to install KDE Plasma 6 + Wayland + SDDM.
+- `INSTALL_BLENDER` — `yes` to install Blender 3D creation suite with OpenGL and Vulkan support.
 - `ZPOOL` — name of the ZFS pool created (default `tank`).
 - `COMMON_FLAGS` — compile flags written to `make.conf`.
 - `TIMEZONE`, `LOCALE` — timezone/locale written into the installed system.
