@@ -758,9 +758,9 @@ install_kde_plasma() {
   # Note: Batched emerge for performance. All packages are inter-related desktop components,
   # so if any fails, the desktop won't work anyway. The && chain ensures proper error handling.
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
-    chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-login-sessions sys-apps/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde kde-plasma/sddm && systemctl enable sddm"
+    chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-login-sessions sys-apps/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde x11-misc/sddm kde-plasma/sddm-kcm && systemctl enable sddm"
   else
-    chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-login-sessions sys-apps/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde kde-plasma/sddm x11-apps/xdm"
+    chroot_run "emerge media-video/pipewire media-video/wireplumber kde-plasma/plasma-meta kde-plasma/plasma-login-sessions sys-apps/xdg-desktop-portal kde-plasma/xdg-desktop-portal-kde x11-misc/sddm kde-plasma/sddm-kcm x11-apps/xdm"
     cat > "${MNT}/etc/conf.d/xdm" <<'EOF'
 # /etc/conf.d/xdm
 DISPLAYMANAGER="sddm"
