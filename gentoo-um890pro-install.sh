@@ -473,10 +473,20 @@ EOF
 net-wireless/wpa_supplicant dbus
 dev-qt/qt5compat qml icu
 app-text/xmlto text
-dev-qt/qtbase libproxy icu opengl
+dev-qt/qtbase libproxy icu cups -opengl vulkan
 dev-qt/qtdeclarative opengl
 dev-qt/qttools opengl
+dev-qt/qtmultimedia qml
 kde-frameworks/kconfig dbus qml
+kde-frameworks/kcoreaddons dbus
+kde-frameworks/prison qml
+kde-frameworks/sonnet qml
+kde-plasma/kwin lock
+kde-plasma/kwin-x11 lock
+x11-libs/libdrm video_cards_radeon
+x11-base/xwayland libei
+dev-libs/qcoro dbus
+sys-libs/zlib minizip
 EOF
 
   # Disable ModemManager in NetworkManager (no modem present in UM890 Pro)
