@@ -555,6 +555,10 @@ media-video/ffmpeg x264 x265 vpx opus mp3 theora vorbis
 media-libs/mesa vulkan
 EOF
 
+  # If Blender is not requested, remove the Blender-specific package.use file
+  if [[ "${INSTALL_BLENDER:-no}" != "yes" ]]; then
+    rm -f /mnt/gentoo/etc/portage/package.use/blender
+  fi
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
   echo "Installing firmware and essential system packages..."
   echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
