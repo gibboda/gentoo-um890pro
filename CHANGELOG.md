@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Fix SDDM package name: replace `kde-plasma/sddm` (non-existent) with `x11-misc/sddm` and add `kde-plasma/sddm-kcm` for KDE configuration module
 - Fix xdg-desktop-portal package name: replace `gui-libs/xdg-desktop-portal` with `sys-apps/xdg-desktop-portal`
 - Rename function `install_kde_plasma_wayland()` to `install_kde_plasma()` and rename variable `INSTALL_KDE_PLASMA_WAYLAND` to `INSTALL_KDE_PLASMA`
 - Update documentation to clarify that Plasma 6 is installed (the latest major version available in Gentoo)
