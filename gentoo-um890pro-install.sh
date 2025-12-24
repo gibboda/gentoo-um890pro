@@ -473,8 +473,8 @@ EOF
 net-wireless/wpa_supplicant dbus
 dev-qt/qt5compat qml icu
 app-text/xmlto text
-# Enable Vulkan and disable OpenGL for better performance on AMD Radeon 780M iGPU
-dev-qt/qtbase libproxy icu cups -opengl vulkan
+# Enable OpenGL and disable Vulkan for qtbase-6.9.3 compatibility
+dev-qt/qtbase libproxy icu cups opengl -vulkan
 dev-qt/qtdeclarative opengl
 dev-qt/qttools opengl
 dev-qt/qtmultimedia qml
