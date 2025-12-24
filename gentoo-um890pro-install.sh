@@ -531,14 +531,20 @@ EOF
   # This configuration ensures Blender has all necessary graphics backends and features
   cat > "${MNT}/etc/portage/package.use/blender" <<EOF
 # Blender 3D creation suite with full feature set
-# Requires OpenGL and Vulkan for GPU rendering (Cycles, EEVEE)
+# GPU Rendering: opengl vulkan cycles embree openpgl openimagedenoise oslray
+# 3D Libraries: openvdb bullet opensubdiv tbb
+# Media Formats: openexr ffmpeg fftw jack jpeg2k openimageio
+# Import/Export: alembic collada
+# UI/Documentation: color-management man nls
+# Utilities: pugixml potrace
 media-gfx/blender opengl vulkan cycles openexr openvdb bullet ffmpeg fftw jack jpeg2k openimageio \
   openpgl opensubdiv oslray embree tbb color-management man nls alembic collada \
   openimagedenoise pugixml potrace
 
 # Blender dependencies - ensure proper graphics support
 media-libs/openimageio opengl
-media-libs/opensubdiv opencl cuda opengl ptex tbb
+# Note: opencl enables OpenCL rendering; opengl for viewport; ptex for texture mapping
+media-libs/opensubdiv opencl opengl ptex tbb
 dev-cpp/tbb malloc-proxy
 media-libs/opencolorio opengl
 media-libs/embree tbb
@@ -837,7 +843,7 @@ install_blender() {
   [[ "${INSTALL_BLENDER}" == "yes" ]] || return 0
 
   echo "Installing Blender 3D creation suite..."
-  echo "This may take a significant amount of time due to the large number of dependencies..."
+  echo "This will take 1-2 hours depending on CPU performance and network speed."
   echo "Blender will be configured with OpenGL and Vulkan support for GPU rendering."
 
   # Blender has many dependencies and takes time to compile
