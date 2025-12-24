@@ -473,6 +473,7 @@ EOF
 net-wireless/wpa_supplicant dbus
 dev-qt/qt5compat qml icu
 app-text/xmlto text
+# Use Vulkan instead of OpenGL for better performance on AMD Radeon 780M iGPU
 dev-qt/qtbase libproxy icu cups -opengl vulkan
 dev-qt/qtdeclarative opengl
 dev-qt/qttools opengl
@@ -483,6 +484,7 @@ kde-frameworks/prison qml
 kde-frameworks/sonnet qml
 kde-plasma/kwin lock
 kde-plasma/kwin-x11 lock
+# AMD Radeon 780M integrated graphics (UM890 Pro hardware)
 x11-libs/libdrm video_cards_radeon
 x11-base/xwayland libei
 dev-libs/qcoro dbus
