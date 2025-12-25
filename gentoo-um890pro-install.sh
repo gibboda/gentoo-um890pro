@@ -50,7 +50,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="0.1.9"
+VERSION="1.0.0"
 
 # Logging
 # By default, the script writes a timestamped log capturing stdout+stderr.
