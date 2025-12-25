@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.1.8] - 2025-12-25
 - Switch qtbase-6.9.3+ to use Vulkan backend instead of OpenGL
   - Update dev-qt/qtbase USE flags to `-opengl vulkan` (was `opengl -vulkan`)
   - Add package.accept_keywords for dev-util/vulkan-headers ~amd64 to satisfy dependency
@@ -17,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Add media-libs/mesa with vulkan USE flag to ensure Vulkan support for graphics applications
 - Document modular package.use approach in inline comments for future maintainability
 - Update README.md to document the new `INSTALL_BLENDER` configuration variable
+- Version bump to 0.1.8
 
 ## [0.1.7] - 2025-12-21
 - Switch default kernel from binary (gentoo-kernel-bin) to source-based (gentoo-kernel)
