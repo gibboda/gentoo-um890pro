@@ -5,10 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - Switch qtbase-6.9.3+ to use Vulkan backend instead of OpenGL
   - Update dev-qt/qtbase USE flags to `-opengl vulkan` (was `opengl -vulkan`)
-  - Update dev-qt/qtdeclarative and dev-qt/qttools to use vulkan (was opengl)
   - Add package.accept_keywords for dev-util/vulkan-headers ~amd64 to satisfy dependency
   - This resolves "USE changes are necessary: >=dev-qt/qtbase-6.9.3 -opengl vulkan" requirement
-  - Vulkan support is now the primary graphics backend for Qt 6 and KDE Plasma 6
+  - Vulkan backend is used for Qt 6 and KDE Plasma 6 in this configuration
 - Separate KDE Plasma 6 package.use configuration into modular components for better maintainability
   - Split into separate files: qt-base, qt-modules, kde-frameworks, kde-plasma, graphics, blender
   - Allows independent management of different dependency groups

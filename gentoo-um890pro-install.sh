@@ -478,11 +478,11 @@ EOF
   # Separate configuration files allow independent management of different component groups
   
   # Qt 6 Core Packages - Graphics Backend Configuration
-  # Vulkan is now required for qtbase-6.9.3+ to satisfy dependency requirements
+  # qtbase-6.9.3+ is configured with Vulkan backend to satisfy dependency requirements
   # This configuration supports KDE Plasma 6, Wayland, and modern graphics applications
   cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
 # Qt 6 base library with Vulkan support
-# Note: qtbase-6.9.3+ requires Vulkan backend (OpenGL is disabled)
+# Note: This configuration uses Vulkan backend (OpenGL is disabled)
 # dev-util/vulkan-headers is unmasked via package.accept_keywords
 >=dev-qt/qtbase-6.9.3 libproxy icu cups -opengl vulkan
 dev-qt/qt5compat qml icu
@@ -492,10 +492,6 @@ EOF
 
   # Qt 6 Additional Modules
   cat > "${MNT}/etc/portage/package.use/qt-modules" <<EOF
-# Qt declarative (QML) configured with Vulkan for consistency with qtbase
->=dev-qt/qtdeclarative-6.9.3 vulkan
-# Qt tools (Designer, Linguist, etc.) configured with Vulkan for consistency
->=dev-qt/qttools-6.9.3 vulkan
 # Qt multimedia for audio/video in KDE applications
 dev-qt/qtmultimedia qml
 EOF
