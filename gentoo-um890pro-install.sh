@@ -472,13 +472,14 @@ EOF
   # Separate configuration files allow independent management of different component groups
   
   # Qt 6 Core Packages - Graphics Backend Configuration
-  # Both OpenGL and Vulkan are required for qtbase-6.9.3+ to prevent circular dependencies
-  # This configuration supports KDE Plasma 6, Wayland, and applications like Blender
+  # OpenGL is used for qtbase to avoid dependency conflicts
+  # Vulkan support is provided via mesa for applications that need it (Blender, games, etc.)
+  # This configuration supports KDE Plasma 6, Wayland, and graphics applications
   cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
-# Qt 6 base library with both OpenGL and Vulkan support
-# Note: Both backends are needed to avoid USE flag dependency loops in qtbase-6.9.3+
-# This also ensures compatibility with graphics applications (Blender, games, etc.)
->=dev-qt/qtbase-6.9.3 libproxy icu cups opengl vulkan
+# Qt 6 base library with OpenGL support
+# Note: Vulkan is disabled for qtbase-6.9.3+ to avoid USE flag dependency conflicts
+# Applications requiring Vulkan (like Blender) get it through mesa instead
+>=dev-qt/qtbase-6.9.3 libproxy icu cups opengl -vulkan
 dev-qt/qt5compat qml icu
 app-text/xmlto text
 sys-libs/zlib minizip

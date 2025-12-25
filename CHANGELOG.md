@@ -3,11 +3,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Fix qtbase-6.9.3+ USE flag configuration to disable vulkan and prevent dependency conflicts
+  - Remove vulkan USE flag from dev-qt/qtbase (use `-vulkan` instead)
+  - Vulkan support for applications is still provided via media-libs/mesa
+  - This resolves "USE changes are necessary to proceed: >=dev-qt/qtbase-6.9.3 -vulkan" error
 - Separate KDE Plasma 6 package.use configuration into modular components for better maintainability
   - Split into separate files: qt-base, qt-modules, kde-frameworks, kde-plasma, graphics, blender
   - Allows independent management of different dependency groups
 - Add version constraint `>=dev-qt/qtbase-6.9.3` to explicitly target newer qtbase versions
-- Enhance qtbase configuration with detailed comments explaining why both OpenGL and Vulkan are required
 - Add Blender 3D creation suite installation support via `INSTALL_BLENDER` configuration variable
 - Configure Blender with comprehensive USE flags: opengl, vulkan, cycles, openvdb, embree, and more
 - Add media-libs/mesa with vulkan USE flag to ensure Vulkan support for graphics applications
