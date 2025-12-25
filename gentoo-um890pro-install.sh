@@ -1209,10 +1209,11 @@ create_snapshot() {
     local snapshot_name="@-snapshot-${timestamp}"
     
     echo "Creating snapshot: ${snapshot_name}"
+    mkdir -p "${SNAPSHOTS_DIR}"
     btrfs subvolume snapshot -r "${BTRFS_ROOT}/@" "${SNAPSHOTS_DIR}/${snapshot_name}"
     
-    # Update latest symlink
-    ln -sf "${snapshot_name}" "${SNAPSHOTS_DIR}/@-snapshot-latest"
+    # Update latest symlink (use atomic, non-directory replacement)
+    ln -snf "${snapshot_name}" "${SNAPSHOTS_DIR}/@-snapshot-latest"
     
     echo "Snapshot created successfully"
 }
