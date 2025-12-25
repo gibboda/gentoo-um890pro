@@ -1535,17 +1535,16 @@ configure_nvme_optimizations() {
   # Create udev rules for NVMe optimization
   cat > "${MNT}/etc/udev/rules.d/60-nvme-crucial-p3.rules" <<'EOF'
 # NVMe optimization for Crucial P3 Plus CT4000P3PSSD8
-# The P3 Plus uses HMB (Host Memory Buffer) instead of onboard DRAM
+# The P3 Plus uses HMB (Host Memory Buffer) instead of onboard DRAM.
+# NOTE: HMB size is managed via NVMe admin commands (e.g. nvme-cli), not via
+#       non-portable sysfs attributes. This udev rule only applies generic
+#       queue tunables and does not attempt to change HMB size.
 
 # Generic NVMe optimizations
 ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/scheduler}="none"
 ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/nr_requests}="1024"
 ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/read_ahead_kb}="2048"
 ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/max_sectors_kb}="1024"
-
-# Crucial P3 Plus specific: Increase HMB size from 128MB to 256MB
-# This improves performance for DRAM-less SSDs
-ACTION=="add", KERNEL=="nvme[0-9]", ATTRS{model}=="CT4000P3PSSD8", ATTR{device/hmb_size}="262144"
 EOF
 
   # Configure NVMe power management
