@@ -82,9 +82,8 @@ chmod +x gentoo-um890pro-install.sh
 - `USE_BINARY_KERNEL` — `yes` to install `gentoo-kernel-bin`.
 - `INSTALL_KDE_PLASMA` — `yes` to install KDE Plasma 6 + Wayland + SDDM.
 - `INSTALL_BLENDER` — `yes` to install Blender 3D creation suite with OpenGL and Vulkan support.
-- `INSTALL_COMFYUI` — `yes` to set up ComfyUI for AI image generation (manual setup required post-install).
+- `INSTALL_COMFYUI` — `yes` to set up ComfyUI for AI image generation with SDXL support (manual setup required post-install).
 - `INSTALL_ROCM` — `yes` to install ROCm for AMD GPU compute acceleration.
-- `INSTALL_SDXL` — `yes` to configure system for Stable Diffusion XL models.
 - `INSTALL_DUAL_KERNEL` — `yes` to install both binary and source kernels for fallback.
 - `ENABLE_SNAPSHOTS` — `yes` to set up automated Btrfs snapshot management.
 - `ZPOOL` — name of the ZFS pool created (default `tank`).
