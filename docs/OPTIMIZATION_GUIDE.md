@@ -74,22 +74,66 @@ WantedBy=multi-user.target
 
 ## Memory Optimization
 
+### DDR5-5600 Crucial CT48G56C46S5 Configuration
+
+With 2× 48GB DDR5-5600 modules (96GB total), optimize for bandwidth and latency:
+
+```bash
+# Verify memory configuration
+sudo dmidecode -t memory | grep -E "(Size|Speed|Type|Manufacturer|Part Number)"
+
+# Expected output should show:
+# - Size: 48 GB (x2)
+# - Speed: 5600 MT/s
+# - Type: DDR5
+# - Manufacturer: Crucial
+# - Part Number: CT48G56C46S5
+```
+
+### Memory Timings Optimization
+
+```bash
+# Check current memory timings
+sudo dmidecode -t memory | grep -i latency
+
+# Monitor memory bandwidth
+sudo emerge sys-apps/pciutils
+sudo pcm-memory.x
+
+# Or use simpler tools
+free -h && cat /proc/meminfo | grep -E "(MemTotal|MemFree|MemAvailable|Cached|SwapTotal)"
+```
+
 ### Huge Pages
+
+For 96GB system, configure generous huge page allocation:
 
 ```bash
 # Enable transparent huge pages with madvise mode
 echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 echo defer | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
 
-# For large AI models, allocate huge pages
+# For large AI models, allocate 8GB of huge pages (4096 pages of 2MB each)
 echo 4096 | sudo tee /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
+
+# Or allocate 1GB huge pages (8 pages of 1GB each) for very large models
+echo 8 | sudo tee /sys/kernel/mm/hugepages/hugepages-1048576kB/nr_hugepages
 ```
 
 Make persistent in `/etc/sysctl.d/90-hugepages.conf`:
 
 ```
+# 2MB huge pages (8GB total)
 vm.nr_hugepages=4096
+
+# Allow all users to use huge pages
 vm.hugetlb_shm_group=0
+
+# Increase max map count for large allocations
+vm.max_map_count=262144
+
+# Optimize for large memory systems
+vm.min_free_kbytes=524288
 ```
 
 ### Memory Limits for AI Workloads
@@ -105,11 +149,21 @@ vm.hugetlb_shm_group=0
 
 ### ZRAM Configuration
 
-Optimized zram settings for 96GB system in `/etc/conf.d/zram`:
+Optimized zram settings for 96GB DDR5-5600 system in `/etc/conf.d/zram`:
 
 ```bash
-# Use 24GB for zram (1/4 of RAM)
+# Use 24GB for zram (1/4 of 96GB RAM)
+# With DDR5-5600's high bandwidth, zram is very efficient
 ZRAM_SIZE="24G"
+ZRAM_COMP_ALGO="zstd"
+ZRAM_SWAP_PRIORITY="100"
+```
+
+Alternative configuration for AI workloads that may need more swap:
+
+```bash
+# Use 32GB for zram (1/3 of RAM) for heavier AI workloads
+ZRAM_SIZE="32G"
 ZRAM_COMP_ALGO="zstd"
 ZRAM_SWAP_PRIORITY="100"
 ```
@@ -117,12 +171,19 @@ ZRAM_SWAP_PRIORITY="100"
 ### Swappiness Tuning
 
 ```bash
-# Reduce swappiness for systems with large RAM
-echo 10 | sudo tee /proc/sys/vm/swappiness
+# With 96GB RAM, be conservative with swapping
+echo 5 | sudo tee /proc/sys/vm/swappiness
 
 # Make persistent in /etc/sysctl.d/90-swappiness.conf
-vm.swappiness=10
+vm.swappiness=5
 vm.vfs_cache_pressure=50
+
+# For systems with large datasets that benefit from cache
+vm.dirty_ratio=10
+vm.dirty_background_ratio=5
+
+# Optimize for DDR5 bandwidth
+vm.zone_reclaim_mode=0
 ```
 
 ## Storage Optimization

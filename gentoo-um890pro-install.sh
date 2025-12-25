@@ -36,6 +36,11 @@ trap on_err ERR
 
 ###############################################################################
 # Gentoo install bootstrap for Minisforum EliteMini UM890 Pro (UEFI, 2x NVMe)
+# Target Hardware:
+#   - CPU: AMD Ryzen 9 8945HS
+#   - iGPU: AMD Radeon 780M (RDNA 3)
+#   - RAM: 2× Crucial 48GB DDR5-5600 (CT48G56C46S5, 96GB total)
+#   - Storage: 2× Crucial P3 Plus 4TB NVMe (CT4000P3PSSD8)
 # OS: Btrfs on Disk0
 # Data/AI: ZFS pool on Disk1 (no RAID)
 #

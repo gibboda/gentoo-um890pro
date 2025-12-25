@@ -4,8 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 - Comprehensive rewrite for Gentoo UM890 Pro optimization
-- Target hardware: 2× Crucial P3 Plus 4TB NVMe SSD (CT4000P3PSSD8)
-- Added hardware preparation documentation (UEFI, 2× Crucial P3 Plus 4TB, 96 GB RAM)
+- Target hardware specifications documented:
+  - Memory: 2× Crucial 48GB DDR5-5600 (CT48G56C46S5, 96GB total)
+  - Storage: 2× Crucial P3 Plus 4TB NVMe SSD (CT4000P3PSSD8)
+- Added hardware preparation documentation (UEFI, Crucial P3 Plus 4TB, Crucial DDR5-5600 96GB)
 - Implemented Btrfs snapshot management and rollback system with `manage-snapshots` utility
 - Configured NVMe1 as dedicated AI drive with ZFS optimization for large models (1M recordsize)
 - Enhanced rEFInd configuration for snapshot boot options and dual-kernel support
@@ -23,6 +25,8 @@ All notable changes to this project will be documented in this file.
 - Added boot selection ML system scripts with health monitoring
 - Configuration variables: `INSTALL_COMFYUI`, `INSTALL_ROCM`, `INSTALL_SDXL`, `INSTALL_DUAL_KERNEL`, `ENABLE_SNAPSHOTS`
 - Optimized package.use configurations for ROCm, ComfyUI dependencies
+- Added DDR5-5600 specific memory optimizations (huge pages, swappiness tuning)
+- Configured memory bandwidth optimizations for 96GB dual-channel DDR5-5600
 - Version bump to 0.1.9
 
 ## [0.1.8] - 2025-12-25

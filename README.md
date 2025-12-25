@@ -6,6 +6,18 @@ Important: running the installer will irreversibly wipe the selected disks.
 
 Script: [gentoo-um890pro-install.sh](gentoo-um890pro-install.sh)
 
+## Target Hardware Specifications
+
+This installer is specifically optimized for:
+
+- **System**: Minisforum EliteMini UM890 Pro
+- **CPU**: AMD Ryzen 9 8945HS (Zen 4, 8C/16T)
+- **iGPU**: AMD Radeon 780M (RDNA 3, gfx1103)
+- **RAM**: 2× Crucial 48GB DDR5-5600 (CT48G56C46S5) = 96GB total
+- **Storage**: 2× Crucial P3 Plus 4TB NVMe SSD (CT4000P3PSSD8)
+
+See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware information.
+
 ## Overview
 
 - OS disk: EFI System Partition (FAT32) + Btrfs root with subvolumes (`@`, `@home`, `@var`, `@snapshots`).

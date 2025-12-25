@@ -6,7 +6,14 @@
 - **Model**: Minisforum EliteMini UM890 Pro
 - **CPU**: AMD Ryzen 9 8945HS (8-core, 16-thread, Zen 4 architecture)
 - **iGPU**: AMD Radeon 780M (RDNA 3, gfx1103)
-- **Memory**: 96 GB DDR5 (UMA - Unified Memory Architecture)
+- **Memory**: 96 GB DDR5-5600 (2× Crucial 48GB CT48G56C46S5, UMA - Unified Memory Architecture)
+  - Specifications per module:
+    - Capacity: 48GB
+    - Speed: DDR5-5600 (PC5-44800)
+    - Type: SO-DIMM (260-pin)
+    - CAS Latency: CL46
+    - Voltage: 1.1V
+    - Form Factor: Unbuffered Non-ECC
 - **Storage**: 2× Crucial P3 Plus 4TB NVMe SSD (CT4000P3PSSD8)
   - NVMe0: OS drive (Gentoo Linux on Btrfs)
   - NVMe1: AI/Data drive (ZFS with optimizations for large models)
@@ -31,9 +38,23 @@
    - Can be re-enabled later with proper key management
 
 3. **Memory Configuration**
-   - Enable XMP/EXPO profile for DDR5 (if available)
+   - Verify both 48GB modules detected (96GB total)
+   - Enable XMP/EXPO profile for DDR5-5600 (if available)
+   - Verify memory running at 5600 MT/s
    - Set iGPU memory allocation to AUTO or 4GB minimum
    - UMA mode should be enabled (default on APU systems)
+   
+   **Memory verification commands** (after boot):
+   ```bash
+   # Check total memory
+   free -h
+   
+   # Check memory speed and modules
+   sudo dmidecode -t memory | grep -A 20 "Memory Device"
+   
+   # Verify DDR5-5600
+   sudo dmidecode -t memory | grep -i speed
+   ```
 
 4. **AMD Platform Security**
    - AMD-V (virtualization) can be enabled for future VM support
@@ -105,15 +126,29 @@ nvme-CT4000P3PSSD8_2341E6D8YYYY -> ../../nvme1n1
 
 ## Memory Considerations (UMA Architecture)
 
-### Understanding UMA
+### Understanding UMA with Crucial CT48G56C46S5 (96GB DDR5-5600)
 
-The UM890 Pro uses Unified Memory Architecture (UMA):
+The UM890 Pro uses Unified Memory Architecture (UMA) with 2× 48GB DDR5-5600 modules:
 - System RAM is shared between CPU and iGPU
 - No dedicated VRAM; iGPU uses system RAM
-- Total bandwidth shared across CPU and GPU
-- Excellent for AI workloads with large models
+- Total bandwidth: ~89.6 GB/s (DDR5-5600, dual-channel)
+- Large capacity (96GB) ideal for AI workloads with huge models
+- Low latency (CL46) benefits both CPU and GPU operations
 
-### Memory Optimization Strategies
+### DDR5-5600 Performance Benefits
+
+1. **High Bandwidth**: 
+   - DDR5-5600 provides ~44.8 GB/s per channel
+   - Dual-channel: ~89.6 GB/s total bandwidth
+   - Critical for iGPU performance (Radeon 780M bandwidth-limited)
+
+2. **Large Capacity (96GB)**:
+   - Can load 70B+ parameter LLMs entirely in RAM
+   - Supports multiple AI models simultaneously
+   - Excellent for Stable Diffusion XL with large batch sizes
+   - Sufficient for 8K video editing and complex 3D scenes
+
+3. **Memory Optimization Strategies**
 
 1. **For AI/ML Workloads**
    - 96 GB allows loading 70B+ parameter models
@@ -243,8 +278,27 @@ efibootmgr | grep -i refind
 # CPU info
 lscpu
 
-# Memory info
+# Memory info - verify 96GB
 free -h
+
+# Detailed memory info
+sudo dmidecode -t memory
+
+# Verify DDR5-5600 modules
+sudo dmidecode -t memory | grep -A 20 "Memory Device" | grep -E "(Size|Speed|Type|Manufacturer|Part Number|Locator)"
+
+# Expected output:
+# Size: 48 GB (first module)
+# Size: 48 GB (second module)  
+# Type: DDR5
+# Speed: 5600 MT/s
+# Manufacturer: Crucial
+# Part Number: CT48G56C46S5
+
+# Memory bandwidth test
+emerge app-benchmarks/sysbench
+sysbench memory --memory-total-size=10G --memory-oper=read run
+sysbench memory --memory-total-size=10G --memory-oper=write run
 
 # GPU info
 lspci | grep VGA
