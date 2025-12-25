@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-12-25
+- Comprehensive rewrite for Gentoo UM890 Pro optimization
+- Target hardware specifications documented:
+  - Memory: 2× Crucial 48GB DDR5-5600 (CT48G56C46S5, 96GB total)
+  - Storage: 2× Crucial P3 Plus 4TB NVMe SSD (CT4000P3PSSD8)
+- Added hardware preparation documentation (UEFI, Crucial P3 Plus 4TB, Crucial DDR5-5600 96GB)
+- Implemented Btrfs snapshot management and rollback system with `manage-snapshots` utility
+- Configured NVMe1 as dedicated AI drive with ZFS optimization for large models (1M recordsize)
+- Enhanced rEFInd configuration for snapshot boot options and dual-kernel support
+- Created ML-based boot target selection system (`ml-boot-selector`)
+- Added ROCm support for AMD Radeon 780M iGPU (gfx1103)
+- Added ComfyUI installation and UMA-optimized configuration scripts
+- Added SDXL support with memory optimization for UMA systems
+- Implemented SDXL memory optimization workflow templates
+- Created ComfyUI workflow optimized for UMA architecture
+- Added Blender Cycles iGPU optimization configurations and startup scripts
+- Implemented dual-kernel fallback strategy (binary + source kernels)
+- Created comprehensive system optimization guide (OPTIMIZATION_GUIDE.md)
+- Created hardware setup guide (HARDWARE_SETUP.md)
+- Added snapshot management scripts with automatic cleanup
+- Added boot selection ML system scripts with health monitoring
+- Configuration variables: `INSTALL_COMFYUI`, `INSTALL_ROCM`, `INSTALL_SDXL`, `INSTALL_DUAL_KERNEL`, `ENABLE_SNAPSHOTS`
+- Optimized package.use configurations for ROCm, ComfyUI dependencies
+- Added DDR5-5600 specific memory optimizations (huge pages, swappiness tuning)
+- Configured memory bandwidth optimizations for 96GB dual-channel DDR5-5600
+- Prepare changes for upcoming 0.1.9 release (pre-release; version will be finalized upon release)
+
 ## [0.1.8] - 2025-12-25
 - Switch qtbase-6.9.3+ to use Vulkan backend instead of OpenGL
   - Update dev-qt/qtbase USE flags to `-opengl vulkan` (was `opengl -vulkan`)
