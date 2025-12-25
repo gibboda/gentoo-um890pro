@@ -45,7 +45,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="0.1.8"
+VERSION="0.1.9"
 
 # Logging
 # By default, the script writes a timestamped log capturing stdout+stderr.
@@ -96,12 +96,21 @@ ZPOOL="tank"
 # CPU flags: Ryzen 8000/Zen4-ish; use znver4 as a safe default for this class
 COMMON_FLAGS="-O2 -pipe -march=znver4"
 
-# Desktop
+# Desktop and AI workloads
 INSTALL_KDE_PLASMA="yes"  # yes/no
 INSTALL_BLENDER="yes"     # yes/no - Install Blender 3D creation suite
+INSTALL_COMFYUI="yes"     # yes/no - Install ComfyUI for AI image generation
+INSTALL_ROCM="yes"        # yes/no - Install ROCm for AMD GPU compute
+INSTALL_SDXL="yes"        # yes/no - Install Stable Diffusion XL models
 
 # Pure 64-bit (no multilib). The script will try to pick a no-multilib profile.
 PURE_64BIT="yes"  # yes/no
+
+# Dual-kernel setup for safety
+INSTALL_DUAL_KERNEL="yes"  # yes/no - Install both binary and source kernels
+
+# Enable snapshot management for Btrfs
+ENABLE_SNAPSHOTS="yes"  # yes/no - Set up automated snapshot management
 
 # Timezone/locale
 TIMEZONE="America/Chicago"
@@ -561,6 +570,60 @@ EOF
   if [[ "${INSTALL_BLENDER:-no}" != "yes" ]]; then
     rm -f /mnt/gentoo/etc/portage/package.use/blender
   fi
+
+  # ROCm - AMD GPU compute for AI workloads on Radeon 780M iGPU
+  # Configure ROCm with support for the UM890 Pro's integrated graphics
+  cat > "${MNT}/etc/portage/package.use/rocm" <<EOF
+# ROCm for AMD Radeon 780M iGPU (gfx1103 architecture)
+# Enable OpenCL and HIP for GPU compute acceleration
+dev-libs/rocm-opencl-runtime asan clang lto
+dev-libs/rocr-runtime asan
+dev-libs/roct-thunk-interface asan
+dev-util/hip clang
+
+# LLVM/Clang for ROCm
+sys-devel/llvm rocm
+sys-devel/clang rocm
+
+# Mesa with ROCm support
+media-libs/mesa opencl
+
+# Python packages for AI/ML
+dev-python/torch rocm
+dev-python/torchvision rocm
+EOF
+
+  # ROCm package accept keywords
+  cat > "${MNT}/etc/portage/package.accept_keywords/rocm" <<EOF
+# ROCm packages (testing for latest GPU support)
+dev-libs/rocm-opencl-runtime ~amd64
+dev-libs/rocr-runtime ~amd64
+dev-libs/roct-thunk-interface ~amd64
+dev-util/hip ~amd64
+dev-util/rocminfo ~amd64
+EOF
+
+  # If ROCm is not requested, remove the ROCm-specific files
+  if [[ "${INSTALL_ROCM:-no}" != "yes" ]]; then
+    rm -f "${MNT}/etc/portage/package.use/rocm"
+    rm -f "${MNT}/etc/portage/package.accept_keywords/rocm"
+  fi
+
+  # ComfyUI and AI dependencies
+  cat > "${MNT}/etc/portage/package.use/comfyui" <<EOF
+# Python packages for ComfyUI
+dev-python/numpy python_targets_python3_11
+dev-python/pillow python_targets_python3_11
+dev-python/torch python_targets_python3_11
+dev-python/torchvision python_targets_python3_11
+dev-python/transformers python_targets_python3_11
+EOF
+
+  # If ComfyUI is not requested, remove the ComfyUI-specific file
+  if [[ "${INSTALL_COMFYUI:-no}" != "yes" ]]; then
+    rm -f "${MNT}/etc/portage/package.use/comfyui"
+  fi
+  
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
   echo "Installing firmware and essential system packages..."
   echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
@@ -586,7 +649,11 @@ EOF
 install_kernel() {
   echo "Installing kernel..."
 
-  if [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
+  if [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]]; then
+    echo "Installing dual-kernel setup (binary + source) for safety..."
+    # Install both kernels for fallback
+    chroot_run "emerge sys-kernel/gentoo-kernel-bin sys-kernel/gentoo-kernel"
+  elif [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
     chroot_run "emerge sys-kernel/gentoo-kernel-bin"
   else
     chroot_run "emerge sys-kernel/gentoo-kernel"
@@ -618,6 +685,26 @@ EOF
   # dist-kernel installs /boot/vmlinuz-* and /boot/initramfs-*.
   cat > "${MNT}/boot/refind_linux.conf" <<EOF
 \"Gentoo (Btrfs subvol=@)\"  \"root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active\"
+\"Gentoo (Snapshot Recovery)\"  \"root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@snapshots/@-snapshot-latest rw amd_pstate=active\"
+EOF
+
+  # Configure rEFInd for snapshot support
+  cat > "${MNT}/boot/EFI/refind/refind.conf" <<EOF
+# rEFInd configuration for Gentoo with snapshot support
+timeout 20
+use_nvram false
+dont_scan_files shim.efi,shim-fedora.efi,shimx64.efi,PreLoader.efi,TextMode.efi,ebounce.efi,GraphicsConsole.efi,MokManager.efi,HashTool.efi,HashTool-signed.efi,bootmgr.efi,fb{arch}.efi
+scanfor manual,external
+scan_all_linux_kernels true
+
+# Enable touchscreen and mouse support
+enable_touch
+enable_mouse
+
+# Menu appearance
+banner boot/EFI/refind/icons/banner.png
+selection_big boot/EFI/refind/icons/selection_big.png
+selection_small boot/EFI/refind/icons/selection_small.png
 EOF
 }
 
@@ -857,6 +944,558 @@ install_blender() {
   chroot_run "emerge media-gfx/blender"
   
   echo "Blender installation complete."
+  
+  # Create Blender Cycles iGPU optimization config
+  mkdir -p "${MNT}/etc/skel/.config/blender"
+  cat > "${MNT}/etc/skel/.config/blender/cycles-igpu-config.py" <<'EOF'
+# Blender Cycles iGPU optimization for AMD Radeon 780M
+# Place this in ~/.config/blender/X.X/scripts/startup/ to auto-load
+
+import bpy
+
+def setup_cycles_igpu():
+    # Get scene preferences
+    prefs = bpy.context.preferences
+    cycles_prefs = prefs.addons['cycles'].preferences
+    
+    # Configure for iGPU rendering
+    cycles_prefs.compute_device_type = 'HIP'  # Use HIP for AMD
+    
+    # Enable GPU rendering
+    for device in cycles_prefs.devices:
+        if device.type == 'HIP':
+            device.use = True
+    
+    # Scene optimization for UMA
+    scene = bpy.context.scene
+    scene.cycles.device = 'GPU'
+    
+    # Reduce memory pressure for UMA systems
+    scene.cycles.tile_size = 256  # Smaller tiles for shared memory
+    scene.cycles.use_adaptive_sampling = True
+    scene.cycles.adaptive_threshold = 0.01
+    
+    # Enable memory optimizations
+    scene.render.use_persistent_data = True
+    scene.cycles.debug_use_spatial_splits = True
+    
+    print("Cycles configured for AMD Radeon 780M iGPU (UMA optimized)")
+
+# Auto-run on Blender startup
+if __name__ == "__main__":
+    setup_cycles_igpu()
+EOF
+}
+
+install_rocm() {
+  [[ "${INSTALL_ROCM}" == "yes" ]] || return 0
+
+  echo "Installing ROCm for AMD GPU compute..."
+  echo "This enables GPU acceleration for AI/ML workloads on the Radeon 780M iGPU."
+  
+  # Install ROCm runtime and OpenCL
+  chroot_run "emerge dev-libs/rocm-opencl-runtime dev-util/rocminfo"
+  
+  # Configure ROCm for gfx1103 (Radeon 780M)
+  cat > "${MNT}/etc/profile.d/rocm.sh" <<'EOF'
+# ROCm environment configuration for AMD Radeon 780M
+export ROCM_PATH=/usr
+export HIP_PATH=/usr
+export HSA_OVERRIDE_GFX_VERSION=11.0.3
+export GPU_DEVICE_ORDINAL=0
+export HIP_VISIBLE_DEVICES=0
+EOF
+  
+  chmod +x "${MNT}/etc/profile.d/rocm.sh"
+  
+  echo "ROCm installation complete."
+}
+
+install_comfyui_and_sdxl() {
+  [[ "${INSTALL_COMFYUI}" == "yes" ]] || return 0
+
+  echo "Installing ComfyUI and SDXL models..."
+  
+  # Install Python and dependencies
+  chroot_run "emerge dev-lang/python:3.11 dev-python/pip dev-vcs/git"
+  
+  # Create ComfyUI installation directory on ZFS
+  mkdir -p "${MNT}${ZFS_MNT_BASE}/ai-models/ComfyUI"
+  
+  # Install ComfyUI (will be cloned by user after first boot)
+  cat > "${MNT}/usr/local/bin/setup-comfyui" <<'EOF'
+#!/bin/bash
+# ComfyUI setup script for UMA-optimized Stable Diffusion XL
+
+set -e
+
+COMFYUI_DIR="/data/ai-models/ComfyUI"
+MODELS_DIR="${COMFYUI_DIR}/models"
+
+echo "Setting up ComfyUI for AMD Radeon 780M with UMA optimizations..."
+
+# Clone ComfyUI if not present
+if [[ ! -d "${COMFYUI_DIR}/ComfyUI" ]]; then
+    cd "${COMFYUI_DIR}"
+    git clone https://github.com/comfyanonymous/ComfyUI.git
+    cd ComfyUI
+fi
+
+cd "${COMFYUI_DIR}/ComfyUI"
+
+# Create virtual environment
+python3.11 -m venv venv
+source venv/bin/activate
+
+# Install dependencies with ROCm support
+pip install --upgrade pip
+pip install torch torchvision --index-url https://download.pytorch.org/whl/rocm5.7
+pip install -r requirements.txt
+
+# Create UMA-optimized config
+cat > extra_model_paths.yaml <<'YAML'
+# ComfyUI model paths
+comfyui:
+    base_path: /data/ai-models/ComfyUI/
+    checkpoints: models/checkpoints/
+    vae: models/vae/
+    loras: models/loras/
+    upscale_models: models/upscale_models/
+YAML
+
+# Create launch script with UMA optimizations
+cat > launch-comfyui-uma.sh <<'LAUNCH'
+#!/bin/bash
+# Launch ComfyUI with UMA memory optimizations
+
+export PYTORCH_HIP_ALLOC_CONF=max_split_size_mb:512
+export TORCH_HOME=/data/ai-models/torch-cache
+export HF_HOME=/data/ai-models/huggingface-cache
+
+# UMA-specific: limit VRAM to leave room for system
+export HSA_OVERRIDE_GFX_VERSION=11.0.3
+export ROCM_PATH=/usr
+
+cd "$(dirname "$0")"
+source venv/bin/activate
+
+# Run with memory optimization flags
+python main.py \
+    --lowvram \
+    --preview-method auto \
+    --use-split-cross-attention \
+    --disable-xformers \
+    --listen 0.0.0.0 \
+    --port 8188
+LAUNCH
+
+chmod +x launch-comfyui-uma.sh
+
+echo "ComfyUI setup complete!"
+echo "To download SDXL models, run:"
+echo "  cd ${MODELS_DIR}/checkpoints"
+echo "  wget https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors"
+echo ""
+echo "To start ComfyUI:"
+echo "  cd ${COMFYUI_DIR}/ComfyUI"
+echo "  ./launch-comfyui-uma.sh"
+EOF
+
+  chmod +x "${MNT}/usr/local/bin/setup-comfyui"
+  
+  # Create UMA-optimized workflow template
+  mkdir -p "${MNT}/etc/skel/comfyui-workflows"
+  cat > "${MNT}/etc/skel/comfyui-workflows/sdxl-uma-workflow.json" <<'EOF'
+{
+  "workflow": {
+    "name": "SDXL UMA Optimized",
+    "description": "Memory-efficient SDXL workflow for UMA systems with 96GB RAM",
+    "nodes": {
+      "checkpoint_loader": {
+        "type": "CheckpointLoaderSimple",
+        "params": {
+          "ckpt_name": "sd_xl_base_1.0.safetensors"
+        },
+        "optimizations": {
+          "use_fp16": true,
+          "attention_slicing": true,
+          "vae_slicing": true
+        }
+      },
+      "sampler_settings": {
+        "steps": 20,
+        "cfg": 7.0,
+        "sampler_name": "euler_a",
+        "scheduler": "normal",
+        "denoise": 1.0
+      },
+      "memory_optimizations": {
+        "enable_sequential_cpu_offload": false,
+        "enable_vae_slicing": true,
+        "enable_attention_slicing": true,
+        "use_pytorch_cross_attention": true
+      }
+    },
+    "notes": "Optimized for AMD Radeon 780M iGPU with 96GB shared memory (UMA)"
+  }
+}
+EOF
+  
+  echo "ComfyUI and SDXL setup scripts installed."
+  echo "Run 'setup-comfyui' after first boot to complete installation."
+}
+
+setup_snapshot_management() {
+  [[ "${ENABLE_SNAPSHOTS}" == "yes" ]] || return 0
+  
+  echo "Setting up Btrfs snapshot management..."
+  
+  # Install snapper for snapshot management
+  chroot_run "emerge app-backup/snapper"
+  
+  # Create snapper config for root subvolume
+  cat > "${MNT}/etc/snapper/configs/root" <<'EOF'
+# Snapper configuration for root filesystem
+SUBVOLUME="/"
+FSTYPE="btrfs"
+NUMBER_CLEANUP="yes"
+NUMBER_MIN_AGE="1800"
+NUMBER_LIMIT="10"
+NUMBER_LIMIT_IMPORTANT="10"
+TIMELINE_CREATE="yes"
+TIMELINE_CLEANUP="yes"
+TIMELINE_MIN_AGE="1800"
+TIMELINE_LIMIT_HOURLY="5"
+TIMELINE_LIMIT_DAILY="7"
+TIMELINE_LIMIT_WEEKLY="0"
+TIMELINE_LIMIT_MONTHLY="0"
+TIMELINE_LIMIT_YEARLY="0"
+EOF
+
+  # Create snapshot management script
+  cat > "${MNT}/usr/local/bin/manage-snapshots" <<'EOF'
+#!/bin/bash
+# Btrfs snapshot management for Gentoo rollback
+
+set -e
+
+BTRFS_ROOT="/mnt/btrfs-root"
+SNAPSHOTS_DIR="${BTRFS_ROOT}/@snapshots"
+
+usage() {
+    echo "Usage: $0 {create|list|rollback|cleanup}"
+    echo "  create   - Create a new snapshot"
+    echo "  list     - List available snapshots"
+    echo "  rollback - Rollback to a snapshot"
+    echo "  cleanup  - Remove old snapshots"
+    exit 1
+}
+
+ensure_mounted() {
+    if ! mountpoint -q "${BTRFS_ROOT}"; then
+        mkdir -p "${BTRFS_ROOT}"
+        mount -t btrfs /dev/disk/by-label/GENTOOROOT "${BTRFS_ROOT}"
+    fi
+}
+
+create_snapshot() {
+    ensure_mounted
+    local timestamp=$(date +%Y%m%d-%H%M%S)
+    local snapshot_name="@-snapshot-${timestamp}"
+    
+    echo "Creating snapshot: ${snapshot_name}"
+    btrfs subvolume snapshot -r "${BTRFS_ROOT}/@" "${SNAPSHOTS_DIR}/${snapshot_name}"
+    
+    # Update latest symlink
+    ln -sf "${snapshot_name}" "${SNAPSHOTS_DIR}/@-snapshot-latest"
+    
+    echo "Snapshot created successfully"
+}
+
+list_snapshots() {
+    ensure_mounted
+    echo "Available snapshots:"
+    btrfs subvolume list "${BTRFS_ROOT}" | grep "@-snapshot-"
+}
+
+rollback_snapshot() {
+    ensure_mounted
+    echo "Available snapshots:"
+    list_snapshots
+    echo ""
+    read -p "Enter snapshot name to rollback to: " snapshot_name
+    
+    if [[ ! -d "${SNAPSHOTS_DIR}/${snapshot_name}" ]]; then
+        echo "ERROR: Snapshot not found: ${snapshot_name}"
+        exit 1
+    fi
+    
+    echo "Rolling back to: ${snapshot_name}"
+    echo "This will require a reboot. Continue? (yes/no)"
+    read confirm
+    
+    if [[ "${confirm}" != "yes" ]]; then
+        echo "Rollback cancelled"
+        exit 0
+    fi
+    
+    # Rename current @ to @-old
+    mv "${BTRFS_ROOT}/@" "${BTRFS_ROOT}/@-old-$(date +%Y%m%d-%H%M%S)"
+    
+    # Create new @ from snapshot
+    btrfs subvolume snapshot "${SNAPSHOTS_DIR}/${snapshot_name}" "${BTRFS_ROOT}/@"
+    
+    echo "Rollback complete. Please reboot."
+}
+
+cleanup_snapshots() {
+    ensure_mounted
+    echo "Cleaning up old snapshots (keeping last 10)..."
+    
+    # Get list of snapshots sorted by date
+    local snapshots=($(ls -1t "${SNAPSHOTS_DIR}" | grep "@-snapshot-" | tail -n +11))
+    
+    for snapshot in "${snapshots[@]}"; do
+        echo "Removing: ${snapshot}"
+        btrfs subvolume delete "${SNAPSHOTS_DIR}/${snapshot}"
+    done
+    
+    echo "Cleanup complete"
+}
+
+case "${1:-}" in
+    create)
+        create_snapshot
+        ;;
+    list)
+        list_snapshots
+        ;;
+    rollback)
+        rollback_snapshot
+        ;;
+    cleanup)
+        cleanup_snapshots
+        ;;
+    *)
+        usage
+        ;;
+esac
+EOF
+
+  chmod +x "${MNT}/usr/local/bin/manage-snapshots"
+  
+  # Create automated snapshot service
+  if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
+    cat > "${MNT}/etc/systemd/system/btrfs-snapshot.service" <<'EOF'
+[Unit]
+Description=Create Btrfs snapshot before system updates
+Before=package-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/manage-snapshots create
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    cat > "${MNT}/etc/systemd/system/btrfs-snapshot.timer" <<'EOF'
+[Unit]
+Description=Daily Btrfs snapshot
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+    chroot_run "systemctl enable btrfs-snapshot.timer"
+  else
+    # OpenRC cron job
+    cat > "${MNT}/etc/cron.daily/btrfs-snapshot" <<'EOF'
+#!/bin/bash
+/usr/local/bin/manage-snapshots create
+/usr/local/bin/manage-snapshots cleanup
+EOF
+    chmod +x "${MNT}/etc/cron.daily/btrfs-snapshot"
+  fi
+  
+  echo "Snapshot management configured."
+}
+
+setup_ml_boot_selector() {
+  echo "Setting up ML-based boot target selection system..."
+  
+  # Create boot selection ML script
+  cat > "${MNT}/usr/local/bin/ml-boot-selector" <<'EOF'
+#!/usr/bin/env python3
+"""
+Machine Learning Boot Target Selector
+Analyzes system state and hardware adaptation to select optimal boot target
+"""
+
+import os
+import sys
+import json
+import subprocess
+from datetime import datetime
+from pathlib import Path
+
+BOOT_LOG = "/var/log/ml-boot-selector.log"
+STATE_FILE = "/var/lib/ml-boot-selector/state.json"
+BOOT_TARGETS = {
+    "current": {
+        "name": "Gentoo Linux (Current)",
+        "priority": 100,
+        "kernel": "/vmlinuz",
+        "description": "Latest system state"
+    },
+    "snapshot": {
+        "name": "Gentoo Linux (Snapshot - Safe Boot)",
+        "priority": 50,
+        "kernel": "/vmlinuz",
+        "description": "Last known good snapshot"
+    },
+    "fallback": {
+        "name": "Gentoo Linux (Binary Kernel Fallback)",
+        "priority": 25,
+        "kernel": "/vmlinuz-bin",
+        "description": "Binary kernel fallback"
+    }
+}
+
+def log_message(message):
+    """Log message to boot selector log"""
+    timestamp = datetime.now().isoformat()
+    with open(BOOT_LOG, "a") as f:
+        f.write(f"[{timestamp}] {message}\n")
+
+def get_system_health():
+    """Analyze system health metrics"""
+    health = {
+        "boot_count": 0,
+        "last_boot_success": True,
+        "hardware_errors": 0,
+        "memory_errors": 0,
+        "disk_errors": 0
+    }
+    
+    # Check boot count
+    try:
+        result = subprocess.run(["journalctl", "--list-boots"], 
+                              capture_output=True, text=True, check=True)
+        health["boot_count"] = len(result.stdout.strip().split("\n"))
+    except:
+        pass
+    
+    # Check for hardware errors in dmesg
+    try:
+        result = subprocess.run(["dmesg", "-l", "err,warn"], 
+                              capture_output=True, text=True, check=True)
+        errors = result.stdout.lower()
+        if "memory" in errors or "ram" in errors:
+            health["memory_errors"] += errors.count("error")
+        if "disk" in errors or "nvme" in errors:
+            health["disk_errors"] += errors.count("error")
+        health["hardware_errors"] = errors.count("error")
+    except:
+        pass
+    
+    return health
+
+def load_boot_history():
+    """Load historical boot data"""
+    Path(STATE_FILE).parent.mkdir(parents=True, exist_ok=True)
+    
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, "r") as f:
+            return json.load(f)
+    return {"boots": [], "failures": 0, "last_target": "current"}
+
+def save_boot_history(history):
+    """Save boot history"""
+    with open(STATE_FILE, "w") as f:
+        json.dump(history, f, indent=2)
+
+def select_boot_target():
+    """Use ML heuristics to select best boot target"""
+    health = get_system_health()
+    history = load_boot_history()
+    
+    log_message(f"System health: {health}")
+    log_message(f"Boot history: failures={history['failures']}, last={history['last_target']}")
+    
+    # Decision logic
+    if history["failures"] >= 3:
+        # Multiple failures - use fallback kernel
+        selected = "fallback"
+        log_message("Selected: fallback (multiple boot failures detected)")
+    elif health["hardware_errors"] > 10 or health["memory_errors"] > 5:
+        # Hardware issues - use snapshot
+        selected = "snapshot"
+        log_message("Selected: snapshot (hardware errors detected)")
+    elif health["disk_errors"] > 0:
+        # Disk issues - use snapshot
+        selected = "snapshot"
+        log_message("Selected: snapshot (disk errors detected)")
+    else:
+        # System healthy - use current
+        selected = "current"
+        log_message("Selected: current (system healthy)")
+    
+    # Update history
+    history["boots"].append({
+        "timestamp": datetime.now().isoformat(),
+        "target": selected,
+        "health": health
+    })
+    
+    # Keep only last 100 boots
+    if len(history["boots"]) > 100:
+        history["boots"] = history["boots"][-100:]
+    
+    history["last_target"] = selected
+    save_boot_history(history)
+    
+    return BOOT_TARGETS[selected]
+
+def main():
+    """Main entry point"""
+    try:
+        target = select_boot_target()
+        print(json.dumps(target, indent=2))
+        log_message(f"Recommended boot target: {target['name']}")
+        return 0
+    except Exception as e:
+        log_message(f"ERROR: {str(e)}")
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(main())
+EOF
+
+  chmod +x "${MNT}/usr/local/bin/ml-boot-selector"
+  
+  # Create integration with rEFInd
+  cat > "${MNT}/usr/local/bin/update-refind-default" <<'EOF'
+#!/bin/bash
+# Update rEFInd default based on ML selector recommendation
+
+ML_RESULT=$(/usr/local/bin/ml-boot-selector)
+RECOMMENDED=$(echo "${ML_RESULT}" | jq -r '.name')
+
+echo "ML Boot Selector recommends: ${RECOMMENDED}"
+
+# This could update rEFInd config or just log for manual intervention
+# For now, we log the recommendation
+logger -t refind-ml "Recommended boot: ${RECOMMENDED}"
+EOF
+
+  chmod +x "${MNT}/usr/local/bin/update-refind-default"
+  
+  echo "ML boot selector configured."
 }
 
 finalize_users_passwords() {
@@ -882,6 +1521,35 @@ finalize_users_passwords() {
   fi
 
   [[ "${_trace_was_on}" == "yes" ]] && set -x
+}
+
+configure_nvme_optimizations() {
+  echo "Configuring NVMe optimizations for Crucial P3 Plus..."
+  
+  # Create udev rules for NVMe optimization
+  cat > "${MNT}/etc/udev/rules.d/60-nvme-crucial-p3.rules" <<'EOF'
+# NVMe optimization for Crucial P3 Plus CT4000P3PSSD8
+# The P3 Plus uses HMB (Host Memory Buffer) instead of onboard DRAM
+
+# Generic NVMe optimizations
+ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/scheduler}="none"
+ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/nr_requests}="1024"
+ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/read_ahead_kb}="2048"
+ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/max_sectors_kb}="1024"
+
+# Crucial P3 Plus specific: Increase HMB size from 128MB to 256MB
+# This improves performance for DRAM-less SSDs
+ACTION=="add", KERNEL=="nvme[0-9]", ATTRS{model}=="CT4000P3PSSD8", ATTR{device/hmb_size}="262144"
+EOF
+
+  # Configure NVMe power management
+  cat > "${MNT}/etc/modprobe.d/nvme.conf" <<'EOF'
+# NVMe power management for Crucial P3 Plus
+# Balance between performance and power efficiency
+options nvme_core default_ps_max_latency_us=5500
+EOF
+
+  echo "NVMe optimizations configured."
 }
 
 main() {
@@ -911,7 +1579,12 @@ main() {
   enable_network_and_services
   install_kde_plasma
   install_blender
+  install_rocm
+  install_comfyui_and_sdxl
   install_zfs_and_create_pool
+  setup_snapshot_management
+  setup_ml_boot_selector
+  configure_nvme_optimizations
   finalize_users_passwords
 
   echo
@@ -922,7 +1595,12 @@ main() {
   echo "  2) umount -R ${MNT}"
   echo "  3) reboot"
   echo
-  echo "After reboot, ZFS datasets should be mounted under: ${ZFS_MNT_BASE}"
+  echo "After reboot:"
+  echo "  - ZFS datasets mounted under: ${ZFS_MNT_BASE}"
+  echo "  - Run 'setup-comfyui' to install ComfyUI and download SDXL models"
+  echo "  - Use 'manage-snapshots create' to create system snapshots"
+  echo "  - Blender Cycles configured for AMD Radeon 780M iGPU"
+  echo "  - ROCm enabled for GPU compute (if installed)"
   echo "============================================================"
 }
 

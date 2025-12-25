@@ -53,9 +53,7 @@ chmod +x gentoo-um890pro-install.sh
 
 - `HOSTNAME` — hostname to set in the installed system.
 - `OS_DISK` — device for OS (defaults to `/dev/nvme0n1`). Prefer `/dev/disk/by-id/...` paths.
-  - Example for Crucial P3 Plus: `/dev/disk/by-id/nvme-CT4000P3PSSD8_SERIAL1`
 - `DATA_DISK` — device used for ZFS pool (defaults to `/dev/nvme1n1`). Prefer `/dev/disk/by-id/...` paths.
-  - Example for Crucial P3 Plus: `/dev/disk/by-id/nvme-CT4000P3PSSD8_SERIAL2`
 - `ESP_SIZE_MIB` — size of the EFI partition.
 - `BTRFS_LABEL`, `ESP_LABEL` — filesystem labels.
 - `MNT`, `ESP_MNT`, `ZFS_MNT_BASE` — mountpoints used during install.
@@ -63,34 +61,9 @@ chmod +x gentoo-um890pro-install.sh
 - `USE_BINARY_KERNEL` — `yes` to install `gentoo-kernel-bin`.
 - `INSTALL_KDE_PLASMA` — `yes` to install KDE Plasma 6 + Wayland + SDDM.
 - `INSTALL_BLENDER` — `yes` to install Blender 3D creation suite with OpenGL and Vulkan support.
-- `INSTALL_COMFYUI` — `yes` to set up ComfyUI for AI image generation (manual setup required post-install).
-- `INSTALL_ROCM` — `yes` to install ROCm for AMD GPU compute acceleration.
-- `INSTALL_SDXL` — `yes` to configure system for Stable Diffusion XL models.
-- `INSTALL_DUAL_KERNEL` — `yes` to install both binary and source kernels for fallback.
-- `ENABLE_SNAPSHOTS` — `yes` to set up automated Btrfs snapshot management.
 - `ZPOOL` — name of the ZFS pool created (default `tank`).
 - `COMMON_FLAGS` — compile flags written to `make.conf`.
 - `TIMEZONE`, `LOCALE` — timezone/locale written into the installed system.
-
-### Storage: Crucial P3 Plus 4TB NVMe (CT4000P3PSSD8)
-
-This installer is optimized for the **Crucial P3 Plus 4TB** (model CT4000P3PSSD8):
-- **Capacity**: 4TB per drive (3.7 TiB usable, 7.4 TiB total)
-- **Interface**: PCIe 4.0 x4, NVMe 1.4
-- **Performance**: Up to 4,800 MB/s read, 4,100 MB/s write
-- **Architecture**: DRAM-less design with HMB (Host Memory Buffer)
-- **Endurance**: 800 TBW per drive
-
-**Drive identification**:
-```bash
-# List drives with model numbers
-lsblk -o NAME,SIZE,MODEL
-
-# Find stable device paths
-ls -l /dev/disk/by-id/ | grep CT4000P3PSSD8
-```
-
-**HMB optimization**: The installer configures udev rules to increase the HMB size from the default 128MB to 256MB for better performance with DRAM-less SSDs. See [OPTIMIZATION_GUIDE.md](docs/OPTIMIZATION_GUIDE.md) for details.
 
 ### Tuning zram (OpenRC)
 
