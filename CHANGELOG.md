@@ -29,7 +29,7 @@ All notable changes to this project will be documented in this file.
 - Optimized package.use configurations for ROCm, ComfyUI dependencies
 - Added DDR5-5600 specific memory optimizations (huge pages, swappiness tuning)
 - Configured memory bandwidth optimizations for 96GB dual-channel DDR5-5600
-- Version bump to 0.1.9
+- Prepare changes for upcoming 0.1.9 release (pre-release; version will be finalized upon release)
 
 ## [0.1.8] - 2025-12-25
 - Switch qtbase-6.9.3+ to use Vulkan backend instead of OpenGL
