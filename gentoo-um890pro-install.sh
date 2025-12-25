@@ -1040,15 +1040,15 @@ MODELS_DIR="${COMFYUI_DIR}/models"
 echo "Setting up ComfyUI for AMD Radeon 780M with UMA optimizations..."
 
 # Clone ComfyUI if not present
-if [[ ! -d "${COMFYUI_DIR}/ComfyUI" ]]; then
-    cd "${COMFYUI_DIR}"
-    git clone https://github.com/comfyanonymous/ComfyUI.git
-    cd ComfyUI
+if [[ ! -d "${COMFYUI_DIR}" ]]; then
+    git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"
 fi
 
-cd "${COMFYUI_DIR}/ComfyUI"
+cd "${COMFYUI_DIR}"
 
 # Create virtual environment
+python3.11 -m venv venv
+source venv/bin/activate
 python3.11 -m venv venv
 source venv/bin/activate
 
