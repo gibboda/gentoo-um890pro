@@ -492,9 +492,9 @@ EOF
 
   # Qt 6 Additional Modules
   cat > "${MNT}/etc/portage/package.use/qt-modules" <<EOF
-# Qt declarative (QML) requires Vulkan to match qtbase configuration
+# Qt declarative (QML) configured with Vulkan for consistency with qtbase
 >=dev-qt/qtdeclarative-6.9.3 vulkan
-# Qt tools (Designer, Linguist, etc.) need Vulkan support
+# Qt tools (Designer, Linguist, etc.) configured with Vulkan for consistency
 >=dev-qt/qttools-6.9.3 vulkan
 # Qt multimedia for audio/video in KDE applications
 dev-qt/qtmultimedia qml
