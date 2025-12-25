@@ -18,6 +18,13 @@ This installer is specifically optimized for:
 
 See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware information.
 
+## Documentation
+
+- **[Installation Guide](docs/INSTALLATION_GUIDE.md)** - Step-by-step installation instructions
+- **[Hardware Setup](docs/HARDWARE_SETUP.md)** - BIOS configuration, hardware verification
+- **[System Specifications](docs/SYSTEM_SPECS.md)** - Complete hardware specifications
+- **[Optimization Guide](docs/OPTIMIZATION_GUIDE.md)** - Performance tuning and optimizations
+
 ## Overview
 
 - OS disk: EFI System Partition (FAT32) + Btrfs root with subvolumes (`@`, `@home`, `@var`, `@snapshots`).
