@@ -3,10 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- Fix qtbase-6.9.3+ USE flag configuration to disable vulkan and prevent dependency conflicts
-  - Remove vulkan USE flag from dev-qt/qtbase (use `-vulkan` instead)
-  - Vulkan support for applications is still provided via media-libs/mesa
-  - This resolves "USE changes are necessary to proceed: >=dev-qt/qtbase-6.9.3 -vulkan" error
+- Switch qtbase-6.9.3+ to use Vulkan backend instead of OpenGL
+  - Update dev-qt/qtbase USE flags to `-opengl vulkan` (was `opengl -vulkan`)
+  - Add package.accept_keywords for dev-util/vulkan-headers ~amd64 to satisfy dependency
+  - This resolves "USE changes are necessary: >=dev-qt/qtbase-6.9.3 -opengl vulkan" requirement
+  - Vulkan backend is used for Qt 6 and KDE Plasma 6 in this configuration
 - Separate KDE Plasma 6 package.use configuration into modular components for better maintainability
   - Split into separate files: qt-base, qt-modules, kde-frameworks, kde-plasma, graphics, blender
   - Allows independent management of different dependency groups
