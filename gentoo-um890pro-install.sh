@@ -454,6 +454,12 @@ EOF
 sys-kernel/linux-firmware ~amd64
 EOF
 
+  # Accept testing keyword for vulkan-headers (required by qtbase-6.9.3 with vulkan USE flag)
+  cat > "${MNT}/etc/portage/package.accept_keywords/vulkan-headers" <<EOF
+# Required by dev-qt/qtbase-6.9.3[vulkan]
+dev-util/vulkan-headers ~amd64
+EOF
+
   # Configure package.use for installkernel based on selected init system
   mkdir -p "${MNT}/etc/portage/package.use"
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -472,14 +478,13 @@ EOF
   # Separate configuration files allow independent management of different component groups
   
   # Qt 6 Core Packages - Graphics Backend Configuration
-  # OpenGL is used for qtbase to avoid dependency conflicts
-  # Vulkan support is provided via mesa for applications that need it (Blender, games, etc.)
-  # This configuration supports KDE Plasma 6, Wayland, and graphics applications
+  # Vulkan is now required for qtbase-6.9.3+ to satisfy dependency requirements
+  # This configuration supports KDE Plasma 6, Wayland, and modern graphics applications
   cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
-# Qt 6 base library with OpenGL support
-# Note: Vulkan is disabled for qtbase-6.9.3+ to avoid USE flag dependency conflicts
-# Applications requiring Vulkan (like Blender) get it through mesa instead
->=dev-qt/qtbase-6.9.3 libproxy icu cups opengl -vulkan
+# Qt 6 base library with Vulkan support
+# Note: qtbase-6.9.3+ requires Vulkan backend (OpenGL is disabled)
+# dev-util/vulkan-headers is unmasked via package.accept_keywords
+>=dev-qt/qtbase-6.9.3 libproxy icu cups -opengl vulkan
 dev-qt/qt5compat qml icu
 app-text/xmlto text
 sys-libs/zlib minizip
@@ -487,10 +492,10 @@ EOF
 
   # Qt 6 Additional Modules
   cat > "${MNT}/etc/portage/package.use/qt-modules" <<EOF
-# Qt declarative (QML) requires OpenGL to match qtbase configuration
->=dev-qt/qtdeclarative-6.9.3 opengl
-# Qt tools (Designer, Linguist, etc.) need OpenGL support
->=dev-qt/qttools-6.9.3 opengl
+# Qt declarative (QML) requires Vulkan to match qtbase configuration
+>=dev-qt/qtdeclarative-6.9.3 vulkan
+# Qt tools (Designer, Linguist, etc.) need Vulkan support
+>=dev-qt/qttools-6.9.3 vulkan
 # Qt multimedia for audio/video in KDE applications
 dev-qt/qtmultimedia qml
 EOF
