@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.0.0] - 2025-12-25
 - Comprehensive rewrite for Gentoo UM890 Pro optimization
 - Target hardware specifications documented:
   - Memory: 2× Crucial 48GB DDR5-5600 (CT48G56C46S5, 96GB total)
