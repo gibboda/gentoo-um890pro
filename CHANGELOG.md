@@ -25,7 +25,7 @@ All notable changes to this project will be documented in this file.
 - Created hardware setup guide (HARDWARE_SETUP.md)
 - Added snapshot management scripts with automatic cleanup
 - Added boot selection ML system scripts with health monitoring
-- Configuration variables: `INSTALL_COMFYUI`, `INSTALL_ROCM`, `INSTALL_SDXL`, `INSTALL_DUAL_KERNEL`, `ENABLE_SNAPSHOTS`
+- Configuration variables: `INSTALL_COMFYUI` (includes SDXL support), `INSTALL_ROCM`, `INSTALL_DUAL_KERNEL`, `ENABLE_SNAPSHOTS`
 - Optimized package.use configurations for ROCm, ComfyUI dependencies
 - Added DDR5-5600 specific memory optimizations (huge pages, swappiness tuning)
 - Configured memory bandwidth optimizations for 96GB dual-channel DDR5-5600

@@ -139,9 +139,8 @@
 
 ### Installation Script Enhancements
 1. **New Configuration Variables**:
-   - `INSTALL_COMFYUI` - ComfyUI installation
+   - `INSTALL_COMFYUI` - ComfyUI installation (includes SDXL support)
    - `INSTALL_ROCM` - ROCm for GPU compute
-   - `INSTALL_SDXL` - SDXL model support
    - `INSTALL_DUAL_KERNEL` - Dual-kernel setup
    - `ENABLE_SNAPSHOTS` - Snapshot management
 
