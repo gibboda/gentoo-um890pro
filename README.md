@@ -21,6 +21,7 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 ## Documentation
 
 - **[Installation Guide](docs/INSTALLATION_GUIDE.md)** - Step-by-step installation instructions
+- **[Kernel Management](docs/KERNEL_MANAGEMENT.md)** - Kernel backup, optimization, and fallback strategies
 - **[Hardware Setup](docs/HARDWARE_SETUP.md)** - BIOS configuration, hardware verification
 - **[System Specifications](docs/SYSTEM_SPECS.md)** - Complete hardware specifications
 - **[Optimization Guide](docs/OPTIMIZATION_GUIDE.md)** - Performance tuning and optimizations
@@ -30,7 +31,7 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 - OS disk: EFI System Partition (FAT32) + Btrfs root with subvolumes (`@`, `@home`, `@var`, `@snapshots`).
 - Data disk: single-partition ZFS pool with datasets under `ZFS_MNT_BASE` (default `/data`).
 - Init system: `openrc` (default) or `systemd` (controlled by `INIT_SYSTEM`).
-- Kernel: installs `gentoo-kernel-bin` when `USE_BINARY_KERNEL=yes`, otherwise builds from source.
+- Kernel: installs `gentoo-kernel-bin` by default for fast setup. Use `switch-to-source-kernel` after installation to optimize.
 - Bootloader: rEFInd (UEFI).
 - Desktop: KDE Plasma 6 with Wayland (controlled by `INSTALL_KDE_PLASMA`).
 - Interactive: requires typed confirmation (`WIPE-AND-INSTALL`), prompts for root password, optional user creation.
@@ -84,7 +85,7 @@ chmod +x gentoo-um890pro-install.sh
 - `INSTALL_BLENDER` — `yes` to install Blender 3D creation suite with OpenGL and Vulkan support.
 - `INSTALL_COMFYUI` — `yes` to set up ComfyUI for AI image generation with SDXL support (manual setup required post-install).
 - `INSTALL_ROCM` — `yes` to install ROCm for AMD GPU compute acceleration.
-- `INSTALL_DUAL_KERNEL` — `yes` to install both binary and source kernels for fallback.
+- `INSTALL_DUAL_KERNEL` — **DEPRECATED**: Now behaves the same as `USE_BINARY_KERNEL=yes`. Binary and source kernels of the same version cannot coexist. For kernel fallback, keep old kernel versions instead.
 - `ENABLE_SNAPSHOTS` — `yes` to set up automated Btrfs snapshot management.
 - `ZPOOL` — name of the ZFS pool created (default `tank`).
 - `COMMON_FLAGS` — compile flags written to `make.conf`.
@@ -136,6 +137,38 @@ reboot
 ```
 
 After reboot, ZFS datasets are mounted under `ZFS_MNT_BASE` (default `/data`).
+
+### Kernel optimization and backup
+
+The installer uses a binary kernel (`gentoo-kernel-bin`) by default for fast initial setup. To switch to a source kernel for optimization and customization:
+
+```bash
+sudo switch-to-source-kernel
+```
+
+This helper script will:
+- **Preserve old kernel versions automatically** for backup/fallback
+- Install the source kernel (`sys-kernel/gentoo-kernel`)
+- Automatically replace the binary kernel in the same slot
+- Keep your kernel configuration
+- Optionally customize kernel config with `menuconfig`
+- Guide you through the process (takes 30-60 minutes to build)
+
+#### Kernel backup and fallback strategy
+
+- **Old kernels are kept automatically**: The system is configured to preserve previous kernel versions as backups
+- **Boot menu access**: All installed kernel versions appear in the rEFInd boot menu
+- **Safe upgrades**: When upgrading kernels, old versions remain bootable until you manually remove them
+- **Multiple versions supported**: Keep 2-3 kernel versions for safety
+- **Slot-based system**: Each kernel version uses a different slot (e.g., 6.12.58, 6.13.0)
+
+**Important**: Binary and source kernels cannot coexist in the same version/slot. If you have kernel 6.12.58 as binary, installing source 6.12.58 will replace it. However, you can keep binary 6.12.58 AND source 6.13.0 (different versions).
+
+View preserved kernels:
+```bash
+cat /etc/portage/sets/kernels
+eselect kernel list
+```
 
 ### Note: ZFS and binary kernels
 

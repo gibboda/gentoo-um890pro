@@ -115,8 +115,8 @@ Before running the installer, verify:
    INIT_SYSTEM="openrc"  # or "systemd"
    
    # Kernel choice
-   USE_BINARY_KERNEL="no"  # Uses source kernel
-   INSTALL_DUAL_KERNEL="yes"  # Installs both for safety
+   USE_BINARY_KERNEL="yes"  # Recommended: use binary kernel for speed
+   # Note: INSTALL_DUAL_KERNEL is deprecated (binary and source of same version conflict)
    
    # Desktop and features
    INSTALL_KDE_PLASMA="yes"

@@ -92,8 +92,9 @@ ZFS_MNT_BASE="/data"    # ZFS pool mount base inside the installed OS
 # "openrc" (default; includes an OpenRC zram swap service) or "systemd"
 INIT_SYSTEM="openrc"
 
-# Use a binary kernel for speed/simplicity (recommended)
-USE_BINARY_KERNEL="no"  # yes/no
+# Use a binary kernel for speed/simplicity (recommended for initial installation)
+# You can switch to source kernel later using: sudo switch-to-source-kernel
+USE_BINARY_KERNEL="yes"  # yes/no
 
 # ZFS pool name + datasets
 ZPOOL="tank"
@@ -110,8 +111,10 @@ INSTALL_ROCM="yes"        # yes/no - Install ROCm for AMD GPU compute
 # Pure 64-bit (no multilib). The script will try to pick a no-multilib profile.
 PURE_64BIT="yes"  # yes/no
 
-# Dual-kernel setup for safety
-INSTALL_DUAL_KERNEL="yes"  # yes/no - Install both binary and source kernels
+# DEPRECATED: Dual-kernel setup. Now behaves the same as USE_BINARY_KERNEL=yes.
+# Binary and source kernels of the same version cannot coexist (soft-block conflict).
+# For kernel fallback, keep old kernel versions instead of trying to install both types.
+INSTALL_DUAL_KERNEL="no"  # yes/no - Deprecated, use USE_BINARY_KERNEL instead
 
 # Enable snapshot management for Btrfs
 ENABLE_SNAPSHOTS="yes"  # yes/no - Set up automated snapshot management
@@ -364,6 +367,20 @@ ABI_X86="64"
 # Multiple targets allow packages with different Python versions to coexist
 PYTHON_TARGETS="python3_12 python3_13"
 PYTHON_SINGLE_TARGET="python3_12"
+EOF
+
+  # Configure Portage to keep old kernel versions for backup/fallback
+  # This prevents emerge --depclean from removing old kernels automatically.
+  # Kernel preservation is handled via the dedicated Portage set below.
+
+  # Add configuration to preserve multiple kernel slots
+  mkdir -p "${MNT}/etc/portage/sets"
+  cat > "${MNT}/etc/portage/sets/kernels" <<'EOF'
+# Kernel preservation set
+# Add specific kernel versions here to prevent removal
+# Example (edit after installation):
+# sys-kernel/gentoo-kernel-bin:6.12.58
+# sys-kernel/gentoo-kernel:6.13.0
 EOF
 
   # Mount chroot binds
@@ -689,16 +706,10 @@ EOF
 install_kernel() {
   echo "Installing kernel..."
 
-  if [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]]; then
-    echo "Installing dual-kernel setup (binary + source) for safety..."
-    # Install kernels sequentially to avoid slot blocking conflicts
-    # The binary and source kernels soft-block each other in the same slot,
-    # but can coexist when installed separately.
-    echo "Installing binary kernel first..."
-    chroot_run "emerge sys-kernel/gentoo-kernel-bin"
-    echo "Installing source kernel second..."
-    chroot_run "emerge sys-kernel/gentoo-kernel"
-  elif [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
+  # Note: INSTALL_DUAL_KERNEL is deprecated and now behaves the same as USE_BINARY_KERNEL=yes
+  # The binary and source kernels of the same version cannot coexist (they soft-block each other).
+  # For kernel fallback/safety, keep old kernel versions around rather than trying to install both types.
+  if [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]] || [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
     chroot_run "emerge sys-kernel/gentoo-kernel-bin"
   else
     chroot_run "emerge sys-kernel/gentoo-kernel"
@@ -1267,7 +1278,7 @@ rollback_snapshot() {
     echo "Available snapshots:"
     list_snapshots
     echo ""
-    read -p "Enter snapshot name to rollback to: " snapshot_name
+    read -r -p "Enter snapshot name to rollback to: " snapshot_name
     
     if [[ ! -d "${SNAPSHOTS_DIR}/${snapshot_name}" ]]; then
         echo "ERROR: Snapshot not found: ${snapshot_name}"
@@ -1595,6 +1606,401 @@ EOF
   echo "NVMe optimizations configured."
 }
 
+create_kernel_switch_helper() {
+  echo "Creating kernel switch helper script..."
+  
+  # Ensure target directory exists for the helper script
+  mkdir -p "${MNT}/usr/local/bin"
+  # Create helper script for switching from binary to source kernel
+  cat > "${MNT}/usr/local/bin/switch-to-source-kernel" <<'EOF'
+#!/bin/bash
+# Helper script to switch from gentoo-kernel-bin to gentoo-kernel (source)
+# This allows users to optimize their kernel after initial installation
+
+set -e
+
+if [[ $EUID -ne 0 ]]; then
+   echo "ERROR: This script must be run as root" 
+   exit 1
+fi
+
+echo "================================================================================"
+echo "Kernel Switch Helper: Binary to Source (with Backup)"
+echo "================================================================================"
+echo
+echo "This script will help you switch from the binary kernel (gentoo-kernel-bin)"
+echo "to the source kernel (gentoo-kernel) for optimization and customization."
+echo
+echo "IMPORTANT NOTES:"
+echo "  1. The binary and source kernels CANNOT coexist in the same slot"
+echo "  2. Old kernel versions will be kept automatically for backup/fallback"
+echo "  3. Building the source kernel will take 30-60 minutes"
+echo "  4. Your current kernel configuration will be preserved"
+echo "  5. You can boot into old kernels from the rEFInd boot menu"
+echo
+echo "Current kernel packages:"
+emerge --search sys-kernel/gentoo-kernel 2>/dev/null | grep -E '^\* sys-kernel/gentoo-kernel$|^[[:space:]]*Latest version available:|^[[:space:]]*Installed versions:' || true
+echo
+
+read -r -p "Do you want to proceed? (yes/no): " confirm
+if [[ "${confirm}" != "yes" ]]; then
+    echo "Aborted."
+    exit 0
+fi
+
+echo
+echo "================================================================================"
+echo "Step 1: Recording current kernel for backup..."
+echo "================================================================================"
+
+# Get current kernel version to preserve
+CURRENT_KERNEL=$(eselect kernel show | grep -oP 'linux-\K[0-9]+\.[0-9]+\.[0-9]+.*' || echo "unknown")
+echo "Current kernel version: ${CURRENT_KERNEL}"
+
+# Paths for kernel preservation set and lock file
+KERNEL_SET_FILE="/etc/portage/sets/kernels"
+KERNEL_SET_LOCK="${KERNEL_SET_FILE}.lock"
+
+# Find installed binary kernel packages (prefer qlist, but fall back to eix/emerge if needed)
+if command -v qlist >/dev/null 2>&1; then
+    BINARY_KERNELS=$(qlist -ICv sys-kernel/gentoo-kernel-bin 2>/dev/null || echo "")
+elif command -v eix >/dev/null 2>&1; then
+    # eix fallback: list installed package atoms matching sys-kernel/gentoo-kernel-bin
+    BINARY_KERNELS=$(eix -I --only-names sys-kernel/gentoo-kernel-bin 2>/dev/null || echo "")
+elif command -v emerge >/dev/null 2>&1; then
+    # emerge fallback: parse search output to extract the package atom
+    BINARY_KERNELS=$(emerge -s sys-kernel/gentoo-kernel-bin 2>/dev/null | awk '/^\* sys-kernel\/gentoo-kernel-bin/ {print $2}' || echo "")
+else
+    BINARY_KERNELS=""
+fi
+if [[ -n "${BINARY_KERNELS}" ]]; then
+    echo "Binary kernels installed:"
+    echo "${BINARY_KERNELS}"
+
+    # Add to kernel preservation set
+    echo
+    echo "Adding current binary kernel(s) to preservation set..."
+
+    # Use a lockfile if flock is available to avoid concurrent modifications.
+    if command -v flock >/dev/null 2>&1; then
+        flock_cmd=(flock -w 10 "${KERNEL_SET_LOCK}")
+    else
+        flock_cmd=()
+    fi
+
+    # Run the update under the (optional) lock, avoiding duplicate entries and
+    # only adding a comment when at least one new kernel is preserved.
+    "${flock_cmd[@]}" bash -c '
+        set -Eeuo pipefail
+        kernel_set_file="$1"
+        shift
+
+        # Ensure the set file exists
+        touch "${kernel_set_file}"
+
+        added_any=false
+        for pkg in "$@"; do
+            # Skip empty lines
+            [[ -z "${pkg}" ]] && continue
+
+            # Only add package if it is not already present
+            if ! grep -qxF "${pkg}" "${kernel_set_file}"; then
+                if [ "${added_any}" = false ]; then
+                    echo "# Auto-added by switch-to-source-kernel on $(date)" >> "${kernel_set_file}"
+                    added_any=true
+                fi
+                echo "${pkg}" >> "${kernel_set_file}"
+                echo "  Preserved: ${pkg}"
+            else
+                echo "  Already preserved: ${pkg}"
+            fi
+        done
+    ' bash "${KERNEL_SET_FILE}" ${BINARY_KERNELS}
+fi
+
+echo
+echo "================================================================================"
+echo "Step 2: Installing source kernel (this will take 30-60 minutes)..."
+echo "================================================================================"
+echo "Note: The binary kernel in the SAME slot will be automatically replaced."
+echo "      Old binary kernels in DIFFERENT slots are preserved as backup."
+echo
+
+# Install source kernel - this will replace binary kernel in the same slot
+if [[ -t 0 ]]; then
+    # Interactive session: keep emerge confirmation prompt for safety
+    emerge --ask sys-kernel/gentoo-kernel
+else
+    # Non-interactive session: avoid --ask to prevent hanging automated runs
+    echo "Non-interactive mode detected; emerging sys-kernel/gentoo-kernel without --ask." >&2
+    emerge sys-kernel/gentoo-kernel
+fi
+
+echo
+echo "================================================================================"
+echo "Step 3: Verifying kernel installation..."
+echo "================================================================================"
+
+# Show installed kernels
+echo "Installed kernel packages:"
+qlist -ICv sys-kernel/gentoo-kernel sys-kernel/gentoo-kernel-bin 2>/dev/null || \
+    eix -I --only-names sys-kernel/gentoo-kernel sys-kernel/gentoo-kernel-bin 2>/dev/null || \
+    emerge -s sys-kernel/gentoo-kernel | grep "Installed versions"
+
+echo
+echo "Available kernel sources:"
+eselect kernel list
+
+echo
+echo "================================================================================"
+echo "Step 4: Kernel configuration (optional customization)"
+echo "================================================================================"
+echo
+read -r -p "Do you want to customize the kernel config now? (y/n): " customize
+if [[ "${customize}" == "y" || "${customize}" == "Y" ]]; then
+    cd /usr/src/linux
+    make menuconfig
+    echo
+    echo "Rebuilding kernel with custom configuration..."
+    emerge --config sys-kernel/gentoo-kernel
+fi
+
+echo
+echo "================================================================================"
+echo "Kernel switch complete!"
+echo "================================================================================"
+echo
+echo "Next steps:"
+echo "  1. REBOOT to test the new kernel"
+echo "  2. After verifying the new kernel works, old kernels are still available"
+echo "  3. Boot menu (rEFInd) will show all installed kernel versions"
+echo
+echo "Backup kernels:"
+echo "  - Old kernel versions are preserved automatically"
+echo "  - View preserved kernels: cat /etc/portage/sets/kernels"
+echo "  - Boot old kernels from rEFInd boot menu if needed"
+echo
+echo "To customize kernel later:"
+echo "  cd /usr/src/linux"
+echo "  make menuconfig"
+echo "  emerge --config sys-kernel/gentoo-kernel"
+echo
+echo "To manage kernel versions:"
+echo "  - List: eselect kernel list"
+echo "  - Keep multiple versions for fallback"
+echo "  - Remove old versions: emerge --deselect sys-kernel/gentoo-kernel:<version>"
+echo "================================================================================"
+EOF
+
+  chmod +x "${MNT}/usr/local/bin/switch-to-source-kernel"
+  
+  echo "Kernel switch helper created at /usr/local/bin/switch-to-source-kernel"
+}
+
+create_kernel_management_helper() {
+  echo "Creating kernel management helper script..."
+  
+  # Ensure target directory exists before creating the helper script
+  mkdir -p "${MNT}/usr/local/bin"
+  # Create helper script for managing kernel versions
+  cat > "${MNT}/usr/local/bin/manage-kernels" <<'EOF'
+#!/bin/bash
+# Helper script to manage kernel versions and backups
+
+if [[ $EUID -ne 0 ]]; then
+   echo "ERROR: This script must be run as root" 
+   exit 1
+fi
+
+show_help() {
+    cat <<'HELP'
+Usage: manage-kernels <command>
+
+Commands:
+  list      - Show all installed kernel versions
+  preserve  - Add current kernels to preservation set
+  clean     - Interactively remove old kernel versions
+  info      - Show detailed kernel information
+
+Examples:
+  manage-kernels list        # List all kernels
+  manage-kernels preserve    # Preserve current kernels
+  manage-kernels clean       # Clean old kernels
+HELP
+}
+
+list_kernels() {
+    echo "================================================================================"
+    echo "Installed Kernel Packages"
+    echo "================================================================================"
+    
+    # Try multiple methods to list kernels
+    if command -v qlist &>/dev/null; then
+        echo "Binary kernels:"
+        qlist -ICv sys-kernel/gentoo-kernel-bin 2>/dev/null || echo "  None"
+        echo
+        echo "Source kernels:"
+        qlist -ICv sys-kernel/gentoo-kernel 2>/dev/null || echo "  None"
+    elif command -v eix &>/dev/null; then
+        eix -I sys-kernel/gentoo-kernel-bin sys-kernel/gentoo-kernel
+    else
+        emerge -s sys-kernel/gentoo-kernel | grep -E "^\*|Installed versions"
+    fi
+    
+    echo
+    echo "================================================================================"
+    echo "Available Kernel Sources"
+    echo "================================================================================"
+    eselect kernel list
+    
+    echo
+    echo "================================================================================"
+    echo "Preserved Kernels (in /etc/portage/sets/kernels)"
+    echo "================================================================================"
+    if [[ -f /etc/portage/sets/kernels ]]; then
+        grep -v '^#' /etc/portage/sets/kernels | grep -v '^$' || echo "  None explicitly preserved"
+    else
+        echo "  Preservation set not found"
+    fi
+    
+    echo
+    echo "================================================================================"
+    echo "Boot Entries (in /boot)"
+    echo "================================================================================"
+    ls -lh /boot/vmlinuz-* 2>/dev/null || echo "  No kernels found in /boot"
+}
+
+preserve_current() {
+    echo "================================================================================"
+    echo "Preserve Current Kernels"
+    echo "================================================================================"
+    echo
+    
+    mkdir -p /etc/portage/sets
+    
+    # Get all installed kernel packages
+    if command -v qlist &>/dev/null; then
+        KERNELS=$(qlist -ICv sys-kernel/gentoo-kernel-bin sys-kernel/gentoo-kernel 2>/dev/null || true)
+    elif command -v eix &>/dev/null; then
+        # Fallback: use eix to list installed kernel package names
+        KERNELS=$(eix -I --only-names sys-kernel/gentoo-kernel-bin sys-kernel/gentoo-kernel 2>/dev/null || true)
+    else
+        echo "Error: Unable to determine installed kernels to preserve."
+        echo "Neither 'qlist' (from portage-utils) nor 'eix' is available."
+        echo "Please install 'portage-utils' (emerge portage-utils) or 'eix' and retry."
+        exit 1
+    fi
+    
+    if [[ -z "${KERNELS}" ]]; then
+        echo "No kernels found to preserve."
+        exit 0
+    fi
+    
+    echo "Current kernels:"
+    echo "${KERNELS}"
+    echo
+    read -r -p "Add these to preservation set? (y/n): " confirm
+    if [[ "${confirm}" != "y" && "${confirm}" != "Y" ]]; then
+        echo "Cancelled."
+        exit 0
+    fi
+    
+    # Avoid duplicating the preserved-kernels comment if it already exists.
+    if ! grep -q '^# Preserved on' /etc/portage/sets/kernels 2>/dev/null; then
+        echo "# Preserved on $(date)" >> /etc/portage/sets/kernels
+    fi
+
+    echo "${KERNELS}" | while read -r pkg; do
+        if [[ -n "${pkg}" ]]; then
+            # Only append the package if it is not already present as a full line.
+            if ! grep -Fxq "${pkg}" /etc/portage/sets/kernels 2>/dev/null; then
+                echo "${pkg}" >> /etc/portage/sets/kernels
+                echo "  Preserved: ${pkg}"
+            else
+                echo "  Already preserved: ${pkg}"
+            fi
+        fi
+    done <<< "${KERNELS}"
+    
+    echo
+    echo "Kernels added to /etc/portage/sets/kernels"
+}
+
+clean_old_kernels() {
+    echo "================================================================================"
+    echo "Clean Old Kernel Versions"
+    echo "================================================================================"
+    echo
+    echo "WARNING: This will help you remove old kernel versions."
+    echo "         Always keep at least 2 kernel versions for fallback!"
+    echo
+    
+    list_kernels
+    
+    echo
+    echo "================================================================================"
+    echo
+    read -r -p "Do you want to clean old kernels? (yes/no): " confirm
+    if [[ "${confirm}" != "yes" ]]; then
+        echo "Cancelled."
+        exit 0
+    fi
+    
+    echo
+    echo "Use 'emerge --deselect' to remove kernels from world, then 'emerge --depclean'"
+    echo "Example: emerge --deselect sys-kernel/gentoo-kernel-bin:6.12.58"
+    echo
+    read -r -p "Run interactive depclean now? (y/n): " run_clean
+    if [[ "${run_clean}" == "y" || "${run_clean}" == "Y" ]]; then
+        emerge --depclean --ask
+    fi
+}
+
+show_info() {
+    echo "================================================================================"
+    echo "Kernel System Information"
+    echo "================================================================================"
+    echo
+    echo "Current running kernel:"
+    uname -r
+    echo
+    echo "Currently selected kernel source:"
+    eselect kernel show
+    echo
+    
+    list_kernels
+}
+
+case "${1:-}" in
+    list)
+        list_kernels
+        ;;
+    preserve)
+        preserve_current
+        ;;
+    clean)
+        clean_old_kernels
+        ;;
+    info)
+        show_info
+        ;;
+    help|--help|-h|"")
+        show_help
+        ;;
+    *)
+        echo "ERROR: Unknown command: $1"
+        echo
+        show_help
+        exit 1
+        ;;
+esac
+EOF
+
+  chmod +x "${MNT}/usr/local/bin/manage-kernels"
+  
+  echo "Kernel management helper created at /usr/local/bin/manage-kernels"
+}
+
 main() {
   require_root
   require_uefi
@@ -1628,6 +2034,8 @@ main() {
   setup_snapshot_management
   setup_ml_boot_selector
   configure_nvme_optimizations
+  create_kernel_switch_helper
+  create_kernel_management_helper
   finalize_users_passwords
 
   echo
@@ -1644,6 +2052,16 @@ main() {
   echo "  - Use 'manage-snapshots create' to create system snapshots"
   echo "  - Blender Cycles configured for AMD Radeon 780M iGPU"
   echo "  - ROCm enabled for GPU compute (if installed)"
+  if [[ "${USE_BINARY_KERNEL}" == "yes" ]] || [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]]; then
+    echo
+    echo "Kernel management:"
+    echo "  - Binary kernel installed for fast initial setup"
+    echo "  - Old kernel versions can be preserved for fallback (run 'sudo manage-kernels preserve')"
+    echo "  - To switch to source kernel for optimization:"
+    echo "    sudo switch-to-source-kernel"
+    echo "  - To manage kernel versions:"
+    echo "    sudo manage-kernels list"
+  fi
   echo "============================================================"
 }
 

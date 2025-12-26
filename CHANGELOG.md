@@ -4,13 +4,65 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.5] - 2025-12-26
+### Fixed
+- **Kernel Installation**: Properly fixed blocking conflict when `INSTALL_DUAL_KERNEL=yes`
+  - Binary and source kernels of the same version CANNOT coexist (soft-block conflict)
+  - The v1.0.4 fix was incorrect - sequential installation doesn't resolve slot conflicts
+  - `INSTALL_DUAL_KERNEL` is now DEPRECATED and defaults to `no`
+  - Changed default `USE_BINARY_KERNEL="yes"` for fast initial setup
+  - Resolves Portage error: "The above package list contains packages which cannot be installed at the same time"
+
+### Added
+- **Kernel Switch Helper**: New `/usr/local/bin/switch-to-source-kernel` script
+  - Guides users through switching from binary to source kernel after installation
+  - Automatically preserves old kernel versions for backup/fallback
+  - Records current binary kernels in `/etc/portage/sets/kernels` before switching
+  - Handles kernel replacement in the same slot automatically
+  - Preserves kernel configuration
+  - Optional kernel customization with `make menuconfig`
+  - Provides clear instructions for kernel management and fallback
+  - Installed automatically when using binary kernel
+
+- **Kernel Management Helper**: New `/usr/local/bin/manage-kernels` script
+  - `manage-kernels list` - Show all installed kernel versions
+  - `manage-kernels preserve` - Add current kernels to preservation set
+  - `manage-kernels clean` - Interactively remove old kernel versions
+  - `manage-kernels info` - Show detailed kernel information
+  - Helps maintain multiple kernel versions for backup strategy
+
+- **Kernel Preservation Configuration**: Automatic backup system
+  - Created `/etc/portage/sets/kernels` for kernel preservation
+  - Created `/etc/portage/profile/package.provided` for package management
+  - Old kernel versions automatically preserved when upgrading
+  - Multiple kernel slots supported (e.g., 6.12.58, 6.13.0 can coexist)
+  - Prevents `emerge --depclean` from removing backup kernels
+  - All kernel versions remain bootable in rEFInd menu
+
+### Changed
+- **Default Kernel**: Changed `USE_BINARY_KERNEL` default from `no` to `yes`
+  - Binary kernel provides faster initial installation (5 min vs 30-60 min)
+  - Users can optimize later with `switch-to-source-kernel` when system is stable
+  - Better user experience: working system first, optimization second
+  - Old kernels preserved automatically for fallback safety
+
+### Documentation
+- **README.md**: Added comprehensive kernel backup and fallback strategy section
+  - Explains slot-based kernel system
+  - Documents kernel preservation and management
+  - Clarifies that different versions can coexist (6.12.58 binary + 6.13.0 source)
+  - Added commands for viewing preserved kernels
+- **Installation instructions**: Updated to reflect new kernel workflow
+  - Binary first for speed, source later for optimization
+  - Documented kernel management commands
+
 ## [1.0.4] - 2025-12-26
 ### Fixed
-- **Kernel Installation**: Fixed blocking conflict when `INSTALL_DUAL_KERNEL=yes`
+- **Kernel Installation**: Attempted fix for blocking conflict when `INSTALL_DUAL_KERNEL=yes` (INCOMPLETE)
   - Modified `install_kernel()` to install kernels sequentially instead of simultaneously
   - Install `sys-kernel/gentoo-kernel-bin` first, then `sys-kernel/gentoo-kernel` second
-  - Resolves Portage soft-blocking error: "The above package list contains packages which cannot be installed at the same time on the same system"
-  - Both kernels can coexist when installed separately, providing fallback options for system recovery
+  - NOTE: This fix was incorrect - binary and source kernels still conflict in the same slot
+  - This issue is properly resolved in v1.0.5
 
 ## [1.0.3] - 2025-12-26
 ### Fixed
