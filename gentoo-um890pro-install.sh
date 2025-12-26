@@ -691,8 +691,13 @@ install_kernel() {
 
   if [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]]; then
     echo "Installing dual-kernel setup (binary + source) for safety..."
-    # Install both kernels for fallback
-    chroot_run "emerge sys-kernel/gentoo-kernel-bin sys-kernel/gentoo-kernel"
+    # Install kernels sequentially to avoid slot blocking conflicts
+    # The binary and source kernels soft-block each other in the same slot,
+    # but can coexist when installed separately.
+    echo "Installing binary kernel first..."
+    chroot_run "emerge sys-kernel/gentoo-kernel-bin"
+    echo "Installing source kernel second..."
+    chroot_run "emerge sys-kernel/gentoo-kernel"
   elif [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
     chroot_run "emerge sys-kernel/gentoo-kernel-bin"
   else
