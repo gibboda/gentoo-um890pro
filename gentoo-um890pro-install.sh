@@ -370,13 +370,8 @@ PYTHON_SINGLE_TARGET="python3_12"
 EOF
 
   # Configure Portage to keep old kernel versions for backup/fallback
-  # This prevents emerge --depclean from removing old kernels automatically
-  mkdir -p "${MNT}/etc/portage/profile"
-  cat > "${MNT}/etc/portage/profile/package.provided" <<'EOF'
-# Keep at least 2 kernel versions installed for fallback
-# This file can be empty - the actual kernel preservation is handled by
-# the @selected set and explicit package.use/package.mask configurations
-EOF
+  # This prevents emerge --depclean from removing old kernels automatically.
+  # Kernel preservation is handled via the dedicated Portage set below.
 
   # Add configuration to preserve multiple kernel slots
   mkdir -p "${MNT}/etc/portage/sets"
