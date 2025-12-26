@@ -1666,8 +1666,18 @@ echo "Current kernel version: ${CURRENT_KERNEL}"
 KERNEL_SET_FILE="/etc/portage/sets/kernels"
 KERNEL_SET_LOCK="${KERNEL_SET_FILE}.lock"
 
-# Find installed binary kernel packages
-BINARY_KERNELS=$(qlist -ICv sys-kernel/gentoo-kernel-bin 2>/dev/null || echo "")
+# Find installed binary kernel packages (prefer qlist, but fall back to eix/emerge if needed)
+if command -v qlist >/dev/null 2>&1; then
+    BINARY_KERNELS=$(qlist -ICv sys-kernel/gentoo-kernel-bin 2>/dev/null || echo "")
+elif command -v eix >/dev/null 2>&1; then
+    # eix fallback: list installed package atoms matching sys-kernel/gentoo-kernel-bin
+    BINARY_KERNELS=$(eix -I --only-names sys-kernel/gentoo-kernel-bin 2>/dev/null || echo "")
+elif command -v emerge >/dev/null 2>&1; then
+    # emerge fallback: parse search output to extract the package atom
+    BINARY_KERNELS=$(emerge -s sys-kernel/gentoo-kernel-bin 2>/dev/null | awk '/^\* sys-kernel\/gentoo-kernel-bin/ {print $2}' || echo "")
+else
+    BINARY_KERNELS=""
+fi
 if [[ -n "${BINARY_KERNELS}" ]]; then
     echo "Binary kernels installed:"
     echo "${BINARY_KERNELS}"
