@@ -1884,7 +1884,17 @@ preserve_current() {
     mkdir -p /etc/portage/sets
     
     # Get all installed kernel packages
-    KERNELS=$(qlist -ICv sys-kernel/gentoo-kernel-bin sys-kernel/gentoo-kernel 2>/dev/null || true)
+    if command -v qlist &>/dev/null; then
+        KERNELS=$(qlist -ICv sys-kernel/gentoo-kernel-bin sys-kernel/gentoo-kernel 2>/dev/null || true)
+    elif command -v eix &>/dev/null; then
+        # Fallback: use eix to list installed kernel package names
+        KERNELS=$(eix -I --only-names sys-kernel/gentoo-kernel-bin sys-kernel/gentoo-kernel 2>/dev/null || true)
+    else
+        echo "Error: Unable to determine installed kernels to preserve."
+        echo "Neither 'qlist' (from portage-utils) nor 'eix' is available."
+        echo "Please install 'portage-utils' (emerge portage-utils) or 'eix' and retry."
+        exit 1
+    fi
     
     if [[ -z "${KERNELS}" ]]; then
         echo "No kernels found to preserve."
