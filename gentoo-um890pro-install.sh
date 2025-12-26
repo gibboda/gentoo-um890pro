@@ -1614,6 +1614,8 @@ EOF
 create_kernel_switch_helper() {
   echo "Creating kernel switch helper script..."
   
+  # Ensure target directory exists for the helper script
+  mkdir -p "${MNT}/usr/local/bin"
   # Create helper script for switching from binary to source kernel
   cat > "${MNT}/usr/local/bin/switch-to-source-kernel" <<'EOF'
 #!/bin/bash
