@@ -360,9 +360,9 @@ INPUT_DEVICES="libinput"
 ABI_X86="64"
 
 # Python targets - set globally to avoid USE flag conflicts
-# python3_11 is stable and widely supported across Gentoo packages
-PYTHON_TARGETS="python3_11"
-PYTHON_SINGLE_TARGET="python3_11"
+# python3_14 is required by modern Sphinx and documentation tools
+PYTHON_TARGETS="python3_14"
+PYTHON_SINGLE_TARGET="python3_14"
 EOF
 
   # Mount chroot binds
@@ -485,12 +485,18 @@ EOF
   # This prevents infinite loop of USE flag changes across the entire system
   cat > "${MNT}/etc/portage/package.use/python" <<EOF
 # Global Python target configuration
-# All Python packages are configured to use python3_11 to prevent USE flag conflicts
+# All Python packages are configured to use python3_14 to prevent USE flag conflicts
 # This includes packages pulled in by system dependencies (Sphinx, docutils, etc.)
 
-# Apply python3_11 target to all Python packages globally
+# Apply python3_14 target to all Python packages globally
 # This is the most robust solution to prevent USE flag conflicts
-dev-python/* python_targets_python3_11
+dev-python/* python_targets_python3_14
+EOF
+  
+  # Btrfs tools with man pages (requires Sphinx which needs python3_14)
+  cat > "${MNT}/etc/portage/package.use/btrfs" <<EOF
+# Enable man pages for btrfs-progs (requires Sphinx documentation system)
+sys-fs/btrfs-progs man
 EOF
   
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -1035,7 +1041,7 @@ install_comfyui_and_sdxl() {
   echo "Installing ComfyUI and SDXL models..."
   
   # Install Python and dependencies
-  chroot_run "emerge dev-lang/python:3.11 dev-python/pip dev-vcs/git"
+  chroot_run "emerge dev-lang/python:3.14 dev-python/pip dev-vcs/git"
   
   # Create ComfyUI installation directory on ZFS
   mkdir -p "${MNT}${ZFS_MNT_BASE}/ai-models/ComfyUI"
