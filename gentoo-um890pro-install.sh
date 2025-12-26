@@ -1732,7 +1732,14 @@ echo "      Old binary kernels in DIFFERENT slots are preserved as backup."
 echo
 
 # Install source kernel - this will replace binary kernel in the same slot
-emerge --ask sys-kernel/gentoo-kernel
+if [[ -t 0 ]]; then
+    # Interactive session: keep emerge confirmation prompt for safety
+    emerge --ask sys-kernel/gentoo-kernel
+else
+    # Non-interactive session: avoid --ask to prevent hanging automated runs
+    echo "Non-interactive mode detected; emerging sys-kernel/gentoo-kernel without --ask." >&2
+    emerge sys-kernel/gentoo-kernel
+fi
 
 echo
 echo "================================================================================"
