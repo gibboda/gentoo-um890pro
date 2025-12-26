@@ -360,9 +360,9 @@ INPUT_DEVICES="libinput"
 ABI_X86="64"
 
 # Python targets - set globally to avoid USE flag conflicts
-# python3_11 is stable and widely supported across Gentoo packages
-PYTHON_TARGETS="python3_11"
-PYTHON_SINGLE_TARGET="python3_11"
+# python3_14 is required by modern Sphinx and documentation tools
+PYTHON_TARGETS="python3_14"
+PYTHON_SINGLE_TARGET="python3_14"
 EOF
 
   # Mount chroot binds
@@ -466,15 +466,18 @@ EOF
 sys-kernel/linux-firmware linux-fw-redistributable no-source-code
 EOF
 
-  # Accept testing keyword for linux-firmware (may be needed for latest firmware support)
+  # Accept testing keyword for linux-firmware (required for AMD Radeon 780M RDNA3 support)
+  # The UM890 Pro's Radeon 780M (gfx1103) requires recent firmware for proper GPU functionality
   mkdir -p "${MNT}/etc/portage/package.accept_keywords"
   cat > "${MNT}/etc/portage/package.accept_keywords/linux-firmware" <<EOF
+# AMD Radeon 780M (RDNA3, gfx1103) requires latest firmware for GPU acceleration
 sys-kernel/linux-firmware ~amd64
 EOF
 
-  # Accept testing keyword for vulkan-headers (required by qtbase-6.9.3 with vulkan USE flag)
+  # Accept testing keyword for vulkan-headers (required for Qt 6 Vulkan backend)
+  # KDE Plasma 6 with Wayland benefits from Vulkan support on AMD RDNA3 iGPU
   cat > "${MNT}/etc/portage/package.accept_keywords/vulkan-headers" <<EOF
-# Required by dev-qt/qtbase-6.9.3[vulkan]
+# Required by dev-qt/qtbase with vulkan USE flag for KDE Plasma 6
 dev-util/vulkan-headers ~amd64
 EOF
 
@@ -485,12 +488,18 @@ EOF
   # This prevents infinite loop of USE flag changes across the entire system
   cat > "${MNT}/etc/portage/package.use/python" <<EOF
 # Global Python target configuration
-# All Python packages are configured to use python3_11 to prevent USE flag conflicts
+# All Python packages are configured to use python3_14 to prevent USE flag conflicts
 # This includes packages pulled in by system dependencies (Sphinx, docutils, etc.)
 
-# Apply python3_11 target to all Python packages globally
+# Apply python3_14 target to all Python packages globally
 # This is the most robust solution to prevent USE flag conflicts
-dev-python/* python_targets_python3_11
+dev-python/* python_targets_python3_14
+EOF
+  
+  # Btrfs tools with man pages (requires Sphinx which needs python3_14)
+  cat > "${MNT}/etc/portage/package.use/btrfs" <<EOF
+# Enable man pages for btrfs-progs (requires Sphinx documentation system)
+sys-fs/btrfs-progs man
 EOF
   
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -509,13 +518,13 @@ EOF
   # Separate configuration files allow independent management of different component groups
   
   # Qt 6 Core Packages - Graphics Backend Configuration
-  # qtbase-6.9.3+ is configured with Vulkan backend to satisfy dependency requirements
+  # qtbase is configured with Vulkan backend for AMD Radeon 780M RDNA3 iGPU
   # This configuration supports KDE Plasma 6, Wayland, and modern graphics applications
   cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
-# Qt 6 base library with Vulkan support
+# Qt 6 base library with Vulkan support for AMD RDNA3 graphics
 # Note: This configuration uses Vulkan backend (OpenGL is disabled)
 # dev-util/vulkan-headers is unmasked via package.accept_keywords
->=dev-qt/qtbase-6.9.3 libproxy icu cups -opengl vulkan
+dev-qt/qtbase libproxy icu cups -opengl vulkan
 dev-qt/qt5compat qml icu
 app-text/xmlto text
 sys-libs/zlib minizip
@@ -545,6 +554,13 @@ kde-plasma/kwin-x11 lock
 net-wireless/wpa_supplicant dbus
 EOF
 
+  # Audio and Video - PipeWire multimedia stack for KDE Plasma
+  cat > "${MNT}/etc/portage/package.use/audio" <<EOF
+# PipeWire audio/video server for low-latency multimedia
+media-video/pipewire sound-server pipewire-alsa extra gstreamer
+media-video/wireplumber elogind
+EOF
+
   # Graphics and Display - Hardware acceleration and Wayland support
   cat > "${MNT}/etc/portage/package.use/graphics" <<EOF
 # AMD Radeon 780M iGPU support (UM890 Pro integrated graphics)
@@ -552,6 +568,8 @@ EOF
 x11-libs/libdrm video_cards_radeon
 # Wayland display server support with libei for input emulation
 x11-base/xwayland libei
+# Mesa with Vulkan and OpenCL support for AMD RDNA3
+media-libs/mesa vulkan video_cards_radeon
 EOF
 
   # Disable ModemManager in NetworkManager (no modem present in UM890 Pro)
@@ -616,8 +634,10 @@ dev-python/torchvision rocm
 EOF
 
   # ROCm package accept keywords
+  # ROCm testing packages are required for AMD Radeon 780M (gfx1103) support
+  # The Radeon 780M uses RDNA3 architecture which needs recent ROCm versions
   cat > "${MNT}/etc/portage/package.accept_keywords/rocm" <<EOF
-# ROCm packages (testing for latest GPU support)
+# ROCm packages (testing required for AMD Radeon 780M gfx1103 support)
 dev-libs/rocm-opencl-runtime ~amd64
 dev-libs/rocr-runtime ~amd64
 dev-libs/roct-thunk-interface ~amd64
@@ -1035,7 +1055,7 @@ install_comfyui_and_sdxl() {
   echo "Installing ComfyUI and SDXL models..."
   
   # Install Python and dependencies
-  chroot_run "emerge dev-lang/python:3.11 dev-python/pip dev-vcs/git"
+  chroot_run "emerge dev-lang/python:3.14 dev-python/pip dev-vcs/git"
   
   # Create ComfyUI installation directory on ZFS
   mkdir -p "${MNT}${ZFS_MNT_BASE}/ai-models/ComfyUI"
@@ -1060,7 +1080,7 @@ fi
 cd "${COMFYUI_DIR}"
 
 # Create virtual environment
-python3.11 -m venv venv
+python3.14 -m venv venv
 source venv/bin/activate
 
 # Install dependencies with ROCm support
