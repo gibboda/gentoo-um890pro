@@ -30,7 +30,7 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 - OS disk: EFI System Partition (FAT32) + Btrfs root with subvolumes (`@`, `@home`, `@var`, `@snapshots`).
 - Data disk: single-partition ZFS pool with datasets under `ZFS_MNT_BASE` (default `/data`).
 - Init system: `openrc` (default) or `systemd` (controlled by `INIT_SYSTEM`).
-- Kernel: installs `gentoo-kernel-bin` when `USE_BINARY_KERNEL=yes`, otherwise builds from source.
+- Kernel: installs `gentoo-kernel-bin` by default for fast setup. Use `switch-to-source-kernel` after installation to optimize.
 - Bootloader: rEFInd (UEFI).
 - Desktop: KDE Plasma 6 with Wayland (controlled by `INSTALL_KDE_PLASMA`).
 - Interactive: requires typed confirmation (`WIPE-AND-INSTALL`), prompts for root password, optional user creation.
@@ -136,6 +136,22 @@ reboot
 ```
 
 After reboot, ZFS datasets are mounted under `ZFS_MNT_BASE` (default `/data`).
+
+### Kernel optimization
+
+The installer uses a binary kernel (`gentoo-kernel-bin`) by default for fast initial setup. To switch to a source kernel for optimization and customization:
+
+```bash
+sudo switch-to-source-kernel
+```
+
+This helper script will:
+- Install the source kernel (`sys-kernel/gentoo-kernel`)
+- Automatically replace the binary kernel in the same slot
+- Preserve your kernel configuration
+- Guide you through the process (takes 30-60 minutes to build)
+
+**Note**: Binary and source kernels cannot coexist in the same version/slot. For kernel fallback, keep multiple kernel versions (different slots) rather than trying to install both types of the same version.
 
 ### Note: ZFS and binary kernels
 

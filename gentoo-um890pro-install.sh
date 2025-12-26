@@ -92,8 +92,9 @@ ZFS_MNT_BASE="/data"    # ZFS pool mount base inside the installed OS
 # "openrc" (default; includes an OpenRC zram swap service) or "systemd"
 INIT_SYSTEM="openrc"
 
-# Use a binary kernel for speed/simplicity (recommended)
-USE_BINARY_KERNEL="no"  # yes/no
+# Use a binary kernel for speed/simplicity (recommended for initial installation)
+# You can switch to source kernel later using: sudo switch-to-source-kernel
+USE_BINARY_KERNEL="yes"  # yes/no
 
 # ZFS pool name + datasets
 ZPOOL="tank"
@@ -1591,6 +1592,78 @@ EOF
   echo "NVMe optimizations configured."
 }
 
+create_kernel_switch_helper() {
+  echo "Creating kernel switch helper script..."
+  
+  # Create helper script for switching from binary to source kernel
+  cat > "${MNT}/usr/local/bin/switch-to-source-kernel" <<'EOF'
+#!/bin/bash
+# Helper script to switch from gentoo-kernel-bin to gentoo-kernel (source)
+# This allows users to optimize their kernel after initial installation
+
+set -e
+
+if [[ $EUID -ne 0 ]]; then
+   echo "ERROR: This script must be run as root" 
+   exit 1
+fi
+
+echo "================================================================================"
+echo "Kernel Switch Helper: Binary to Source"
+echo "================================================================================"
+echo
+echo "This script will help you switch from the binary kernel (gentoo-kernel-bin)"
+echo "to the source kernel (gentoo-kernel) for optimization and customization."
+echo
+echo "IMPORTANT NOTES:"
+echo "  1. The binary and source kernels CANNOT coexist in the same slot"
+echo "  2. The old binary kernel will be automatically uninstalled"
+echo "  3. Building the source kernel will take 30-60 minutes"
+echo "  4. Your current kernel configuration will be preserved"
+echo "  5. Keep the old kernel slot around until you verify the new one works"
+echo
+echo "Current kernel packages:"
+emerge --search sys-kernel/gentoo-kernel | grep -E "^\*|Latest version"
+echo
+
+read -p "Do you want to proceed? (yes/no): " confirm
+if [[ "${confirm}" != "yes" ]]; then
+    echo "Aborted."
+    exit 0
+fi
+
+echo
+echo "Step 1: Installing source kernel (this will take a while)..."
+echo "The binary kernel in the same slot will be automatically replaced."
+emerge --ask sys-kernel/gentoo-kernel
+
+echo
+echo "Step 2: Checking installed kernels..."
+eselect kernel list
+
+echo
+echo "================================================================================"
+echo "Kernel switch complete!"
+echo
+echo "Next steps:"
+echo "  1. Reboot to test the new kernel"
+echo "  2. After verifying it works, you can remove old kernel slots with:"
+echo "     emerge --depclean"
+echo "  3. To customize your kernel config:"
+echo "     cd /usr/src/linux"
+echo "     make menuconfig"
+echo "     emerge --config sys-kernel/gentoo-kernel"
+echo
+echo "For kernel fallback, keep multiple kernel versions (different slots) rather"
+echo "than trying to install both binary and source of the same version."
+echo "================================================================================"
+EOF
+
+  chmod +x "${MNT}/usr/local/bin/switch-to-source-kernel"
+  
+  echo "Kernel switch helper created at /usr/local/bin/switch-to-source-kernel"
+}
+
 main() {
   require_root
   require_uefi
@@ -1624,6 +1697,7 @@ main() {
   setup_snapshot_management
   setup_ml_boot_selector
   configure_nvme_optimizations
+  create_kernel_switch_helper
   finalize_users_passwords
 
   echo
@@ -1640,6 +1714,13 @@ main() {
   echo "  - Use 'manage-snapshots create' to create system snapshots"
   echo "  - Blender Cycles configured for AMD Radeon 780M iGPU"
   echo "  - ROCm enabled for GPU compute (if installed)"
+  if [[ "${USE_BINARY_KERNEL}" == "yes" ]] || [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]]; then
+    echo
+    echo "Kernel optimization:"
+    echo "  - Binary kernel installed for fast initial setup"
+    echo "  - To switch to source kernel for optimization, run:"
+    echo "    sudo switch-to-source-kernel"
+  fi
   echo "============================================================"
 }
 

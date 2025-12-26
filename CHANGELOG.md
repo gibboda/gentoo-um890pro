@@ -4,13 +4,39 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.5] - 2025-12-26
+### Fixed
+- **Kernel Installation**: Properly fixed blocking conflict when `INSTALL_DUAL_KERNEL=yes`
+  - Binary and source kernels of the same version CANNOT coexist (soft-block conflict)
+  - The v1.0.4 fix was incorrect - sequential installation doesn't resolve slot conflicts
+  - `INSTALL_DUAL_KERNEL` is now DEPRECATED and defaults to `no`
+  - Changed default `USE_BINARY_KERNEL="yes"` for fast initial setup
+  - Added `switch-to-source-kernel` helper script in `/usr/local/bin/`
+  - Users can now install binary kernel first, then switch to source kernel later for optimization
+  - Updated documentation to explain proper kernel fallback: keep multiple versions (different slots)
+  - Resolves Portage error: "The above package list contains packages which cannot be installed at the same time"
+
+### Added
+- **Kernel Switch Helper**: New `/usr/local/bin/switch-to-source-kernel` script
+  - Guides users through switching from binary to source kernel
+  - Automatically handles kernel replacement in the same slot
+  - Preserves kernel configuration
+  - Provides clear instructions for kernel customization
+  - Installed automatically when using binary kernel
+
+### Changed
+- **Default Kernel**: Changed `USE_BINARY_KERNEL` default from `no` to `yes`
+  - Binary kernel provides faster initial installation (5 min vs 30-60 min)
+  - Users can optimize later with `switch-to-source-kernel` when system is stable
+  - Better user experience: working system first, optimization second
+
 ## [1.0.4] - 2025-12-26
 ### Fixed
-- **Kernel Installation**: Fixed blocking conflict when `INSTALL_DUAL_KERNEL=yes`
+- **Kernel Installation**: Attempted fix for blocking conflict when `INSTALL_DUAL_KERNEL=yes` (INCOMPLETE)
   - Modified `install_kernel()` to install kernels sequentially instead of simultaneously
   - Install `sys-kernel/gentoo-kernel-bin` first, then `sys-kernel/gentoo-kernel` second
-  - Resolves Portage soft-blocking error: "The above package list contains packages which cannot be installed at the same time on the same system"
-  - Both kernels can coexist when installed separately, providing fallback options for system recovery
+  - NOTE: This fix was incorrect - binary and source kernels still conflict in the same slot
+  - This issue is properly resolved in v1.0.5
 
 ## [1.0.3] - 2025-12-26
 ### Fixed
