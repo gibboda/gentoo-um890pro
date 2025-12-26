@@ -488,32 +488,9 @@ EOF
 # All Python packages are configured to use python3_11 to prevent USE flag conflicts
 # This includes packages pulled in by system dependencies (Sphinx, docutils, etc.)
 
-# Core Python build tools
->=dev-python/installer-0.5.0 python_targets_python3_11
->=dev-python/gpep517-0.19 python_targets_python3_11
->=dev-python/setuptools-80.0.0 python_targets_python3_11
->=dev-python/wheel-0.40.0 python_targets_python3_11
->=dev-python/packaging-23.0 python_targets_python3_11
->=dev-python/flit-core-3.9.0 python_targets_python3_11
-
-# Common dependencies (often pulled by Sphinx, docutils, etc.)
->=dev-python/olefile-0.47 python_targets_python3_11
->=dev-python/pillow-10.0.0 python_targets_python3_11
->=dev-python/backports-tarfile-1.0.0 python_targets_python3_11
->=dev-python/jaraco-context-4.0.0 python_targets_python3_11
->=dev-python/jaraco-text-3.0.0 python_targets_python3_11
->=dev-python/jaraco-collections-4.0.0 python_targets_python3_11
->=dev-python/jaraco-functools-4.0.0 python_targets_python3_11
->=dev-python/more-itertools-9.0.0 python_targets_python3_11
->=dev-python/platformdirs-3.0.0 python_targets_python3_11
->=dev-python/setuptools-scm-8.0.0 python_targets_python3_11
->=dev-python/trove-classifiers-2023.0.0 python_targets_python3_11
-
-# AI/ML packages (for ComfyUI and ROCm)
->=dev-python/numpy-1.24.0 python_targets_python3_11
->=dev-python/torch-2.0.0 python_targets_python3_11
->=dev-python/torchvision-0.15.0 python_targets_python3_11
->=dev-python/transformers-4.30.0 python_targets_python3_11
+# Apply python3_11 target to all Python packages globally
+# This is the most robust solution to prevent USE flag conflicts
+dev-python/* python_targets_python3_11
 EOF
   
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
