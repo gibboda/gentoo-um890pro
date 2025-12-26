@@ -360,8 +360,9 @@ INPUT_DEVICES="libinput"
 ABI_X86="64"
 
 # Python targets - set globally to avoid USE flag conflicts
-# python3_12 is the latest stable version in Gentoo (python3_14 does not exist)
-PYTHON_TARGETS="python3_12"
+# Support both python3_12 and python3_13 to prevent slot conflicts
+# Multiple targets allow packages with different Python versions to coexist
+PYTHON_TARGETS="python3_12 python3_13"
 PYTHON_SINGLE_TARGET="python3_12"
 EOF
 
@@ -488,15 +489,16 @@ EOF
   # This prevents infinite loop of USE flag changes across the entire system
   cat > "${MNT}/etc/portage/package.use/python" <<EOF
 # Global Python target configuration
-# All Python packages are configured to use python3_12 to prevent USE flag conflicts
+# All Python packages support both python3_12 and python3_13 to prevent slot conflicts
+# Multiple targets allow packages with different Python versions to coexist
 # This includes packages pulled in by system dependencies (Sphinx, docutils, etc.)
 
-# Apply python3_12 target to all Python packages globally
+# Apply both python3_12 and python3_13 targets to all Python packages globally
 # This is the most robust solution to prevent USE flag conflicts
-dev-python/* python_targets_python3_12
+dev-python/* python_targets_python3_12 python_targets_python3_13
 EOF
   
-  # Btrfs tools with man pages (requires Sphinx which needs python3_12)
+  # Btrfs tools with man pages (requires Sphinx documentation system)
   cat > "${MNT}/etc/portage/package.use/btrfs" <<EOF
 # Enable man pages for btrfs-progs (requires Sphinx documentation system)
 sys-fs/btrfs-progs man
