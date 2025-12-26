@@ -358,6 +358,11 @@ INPUT_DEVICES="libinput"
 
 # Prefer pure 64-bit when using a no-multilib profile
 ABI_X86="64"
+
+# Python targets - set globally to avoid USE flag conflicts
+# python3_11 is stable and widely supported across Gentoo packages
+PYTHON_TARGETS="python3_11"
+PYTHON_SINGLE_TARGET="python3_11"
 EOF
 
   # Mount chroot binds
@@ -475,6 +480,19 @@ EOF
 
   # Configure package.use for installkernel based on selected init system
   mkdir -p "${MNT}/etc/portage/package.use"
+  
+  # Python packages - Global Python target configuration
+  # This prevents infinite loop of USE flag changes across the entire system
+  cat > "${MNT}/etc/portage/package.use/python" <<EOF
+# Global Python target configuration
+# All Python packages are configured to use python3_11 to prevent USE flag conflicts
+# This includes packages pulled in by system dependencies (Sphinx, docutils, etc.)
+
+# Apply python3_11 target to all Python packages globally
+# This is the most robust solution to prevent USE flag conflicts
+dev-python/* python_targets_python3_11
+EOF
+  
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     cat > "${MNT}/etc/portage/package.use/installkernel" <<EOF
 # Enable systemd integration for installkernel
@@ -613,19 +631,15 @@ EOF
     rm -f "${MNT}/etc/portage/package.accept_keywords/rocm"
   fi
 
-  # ComfyUI and AI dependencies
-  cat > "${MNT}/etc/portage/package.use/comfyui" <<EOF
-# Python packages for ComfyUI
-dev-python/numpy python_targets_python3_11
-dev-python/pillow python_targets_python3_11
-dev-python/torch python_targets_python3_11
-dev-python/torchvision python_targets_python3_11
-dev-python/transformers python_targets_python3_11
+  # ComfyUI-specific USE flags (if needed)
+  # Note: Python targets are configured globally in package.use/python
+  # When ComfyUI is being installed, create a placeholder file for potential ComfyUI-specific USE flags
+  if [[ "${INSTALL_COMFYUI:-no}" == "yes" ]]; then
+    cat > "${MNT}/etc/portage/package.use/comfyui" <<EOF
+# ComfyUI-specific USE flags
+# Python targets are configured globally in package.use/python
+# This file is a placeholder for potential ComfyUI-specific USE flags and is only created when ComfyUI is installed
 EOF
-
-  # If ComfyUI is not requested, remove the ComfyUI-specific file
-  if [[ "${INSTALL_COMFYUI:-no}" != "yes" ]]; then
-    rm -f "${MNT}/etc/portage/package.use/comfyui"
   fi
   
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
