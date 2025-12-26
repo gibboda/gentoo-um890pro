@@ -482,9 +482,7 @@ EOF
   mkdir -p "${MNT}/etc/portage/package.use"
   
   # Python packages - Global Python target configuration
-  # This prevents the infinite loop of USE flag changes by ensuring all Python packages
-  # use the same python_targets_python3_11 consistently across the entire system.
-  # These packages are commonly pulled in as dependencies by various system packages.
+  # This prevents infinite loop of USE flag changes across the entire system.
   cat > "${MNT}/etc/portage/package.use/python" <<EOF
 # Global Python target configuration
 # All Python packages are configured to use python3_11 to prevent USE flag conflicts
@@ -492,7 +490,7 @@ EOF
 
 # Core Python build tools
 >=dev-python/installer-0.5.0 python_targets_python3_11
->=dev-python/gpep517-19 python_targets_python3_11
+>=dev-python/gpep517-0.19 python_targets_python3_11
 >=dev-python/setuptools-80.0.0 python_targets_python3_11
 >=dev-python/wheel-0.40.0 python_targets_python3_11
 >=dev-python/packaging-23.0 python_targets_python3_11
@@ -656,18 +654,15 @@ EOF
     rm -f "${MNT}/etc/portage/package.accept_keywords/rocm"
   fi
 
-  # ComfyUI and AI dependencies
+  # ComfyUI-specific USE flags (if needed)
   # Note: Python targets are configured globally in package.use/python
-  # This file is kept for potential future ComfyUI-specific USE flags
-  cat > "${MNT}/etc/portage/package.use/comfyui" <<EOF
-# ComfyUI and AI dependencies
+  # Only create this file if ComfyUI is installed, for future ComfyUI-specific USE flags
+  if [[ "${INSTALL_COMFYUI:-no}" == "yes" ]]; then
+    cat > "${MNT}/etc/portage/package.use/comfyui" <<EOF
+# ComfyUI-specific USE flags
 # Python targets are configured globally in package.use/python
 # Add any ComfyUI-specific USE flags here if needed in the future
 EOF
-
-  # If ComfyUI is not requested, remove the ComfyUI-specific file
-  if [[ "${INSTALL_COMFYUI:-no}" != "yes" ]]; then
-    rm -f "${MNT}/etc/portage/package.use/comfyui"
   fi
   
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
