@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.1] - 2025-12-26
+### Fixed
+- Fix infinite loop of USE flag changes for Python packages during installation
+  - Add global `PYTHON_TARGETS="python3_11"` and `PYTHON_SINGLE_TARGET="python3_11"` to make.conf
+  - Create comprehensive `package.use/python` configuration covering all common Python dependencies
+  - This prevents Portage from continuously requesting python_targets_python3_11 for packages
+  - Fixes issue where Python packages pulled in by system dependencies (Sphinx, docutils, etc.) caused USE flag conflicts
+  - Resolves masked package issues with dev-python/installer and other Python build tools
+  - Remove duplicate Python target settings from ComfyUI configuration (now set globally)
+
 ## [1.0.0] - 2025-12-25
 - Comprehensive rewrite for Gentoo UM890 Pro optimization
 - Target hardware specifications documented:

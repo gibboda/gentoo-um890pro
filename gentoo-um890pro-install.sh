@@ -358,6 +358,11 @@ INPUT_DEVICES="libinput"
 
 # Prefer pure 64-bit when using a no-multilib profile
 ABI_X86="64"
+
+# Python targets - set globally to avoid USE flag conflicts
+# python3_11 is stable and widely supported across Gentoo packages
+PYTHON_TARGETS="python3_11"
+PYTHON_SINGLE_TARGET="python3_11"
 EOF
 
   # Mount chroot binds
@@ -475,6 +480,44 @@ EOF
 
   # Configure package.use for installkernel based on selected init system
   mkdir -p "${MNT}/etc/portage/package.use"
+  
+  # Python packages - Global Python target configuration
+  # This prevents the infinite loop of USE flag changes by ensuring all Python packages
+  # use the same python_targets_python3_11 consistently across the entire system.
+  # These packages are commonly pulled in as dependencies by various system packages.
+  cat > "${MNT}/etc/portage/package.use/python" <<EOF
+# Global Python target configuration
+# All Python packages are configured to use python3_11 to prevent USE flag conflicts
+# This includes packages pulled in by system dependencies (Sphinx, docutils, etc.)
+
+# Core Python build tools
+>=dev-python/installer-0.5.0 python_targets_python3_11
+>=dev-python/gpep517-19 python_targets_python3_11
+>=dev-python/setuptools-80.0.0 python_targets_python3_11
+>=dev-python/wheel-0.40.0 python_targets_python3_11
+>=dev-python/packaging-23.0 python_targets_python3_11
+>=dev-python/flit-core-3.9.0 python_targets_python3_11
+
+# Common dependencies (often pulled by Sphinx, docutils, etc.)
+>=dev-python/olefile-0.47 python_targets_python3_11
+>=dev-python/pillow-10.0.0 python_targets_python3_11
+>=dev-python/backports-tarfile-1.0.0 python_targets_python3_11
+>=dev-python/jaraco-context-4.0.0 python_targets_python3_11
+>=dev-python/jaraco-text-3.0.0 python_targets_python3_11
+>=dev-python/jaraco-collections-4.0.0 python_targets_python3_11
+>=dev-python/jaraco-functools-4.0.0 python_targets_python3_11
+>=dev-python/more-itertools-9.0.0 python_targets_python3_11
+>=dev-python/platformdirs-3.0.0 python_targets_python3_11
+>=dev-python/setuptools-scm-8.0.0 python_targets_python3_11
+>=dev-python/trove-classifiers-2023.0.0 python_targets_python3_11
+
+# AI/ML packages (for ComfyUI and ROCm)
+>=dev-python/numpy-1.24.0 python_targets_python3_11
+>=dev-python/torch-2.0.0 python_targets_python3_11
+>=dev-python/torchvision-0.15.0 python_targets_python3_11
+>=dev-python/transformers-4.30.0 python_targets_python3_11
+EOF
+  
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     cat > "${MNT}/etc/portage/package.use/installkernel" <<EOF
 # Enable systemd integration for installkernel
@@ -614,13 +657,12 @@ EOF
   fi
 
   # ComfyUI and AI dependencies
+  # Note: Python targets are configured globally in package.use/python
+  # This file is kept for potential future ComfyUI-specific USE flags
   cat > "${MNT}/etc/portage/package.use/comfyui" <<EOF
-# Python packages for ComfyUI
-dev-python/numpy python_targets_python3_11
-dev-python/pillow python_targets_python3_11
-dev-python/torch python_targets_python3_11
-dev-python/torchvision python_targets_python3_11
-dev-python/transformers python_targets_python3_11
+# ComfyUI and AI dependencies
+# Python targets are configured globally in package.use/python
+# Add any ComfyUI-specific USE flags here if needed in the future
 EOF
 
   # If ComfyUI is not requested, remove the ComfyUI-specific file
