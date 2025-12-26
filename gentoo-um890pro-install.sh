@@ -482,7 +482,7 @@ EOF
   mkdir -p "${MNT}/etc/portage/package.use"
   
   # Python packages - Global Python target configuration
-  # This prevents infinite loop of USE flag changes across the entire system.
+  # This prevents infinite loop of USE flag changes across the entire system
   cat > "${MNT}/etc/portage/package.use/python" <<EOF
 # Global Python target configuration
 # All Python packages are configured to use python3_11 to prevent USE flag conflicts
@@ -633,12 +633,12 @@ EOF
 
   # ComfyUI-specific USE flags (if needed)
   # Note: Python targets are configured globally in package.use/python
-  # Only create this file if ComfyUI is installed, for future ComfyUI-specific USE flags
+  # Creates placeholder file for potential ComfyUI-specific USE flags
   if [[ "${INSTALL_COMFYUI:-no}" == "yes" ]]; then
     cat > "${MNT}/etc/portage/package.use/comfyui" <<EOF
 # ComfyUI-specific USE flags
 # Python targets are configured globally in package.use/python
-# Add any ComfyUI-specific USE flags here if needed in the future
+# This file is a placeholder for potential ComfyUI-specific USE flags
 EOF
   fi
   
