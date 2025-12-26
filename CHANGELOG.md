@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.4] - 2025-12-26
+### Fixed
+- **Kernel Installation**: Fixed blocking conflict when `INSTALL_DUAL_KERNEL=yes`
+  - Modified `install_kernel()` to install kernels sequentially instead of simultaneously
+  - Install `sys-kernel/gentoo-kernel-bin` first, then `sys-kernel/gentoo-kernel` second
+  - Resolves Portage soft-blocking error: "The above package list contains packages which cannot be installed at the same time on the same system"
+  - Both kernels can coexist when installed separately, providing fallback options for system recovery
+
 ## [1.0.3] - 2025-12-26
 ### Fixed
 - **Python Targets**: Corrected from python3_14 to python3_12 (python3_14 does not exist)
