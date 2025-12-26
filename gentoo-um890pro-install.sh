@@ -104,9 +104,8 @@ COMMON_FLAGS="-O2 -pipe -march=znver4"
 # Desktop and AI workloads
 INSTALL_KDE_PLASMA="yes"  # yes/no
 INSTALL_BLENDER="yes"     # yes/no - Install Blender 3D creation suite
-INSTALL_COMFYUI="yes"     # yes/no - Install ComfyUI for AI image generation
+INSTALL_COMFYUI="yes"     # yes/no - Install ComfyUI for AI image generation (includes SDXL support)
 INSTALL_ROCM="yes"        # yes/no - Install ROCm for AMD GPU compute
-INSTALL_SDXL="yes"        # yes/no - Install Stable Diffusion XL models
 
 # Pure 64-bit (no multilib). The script will try to pick a no-multilib profile.
 PURE_64BIT="yes"  # yes/no
@@ -1047,8 +1046,6 @@ fi
 cd "${COMFYUI_DIR}"
 
 # Create virtual environment
-python3.11 -m venv venv
-source venv/bin/activate
 python3.11 -m venv venv
 source venv/bin/activate
 

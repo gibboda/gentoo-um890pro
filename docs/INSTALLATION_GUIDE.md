@@ -121,9 +121,8 @@ Before running the installer, verify:
    # Desktop and features
    INSTALL_KDE_PLASMA="yes"
    INSTALL_BLENDER="yes"
-   INSTALL_COMFYUI="yes"
+   INSTALL_COMFYUI="yes"  # Includes SDXL support
    INSTALL_ROCM="yes"
-   INSTALL_SDXL="yes"
    
    # Snapshot management
    ENABLE_SNAPSHOTS="yes"
