@@ -1850,11 +1850,20 @@ preserve_current() {
         exit 0
     fi
     
-    echo "# Preserved on $(date)" >> /etc/portage/sets/kernels
-    while IFS= read -r pkg; do
+    # Avoid duplicating the preserved-kernels comment if it already exists.
+    if ! grep -q '^# Preserved on' /etc/portage/sets/kernels 2>/dev/null; then
+        echo "# Preserved on $(date)" >> /etc/portage/sets/kernels
+    fi
+
+    echo "${KERNELS}" | while read -r pkg; do
         if [[ -n "${pkg}" ]]; then
-            echo "${pkg}" >> /etc/portage/sets/kernels
-            echo "  Preserved: ${pkg}"
+            # Only append the package if it is not already present as a full line.
+            if ! grep -Fxq "${pkg}" /etc/portage/sets/kernels 2>/dev/null; then
+                echo "${pkg}" >> /etc/portage/sets/kernels
+                echo "  Preserved: ${pkg}"
+            else
+                echo "  Already preserved: ${pkg}"
+            fi
         fi
     done <<< "${KERNELS}"
     
