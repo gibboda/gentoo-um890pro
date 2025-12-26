@@ -1851,12 +1851,12 @@ preserve_current() {
     fi
     
     echo "# Preserved on $(date)" >> /etc/portage/sets/kernels
-    echo "${KERNELS}" | while read -r pkg; do
+    while IFS= read -r pkg; do
         if [[ -n "${pkg}" ]]; then
             echo "${pkg}" >> /etc/portage/sets/kernels
             echo "  Preserved: ${pkg}"
         fi
-    done
+    done <<< "${KERNELS}"
     
     echo
     echo "Kernels added to /etc/portage/sets/kernels"
