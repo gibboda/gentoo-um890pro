@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.2] - 2025-12-26
+### Changed
+- **Python Targets**: Updated from python3_11 to python3_14
+  - Update `PYTHON_TARGETS="python3_14"` and `PYTHON_SINGLE_TARGET="python3_14"` in make.conf
+  - Update `package.use/python` to use `python_targets_python3_14` for all Python packages
+  - Update ComfyUI Python installation to use `dev-lang/python:3.14`
+  - This resolves USE flag conflicts with modern Sphinx and documentation tools that require python3_14
+- **Btrfs Tools**: Added man USE flag for sys-fs/btrfs-progs
+  - Create `package.use/btrfs` configuration file
+  - Enable man pages which require Sphinx documentation system with python3_14 support
+- **Package Version Constraints**: Removed specific version requirements to use latest stable releases
+  - Changed `>=dev-qt/qtbase-6.9.3` to `dev-qt/qtbase` (use stable version)
+  - This allows Portage to select the latest stable Qt version automatically
+- **Testing Keywords Documentation**: Improved comments for ~amd64 testing packages
+  - linux-firmware: Clarified requirement for AMD Radeon 780M RDNA3 (gfx1103) support
+  - vulkan-headers: Clarified requirement for Qt 6 Vulkan backend in KDE Plasma 6
+  - ROCm packages: Clarified requirement for AMD Radeon 780M gfx1103 architecture support
+- **Audio/Video Support**: Added comprehensive PipeWire USE flags
+  - Create `package.use/audio` configuration file
+  - Configure media-video/pipewire with sound-server, pipewire-alsa, extra, gstreamer
+  - Configure media-video/wireplumber with elogind
+- **Graphics Support**: Enhanced Mesa configuration for AMD RDNA3
+  - Add vulkan and video_cards_radeon USE flags to media-libs/mesa
+  - Ensures proper Vulkan and OpenCL support for AMD Radeon 780M iGPU
+
+### Fixed
+- Resolved Python target conflicts that prevented package installation
+- Resolved btrfs-progs man page dependency conflicts with Sphinx
+- Improved hardware-specific USE flag configurations for UM890 Pro (AMD Radeon 780M)
+
 ## [1.0.1] - 2025-12-26
 ### Fixed
 - Fix infinite loop of USE flag changes for Python packages during installation
