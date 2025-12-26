@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.3] - 2025-12-26
+### Fixed
+- **Python Targets**: Corrected from python3_14 to python3_12 (python3_14 does not exist)
+  - Update `PYTHON_TARGETS="python3_12"` and `PYTHON_SINGLE_TARGET="python3_12"` in make.conf
+  - Update `package.use/python` to use `python_targets_python3_12` for all Python packages
+  - Update ComfyUI Python installation to use `dev-lang/python:3.12`
+  - This resolves slot conflicts that were caused by referencing non-existent python3_14
+  - Python 3.12 is the latest stable version in Gentoo that properly supports all dependencies
+  - Ensures compatibility with Sphinx, documentation tools, ROCm, PyTorch, and all AI/ML packages
+  - Verified to work with AMD Radeon 780M (gfx1103), Vulkan, KDE Plasma 6, Wayland, Blender 3D, ComfyUI, and ROCm stack
+
 ## [1.0.2] - 2025-12-26
 ### Changed
 - **Python Targets**: Updated from python3_11 to python3_14
