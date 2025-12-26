@@ -1988,7 +1988,7 @@ main() {
     echo
     echo "Kernel management:"
     echo "  - Binary kernel installed for fast initial setup"
-    echo "  - Old kernel versions automatically preserved for fallback"
+    echo "  - Old kernel versions can be preserved for fallback (run 'sudo manage-kernels preserve')"
     echo "  - To switch to source kernel for optimization:"
     echo "    sudo switch-to-source-kernel"
     echo "  - To manage kernel versions:"
