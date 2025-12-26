@@ -1662,22 +1662,55 @@ echo "==========================================================================
 CURRENT_KERNEL=$(eselect kernel show | grep -oP 'linux-\K[0-9]+\.[0-9]+\.[0-9]+.*' || echo "unknown")
 echo "Current kernel version: ${CURRENT_KERNEL}"
 
+# Paths for kernel preservation set and lock file
+KERNEL_SET_FILE="/etc/portage/sets/kernels"
+KERNEL_SET_LOCK="${KERNEL_SET_FILE}.lock"
+
 # Find installed binary kernel packages
 BINARY_KERNELS=$(qlist -ICv sys-kernel/gentoo-kernel-bin 2>/dev/null || echo "")
 if [[ -n "${BINARY_KERNELS}" ]]; then
     echo "Binary kernels installed:"
     echo "${BINARY_KERNELS}"
-    
+
     # Add to kernel preservation set
     echo
     echo "Adding current binary kernel(s) to preservation set..."
-    echo "# Auto-added by switch-to-source-kernel on $(date)" >> /etc/portage/sets/kernels
-    echo "${BINARY_KERNELS}" | while read -r pkg; do
-        if [[ -n "${pkg}" ]]; then
-            echo "${pkg}" >> /etc/portage/sets/kernels
-            echo "  Preserved: ${pkg}"
-        fi
-    done
+
+    # Use a lockfile if flock is available to avoid concurrent modifications.
+    if command -v flock >/dev/null 2>&1; then
+        flock_cmd=(flock -w 10 "${KERNEL_SET_LOCK}")
+    else
+        flock_cmd=()
+    fi
+
+    # Run the update under the (optional) lock, avoiding duplicate entries and
+    # only adding a comment when at least one new kernel is preserved.
+    "${flock_cmd[@]}" bash -c '
+        set -Eeuo pipefail
+        kernel_set_file="$1"
+        shift
+
+        # Ensure the set file exists
+        touch "${kernel_set_file}"
+
+        added_any=false
+        for pkg in "$@"; do
+            # Skip empty lines
+            [[ -z "${pkg}" ]] && continue
+
+            # Only add package if it is not already present
+            if ! grep -qxF "${pkg}" "${kernel_set_file}"; then
+                if [ "${added_any}" = false ]; then
+                    echo "# Auto-added by switch-to-source-kernel on $(date)" >> "${kernel_set_file}"
+                    added_any=true
+                fi
+                echo "${pkg}" >> "${kernel_set_file}"
+                echo "  Preserved: ${pkg}"
+            else
+                echo "  Already preserved: ${pkg}"
+            fi
+        done
+    ' bash "${KERNEL_SET_FILE}" ${BINARY_KERNELS}
 fi
 
 echo
