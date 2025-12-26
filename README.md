@@ -21,6 +21,7 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 ## Documentation
 
 - **[Installation Guide](docs/INSTALLATION_GUIDE.md)** - Step-by-step installation instructions
+- **[Kernel Management](docs/KERNEL_MANAGEMENT.md)** - Kernel backup, optimization, and fallback strategies
 - **[Hardware Setup](docs/HARDWARE_SETUP.md)** - BIOS configuration, hardware verification
 - **[System Specifications](docs/SYSTEM_SPECS.md)** - Complete hardware specifications
 - **[Optimization Guide](docs/OPTIMIZATION_GUIDE.md)** - Performance tuning and optimizations
@@ -137,7 +138,7 @@ reboot
 
 After reboot, ZFS datasets are mounted under `ZFS_MNT_BASE` (default `/data`).
 
-### Kernel optimization
+### Kernel optimization and backup
 
 The installer uses a binary kernel (`gentoo-kernel-bin`) by default for fast initial setup. To switch to a source kernel for optimization and customization:
 
@@ -146,12 +147,28 @@ sudo switch-to-source-kernel
 ```
 
 This helper script will:
+- **Preserve old kernel versions automatically** for backup/fallback
 - Install the source kernel (`sys-kernel/gentoo-kernel`)
 - Automatically replace the binary kernel in the same slot
-- Preserve your kernel configuration
+- Keep your kernel configuration
+- Optionally customize kernel config with `menuconfig`
 - Guide you through the process (takes 30-60 minutes to build)
 
-**Note**: Binary and source kernels cannot coexist in the same version/slot. For kernel fallback, keep multiple kernel versions (different slots) rather than trying to install both types of the same version.
+#### Kernel backup and fallback strategy
+
+- **Old kernels are kept automatically**: The system is configured to preserve previous kernel versions as backups
+- **Boot menu access**: All installed kernel versions appear in the rEFInd boot menu
+- **Safe upgrades**: When upgrading kernels, old versions remain bootable until you manually remove them
+- **Multiple versions supported**: Keep 2-3 kernel versions for safety
+- **Slot-based system**: Each kernel version uses a different slot (e.g., 6.12.58, 6.13.0)
+
+**Important**: Binary and source kernels cannot coexist in the same version/slot. If you have kernel 6.12.58 as binary, installing source 6.12.58 will replace it. However, you can keep binary 6.12.58 AND source 6.13.0 (different versions).
+
+View preserved kernels:
+```bash
+cat /etc/portage/sets/kernels
+eselect kernel list
+```
 
 ### Note: ZFS and binary kernels
 

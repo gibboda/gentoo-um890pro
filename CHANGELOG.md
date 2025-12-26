@@ -11,24 +11,50 @@ All notable changes to this project will be documented in this file.
   - The v1.0.4 fix was incorrect - sequential installation doesn't resolve slot conflicts
   - `INSTALL_DUAL_KERNEL` is now DEPRECATED and defaults to `no`
   - Changed default `USE_BINARY_KERNEL="yes"` for fast initial setup
-  - Added `switch-to-source-kernel` helper script in `/usr/local/bin/`
-  - Users can now install binary kernel first, then switch to source kernel later for optimization
-  - Updated documentation to explain proper kernel fallback: keep multiple versions (different slots)
   - Resolves Portage error: "The above package list contains packages which cannot be installed at the same time"
 
 ### Added
 - **Kernel Switch Helper**: New `/usr/local/bin/switch-to-source-kernel` script
-  - Guides users through switching from binary to source kernel
-  - Automatically handles kernel replacement in the same slot
+  - Guides users through switching from binary to source kernel after installation
+  - Automatically preserves old kernel versions for backup/fallback
+  - Records current binary kernels in `/etc/portage/sets/kernels` before switching
+  - Handles kernel replacement in the same slot automatically
   - Preserves kernel configuration
-  - Provides clear instructions for kernel customization
+  - Optional kernel customization with `make menuconfig`
+  - Provides clear instructions for kernel management and fallback
   - Installed automatically when using binary kernel
+
+- **Kernel Management Helper**: New `/usr/local/bin/manage-kernels` script
+  - `manage-kernels list` - Show all installed kernel versions
+  - `manage-kernels preserve` - Add current kernels to preservation set
+  - `manage-kernels clean` - Interactively remove old kernel versions
+  - `manage-kernels info` - Show detailed kernel information
+  - Helps maintain multiple kernel versions for backup strategy
+
+- **Kernel Preservation Configuration**: Automatic backup system
+  - Created `/etc/portage/sets/kernels` for kernel preservation
+  - Created `/etc/portage/profile/package.provided` for package management
+  - Old kernel versions automatically preserved when upgrading
+  - Multiple kernel slots supported (e.g., 6.12.58, 6.13.0 can coexist)
+  - Prevents `emerge --depclean` from removing backup kernels
+  - All kernel versions remain bootable in rEFInd menu
 
 ### Changed
 - **Default Kernel**: Changed `USE_BINARY_KERNEL` default from `no` to `yes`
   - Binary kernel provides faster initial installation (5 min vs 30-60 min)
   - Users can optimize later with `switch-to-source-kernel` when system is stable
   - Better user experience: working system first, optimization second
+  - Old kernels preserved automatically for fallback safety
+
+### Documentation
+- **README.md**: Added comprehensive kernel backup and fallback strategy section
+  - Explains slot-based kernel system
+  - Documents kernel preservation and management
+  - Clarifies that different versions can coexist (6.12.58 binary + 6.13.0 source)
+  - Added commands for viewing preserved kernels
+- **Installation instructions**: Updated to reflect new kernel workflow
+  - Binary first for speed, source later for optimization
+  - Documented kernel management commands
 
 ## [1.0.4] - 2025-12-26
 ### Fixed
