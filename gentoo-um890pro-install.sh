@@ -1642,7 +1642,7 @@ echo "  4. Your current kernel configuration will be preserved"
 echo "  5. You can boot into old kernels from the rEFInd boot menu"
 echo
 echo "Current kernel packages:"
-emerge --search sys-kernel/gentoo-kernel 2>/dev/null | grep -E "^\*|Latest version|Installed versions" || true
+emerge --search sys-kernel/gentoo-kernel 2>/dev/null | grep -E '^\* sys-kernel/gentoo-kernel$|^[[:space:]]*Latest version available:|^[[:space:]]*Installed versions:' || true
 echo
 
 read -r -p "Do you want to proceed? (yes/no): " confirm
