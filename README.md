@@ -84,7 +84,7 @@ chmod +x gentoo-um890pro-install.sh
 - `INSTALL_BLENDER` — `yes` to install Blender 3D creation suite with OpenGL and Vulkan support.
 - `INSTALL_COMFYUI` — `yes` to set up ComfyUI for AI image generation with SDXL support (manual setup required post-install).
 - `INSTALL_ROCM` — `yes` to install ROCm for AMD GPU compute acceleration.
-- `INSTALL_DUAL_KERNEL` — `yes` to install both binary and source kernels for fallback.
+- `INSTALL_DUAL_KERNEL` — **DEPRECATED**: Now behaves the same as `USE_BINARY_KERNEL=yes`. Binary and source kernels of the same version cannot coexist. For kernel fallback, keep old kernel versions instead.
 - `ENABLE_SNAPSHOTS` — `yes` to set up automated Btrfs snapshot management.
 - `ZPOOL` — name of the ZFS pool created (default `tank`).
 - `COMMON_FLAGS` — compile flags written to `make.conf`.

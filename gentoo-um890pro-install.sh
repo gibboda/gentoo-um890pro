@@ -110,8 +110,10 @@ INSTALL_ROCM="yes"        # yes/no - Install ROCm for AMD GPU compute
 # Pure 64-bit (no multilib). The script will try to pick a no-multilib profile.
 PURE_64BIT="yes"  # yes/no
 
-# Dual-kernel setup for safety
-INSTALL_DUAL_KERNEL="yes"  # yes/no - Install both binary and source kernels
+# DEPRECATED: Dual-kernel setup. Now behaves the same as USE_BINARY_KERNEL=yes.
+# Binary and source kernels of the same version cannot coexist (soft-block conflict).
+# For kernel fallback, keep old kernel versions instead of trying to install both types.
+INSTALL_DUAL_KERNEL="no"  # yes/no - Deprecated, use USE_BINARY_KERNEL instead
 
 # Enable snapshot management for Btrfs
 ENABLE_SNAPSHOTS="yes"  # yes/no - Set up automated snapshot management
@@ -689,16 +691,10 @@ EOF
 install_kernel() {
   echo "Installing kernel..."
 
-  if [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]]; then
-    echo "Installing dual-kernel setup (binary + source) for safety..."
-    # Install kernels sequentially to avoid slot blocking conflicts
-    # The binary and source kernels soft-block each other in the same slot,
-    # but can coexist when installed separately.
-    echo "Installing binary kernel first..."
-    chroot_run "emerge sys-kernel/gentoo-kernel-bin"
-    echo "Installing source kernel second..."
-    chroot_run "emerge sys-kernel/gentoo-kernel"
-  elif [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
+  # Note: INSTALL_DUAL_KERNEL is deprecated and now behaves the same as USE_BINARY_KERNEL=yes
+  # The binary and source kernels of the same version cannot coexist (they soft-block each other).
+  # For kernel fallback/safety, keep old kernel versions around rather than trying to install both types.
+  if [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]] || [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
     chroot_run "emerge sys-kernel/gentoo-kernel-bin"
   else
     chroot_run "emerge sys-kernel/gentoo-kernel"
