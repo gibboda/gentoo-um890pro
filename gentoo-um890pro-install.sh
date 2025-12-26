@@ -1283,7 +1283,7 @@ rollback_snapshot() {
     echo "Available snapshots:"
     list_snapshots
     echo ""
-    read -p "Enter snapshot name to rollback to: " snapshot_name
+    read -r -p "Enter snapshot name to rollback to: " snapshot_name
     
     if [[ ! -d "${SNAPSHOTS_DIR}/${snapshot_name}" ]]; then
         echo "ERROR: Snapshot not found: ${snapshot_name}"
@@ -1645,7 +1645,7 @@ echo "Current kernel packages:"
 emerge --search sys-kernel/gentoo-kernel 2>/dev/null | grep -E "^\*|Latest version|Installed versions" || true
 echo
 
-read -p "Do you want to proceed? (yes/no): " confirm
+read -r -p "Do you want to proceed? (yes/no): " confirm
 if [[ "${confirm}" != "yes" ]]; then
     echo "Aborted."
     exit 0
@@ -1709,7 +1709,7 @@ echo "==========================================================================
 echo "Step 4: Kernel configuration (optional customization)"
 echo "================================================================================"
 echo
-read -p "Do you want to customize the kernel config now? (y/n): " customize
+read -r -p "Do you want to customize the kernel config now? (y/n): " customize
 if [[ "${customize}" == "y" || "${customize}" == "Y" ]]; then
     cd /usr/src/linux
     make menuconfig
@@ -1840,7 +1840,7 @@ preserve_current() {
     echo "Current kernels:"
     echo "${KERNELS}"
     echo
-    read -p "Add these to preservation set? (y/n): " confirm
+    read -r -p "Add these to preservation set? (y/n): " confirm
     if [[ "${confirm}" != "y" && "${confirm}" != "Y" ]]; then
         echo "Cancelled."
         exit 0
@@ -1872,7 +1872,7 @@ clean_old_kernels() {
     echo
     echo "================================================================================"
     echo
-    read -p "Do you want to clean old kernels? (yes/no): " confirm
+    read -r -p "Do you want to clean old kernels? (yes/no): " confirm
     if [[ "${confirm}" != "yes" ]]; then
         echo "Cancelled."
         exit 0
@@ -1882,7 +1882,7 @@ clean_old_kernels() {
     echo "Use 'emerge --deselect' to remove kernels from world, then 'emerge --depclean'"
     echo "Example: emerge --deselect sys-kernel/gentoo-kernel-bin:6.12.58"
     echo
-    read -p "Run interactive depclean now? (y/n): " run_clean
+    read -r -p "Run interactive depclean now? (y/n): " run_clean
     if [[ "${run_clean}" == "y" || "${run_clean}" == "Y" ]]; then
         emerge --depclean --ask
     fi
