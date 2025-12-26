@@ -498,7 +498,7 @@ EOF
 dev-python/* python_targets_python3_12 python_targets_python3_13
 EOF
   
-  # Btrfs tools with man pages (requires Sphinx documentation system)
+  # Btrfs tools with man pages (requires Sphinx, which will use configured Python targets)
   cat > "${MNT}/etc/portage/package.use/btrfs" <<EOF
 # Enable man pages for btrfs-progs (requires Sphinx documentation system)
 sys-fs/btrfs-progs man
