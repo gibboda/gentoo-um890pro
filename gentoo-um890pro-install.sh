@@ -633,12 +633,12 @@ EOF
 
   # ComfyUI-specific USE flags (if needed)
   # Note: Python targets are configured globally in package.use/python
-  # Creates placeholder file for potential ComfyUI-specific USE flags
+  # When ComfyUI is being installed, create a placeholder file for potential ComfyUI-specific USE flags
   if [[ "${INSTALL_COMFYUI:-no}" == "yes" ]]; then
     cat > "${MNT}/etc/portage/package.use/comfyui" <<EOF
 # ComfyUI-specific USE flags
 # Python targets are configured globally in package.use/python
-# This file is a placeholder for potential ComfyUI-specific USE flags
+# This file is a placeholder for potential ComfyUI-specific USE flags and is only created when ComfyUI is installed
 EOF
   fi
   
