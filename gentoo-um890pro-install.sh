@@ -1755,6 +1755,8 @@ EOF
 create_kernel_management_helper() {
   echo "Creating kernel management helper script..."
   
+  # Ensure target directory exists before creating the helper script
+  mkdir -p "${MNT}/usr/local/bin"
   # Create helper script for managing kernel versions
   cat > "${MNT}/usr/local/bin/manage-kernels" <<'EOF'
 #!/bin/bash
