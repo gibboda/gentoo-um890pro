@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.7] - 2025-12-27
+
 ### Added
 - **Safe Dual-Kernel Installation**: Reimplemented `INSTALL_DUAL_KERNEL` with LOCALVERSION isolation
   - Kernel A: `sys-kernel/gentoo-kernel-bin` (stable fallback, never modified after installation)
