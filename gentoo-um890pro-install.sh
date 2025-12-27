@@ -495,13 +495,6 @@ EOF
 sys-kernel/linux-firmware ~amd64
 EOF
 
-  # Accept testing keyword for vulkan-headers (required for Qt 6 Vulkan backend)
-  # KDE Plasma 6 with Wayland benefits from Vulkan support on AMD RDNA3 iGPU
-  cat > "${MNT}/etc/portage/package.accept_keywords/vulkan-headers" <<EOF
-# Required by dev-qt/qtbase with vulkan USE flag for KDE Plasma 6
-dev-util/vulkan-headers ~amd64
-EOF
-
   # Configure package.use for installkernel based on selected init system
   mkdir -p "${MNT}/etc/portage/package.use"
   
@@ -540,14 +533,13 @@ EOF
   # Separate configuration files allow independent management of different component groups
   
   # Qt 6 Core Packages - Graphics Backend Configuration
-  # qtbase is configured with Vulkan backend for AMD Radeon 780M RDNA3 iGPU
+  # qtbase uses OpenGL (Vulkan disabled) to satisfy Portage autounmask for >=6.10.1
   # This configuration supports KDE Plasma 6, Wayland, and modern graphics applications
   cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
-# Qt 6 base library with Vulkan and OpenGL support for AMD RDNA3 graphics
+# Qt 6 base library with OpenGL support for AMD RDNA3 graphics
 # Note: OpenGL is required when wayland USE flag is enabled (REQUIRED_USE: wayland? ( opengl ))
-# Both OpenGL and Vulkan are enabled to satisfy the Wayland REQUIRED_USE constraint while using the Vulkan backend
-# dev-util/vulkan-headers is unmasked via package.accept_keywords
-dev-qt/qtbase libproxy icu cups opengl vulkan
+# Vulkan is disabled to comply with autounmask requirement for >=dev-qt/qtbase-6.10.1
+dev-qt/qtbase libproxy icu cups opengl -vulkan
 dev-qt/qt5compat qml icu
 app-text/xmlto text
 sys-libs/zlib minizip

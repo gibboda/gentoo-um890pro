@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
     depending on `qtbase[opengl=]` (this is not a universal Portage rule)
   - Prevents conflict between `-opengl` suggestion and qtbase/wayland requirement
   - Affects KDE Plasma 6 with Wayland on AMD Radeon 780M iGPU
+- **Qt 6 USE flags**: Disable `vulkan` for `>=dev-qt/qtbase-6.10.1`
+  - Matches Portage autounmask requirement: `>=dev-qt/qtbase-6.10.1 -vulkan`
+  - Removes unnecessary `vulkan-headers` keyword override and keeps OpenGL enabled
 
 ## [1.0.7] - 2025-12-27
 
