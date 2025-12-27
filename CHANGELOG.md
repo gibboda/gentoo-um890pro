@@ -14,7 +14,9 @@ All notable changes to this project will be documented in this file.
   - Affects KDE Plasma 6 with Wayland on AMD Radeon 780M iGPU
 - **Qt 6 USE flags**: Enable `vulkan` for `>=dev-qt/qtbase-6.10.1` and matching Qt 6 modules
   - Aligns with autounmask request: `>=dev-qt/qtbase-6.10.1 vulkan`
-  - Keeps OpenGL enabled for Wayland while ensuring KDE Plasma components (kinfocenter, kscreen, qtquick3d, qtmultimedia, qtdeclarative) share the same Vulkan setting to avoid slot conflicts
+  - Reverts a temporary change between v1.0.6 and this release where `vulkan` was disabled on `dev-qt/qtbase`
+  - Previous disabling attempted to work around observed stability issues, which were later traced to the graphics stack (Mesa/driver combination) rather than Vulkan itself
+  - Vulkan is now enabled consistently across `qtbase` and dependent Qt/KDE components (kinfocenter, kscreen, qtquick3d, qtmultimedia, qtdeclarative) to avoid USE/slot conflicts while keeping OpenGL enabled for Wayland
 
 ## [1.0.7] - 2025-12-27
 
