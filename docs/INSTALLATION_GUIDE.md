@@ -157,7 +157,7 @@ Before running the installer, verify:
    - Base system packages: ~20-40 min
    - Kernel installation:
      - Binary kernel (USE_BINARY_KERNEL="yes"): ~5 min
-     - Dual-kernel (INSTALL_DUAL_KERNEL="yes"): ~40-70 min
+     - Dual-kernel (INSTALL_DUAL_KERNEL="yes"): ~35-65 min total
        - Kernel A (binary): ~5 min
        - Kernel B (source build): ~30-60 min
    - ZFS installation: ~10-20 min

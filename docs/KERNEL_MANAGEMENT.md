@@ -53,8 +53,8 @@ add_dracutmodules+=" kernel-modules rootfs-block btrfs resume "
 ```
 
 **Key behavior**: Each kernel gets its own initramfs with versioned naming:
-- Kernel A: `dracut` auto-generates `/boot/initramfs-<VERSION>-gentoo-dist.img`
-- Kernel B: `dracut --force --hostonly --kver "<VERSION>-um890-tuned" "/boot/initramfs-<VERSION>-um890-tuned.img"`
+- Kernel A: dracut auto-generates `/boot/initramfs-<VERSION>-gentoo-dist.img`
+- Kernel B: `dracut --force --hostonly --kver <VERSION>-um890-tuned /boot/initramfs-<VERSION>-um890-tuned.img`
 
 **NOT using** `dracut --regenerate-all` to avoid touching Kernel A.
 
@@ -188,6 +188,8 @@ ls -1 /boot/vmlinuz-* | sed 's/.*vmlinuz-//'
 ```
 
 **Critical**: Each must have a unique suffix (`-gentoo-dist` vs `-um890-tuned`).
+
+**Note**: Both kernels can be the same base version (e.g., both 6.12.58) because the LOCALVERSION suffix makes them unique. Different base versions (e.g., 6.12.58-gentoo-dist + 6.13.0-um890-tuned) are also supported.
 
 ### 4. Test Boot Both Kernels
 

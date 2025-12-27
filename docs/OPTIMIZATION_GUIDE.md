@@ -46,7 +46,7 @@ Example `/boot/refind_linux.conf`:
 
 ### Kernel Configuration
 
-For Kernel B (custom tuned in dual-kernel mode) or custom source kernels:
+For custom source kernels or Kernel B in dual-kernel mode, ensure these AI/ML-optimized options:
 
 ```
 CONFIG_AMDGPU=y
