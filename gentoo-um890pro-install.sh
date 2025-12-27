@@ -533,13 +533,13 @@ EOF
   # Separate configuration files allow independent management of different component groups
   
   # Qt 6 Core Packages - Graphics Backend Configuration
-  # qtbase uses OpenGL (Vulkan disabled) to satisfy Portage autounmask for >=6.10.1
-  # This configuration supports KDE Plasma 6, Wayland, and modern graphics applications
+  # qtbase uses OpenGL + Vulkan to satisfy KDE Plasma 6 components that require Vulkan (e.g., kinfocenter)
+  # This configuration keeps Wayland-required OpenGL while aligning Vulkan across Qt 6 modules
   cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
 # Qt 6 base library with OpenGL support for AMD RDNA3 graphics
 # Note: OpenGL is required when wayland USE flag is enabled (REQUIRED_USE: wayland? ( opengl ))
-# Vulkan is disabled to comply with autounmask requirement for >=dev-qt/qtbase-6.10.1
-dev-qt/qtbase libproxy icu cups opengl -vulkan
+# Vulkan is enabled to match KDE Plasma requirements (kinfocenter, kscreen, qtquick3d, qtmultimedia)
+dev-qt/qtbase libproxy icu cups opengl vulkan
 dev-qt/qt5compat qml icu
 app-text/xmlto text
 sys-libs/zlib minizip
@@ -548,7 +548,11 @@ EOF
   # Qt 6 Additional Modules
   cat > "${MNT}/etc/portage/package.use/qt-modules" <<EOF
 # Qt multimedia for audio/video in KDE applications
-dev-qt/qtmultimedia qml
+dev-qt/qtmultimedia qml vulkan
+# Qt Declarative/QML engine must match qtbase Vulkan setting to avoid slot conflicts
+dev-qt/qtdeclarative vulkan
+# Qt Quick 3D renderer matches qtbase Vulkan setting
+dev-qt/qtquick3d vulkan
 EOF
 
   # KDE Frameworks - Core libraries used by KDE Plasma
@@ -559,6 +563,8 @@ kde-frameworks/kcoreaddons dbus
 kde-frameworks/prison qml
 kde-frameworks/sonnet qml
 dev-libs/qcoro dbus
+# Image formats (required by kscreen): enable AVIF support
+kde-frameworks/kimageformats avif
 EOF
 
   # KDE Plasma - Desktop environment specific settings
@@ -585,6 +591,8 @@ x11-libs/libdrm video_cards_radeon
 x11-base/xwayland libei
 # Mesa with Vulkan and OpenCL support for AMD RDNA3
 media-libs/mesa vulkan video_cards_radeon
+# freetype harfbuzz needed by the pango stack pulled by PipeWire/GStreamer
+media-libs/freetype harfbuzz
 EOF
 
   # Disable ModemManager in NetworkManager (no modem present in UM890 Pro)
