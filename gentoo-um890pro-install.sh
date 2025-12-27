@@ -544,7 +544,7 @@ EOF
   cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
 # Qt 6 base library with Vulkan and OpenGL support for AMD RDNA3 graphics
 # Note: OpenGL is required when wayland USE flag is enabled (REQUIRED_USE: wayland? ( opengl ))
-# Both OpenGL and Vulkan are enabled to satisfy wayland dependency while using Vulkan backend
+# Both OpenGL and Vulkan are enabled to satisfy the Wayland REQUIRED_USE constraint while using the Vulkan backend
 # dev-util/vulkan-headers is unmasked via package.accept_keywords
 dev-qt/qtbase libproxy icu cups opengl vulkan
 dev-qt/qt5compat qml icu
