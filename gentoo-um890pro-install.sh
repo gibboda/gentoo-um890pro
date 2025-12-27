@@ -769,7 +769,8 @@ compress="zstd"
 early_microcode="yes"
 
 # Essential modules for UM890 Pro
-add_drivers+=" amdgpu btrfs zfs nvme "
+# Note: ZFS module will be added automatically if sys-fs/zfs is installed
+add_drivers+=" amdgpu btrfs nvme "
 add_dracutmodules+=" kernel-modules rootfs-block btrfs resume "
 
 # Ensure unique naming per kernel version
@@ -790,8 +791,11 @@ EOF
     
     echo "  Base version: ${KERNEL_B_BASE_VERSION}"
     
-    # Select gentoo-sources for configuration - try by number first, then by name
-    chroot_run "eselect kernel set gentoo-sources-${KERNEL_B_BASE_VERSION} || eselect kernel set 1"
+    # Select gentoo-sources for configuration
+    if ! chroot_run "eselect kernel set gentoo-sources-${KERNEL_B_BASE_VERSION}"; then
+      echo "ERROR: Failed to select gentoo-sources-${KERNEL_B_BASE_VERSION}. Check eselect kernel list."
+      exit 1
+    fi
     
     # Configure the kernel with LOCALVERSION
     # Copy binary kernel config as base, then set LOCALVERSION
@@ -814,10 +818,18 @@ else
     echo "Using default config as base (no existing config found)"
 fi
 
-# Set LOCALVERSION to make this kernel unique
-# This ensures uname -r differs from Kernel A
-echo "CONFIG_LOCALVERSION=\"-um890-tuned\"" >> .config
-echo "# CONFIG_LOCALVERSION_AUTO is not set" >> .config
+# Set LOCALVERSION to make this kernel unique using scripts/config
+# This ensures uname -r differs from Kernel A and handles existing values properly
+if [[ -x scripts/config ]]; then
+    scripts/config --set-str CONFIG_LOCALVERSION "-um890-tuned"
+    scripts/config --disable CONFIG_LOCALVERSION_AUTO
+else
+    # Fallback if scripts/config not available
+    sed -i '/^CONFIG_LOCALVERSION/d' .config
+    sed -i '/^CONFIG_LOCALVERSION_AUTO/d' .config
+    echo 'CONFIG_LOCALVERSION="-um890-tuned"' >> .config
+    echo '# CONFIG_LOCALVERSION_AUTO is not set' >> .config
+fi
 
 # Update config for new options
 make olddefconfig
@@ -891,10 +903,13 @@ KBUILD
     
     # Verify both kernels are present with unique names
     echo "  Checking /boot artifacts for installed kernels..."
-    chroot_run "ls -lh /boot/vmlinuz-*-gentoo-dist /boot/vmlinuz-*-um890-tuned /boot/initramfs-*-gentoo-dist.img /boot/initramfs-*-um890-tuned.img 2>/dev/null || echo 'WARNING: Expected kernel files not found'"
+    # Use specific version variables to verify exact files installed
+    chroot_run "echo 'Kernel A:' && ls -lh /boot/vmlinuz-${KERNEL_A_VERSION}-gentoo-dist /boot/initramfs-${KERNEL_A_VERSION}-gentoo-dist.img /boot/config-${KERNEL_A_VERSION}-gentoo-dist 2>/dev/null || echo 'WARNING: Kernel A files not found'" || true
+    chroot_run "echo 'Kernel B:' && ls -lh /boot/vmlinuz-*-um890-tuned /boot/initramfs-*-um890-tuned.img /boot/config-*-um890-tuned 2>/dev/null || echo 'WARNING: Kernel B files not found'" || true
     
     echo "  Checking /lib/modules directories for installed kernels..."
-    chroot_run "ls -ld /lib/modules/*-gentoo-dist /lib/modules/*-um890-tuned 2>/dev/null || echo 'WARNING: Expected module directories not found'"
+    chroot_run "echo 'Kernel A:' && ls -ld /lib/modules/${KERNEL_A_VERSION}-gentoo-dist 2>/dev/null || echo 'WARNING: Kernel A modules not found'" || true
+    chroot_run "echo 'Kernel B:' && ls -ld /lib/modules/*-um890-tuned 2>/dev/null || echo 'WARNING: Kernel B modules not found'" || true
     
     echo
     echo "================================================================================"
