@@ -363,8 +363,8 @@ If neither kernel boots:
    chroot /mnt/gentoo /bin/bash
    source /etc/profile
    
-   # Rebuild initramfs
-   dracut --force --regenerate-all
+   # Rebuild initramfs for the current kernel only
+   dracut --force /boot/initramfs-$(uname -r).img $(uname -r)
    
    # Or reinstall kernel
    emerge -1 sys-kernel/gentoo-kernel-bin
