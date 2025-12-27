@@ -35,8 +35,8 @@ All notable changes to this project will be documented in this file.
 - **Qt/Wayland Dependency**: Fixed `dev-qt/qtbase` REQUIRED_USE constraint violation
   - Changed qtbase USE flags from `-opengl vulkan` to `opengl vulkan`
   - Resolves error: "wayland? ( opengl )" constraint requires OpenGL when Wayland is enabled
-  - Both OpenGL and Vulkan are now enabled to satisfy wayland dependency
-  - Qt can still use Vulkan backend while OpenGL support satisfies the wayland requirement
+  - Both OpenGL and Vulkan are now enabled to satisfy the qtbase `wayland` REQUIRED_USE constraint
+  - Qt can still use Vulkan backend while OpenGL support satisfies this REQUIRED_USE constraint
   - Fixes dependency chain: networkmanager → elogind → polkit → polkit-kde-agent → qtbase
   - This prevents package installation failures when KDE Plasma with Wayland is enabled
 
