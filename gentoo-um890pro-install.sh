@@ -563,7 +563,7 @@ kde-frameworks/kcoreaddons dbus
 kde-frameworks/prison qml
 kde-frameworks/sonnet qml
 dev-libs/qcoro dbus
-# Image formats (required by kscreen/kinfocenter): enable AVIF support
+# Image formats (required by kscreen): enable AVIF support
 kde-frameworks/kimageformats avif
 EOF
 
