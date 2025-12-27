@@ -259,6 +259,31 @@ efibootmgr -v
 efibootmgr | grep -i refind
 ```
 
+### Boot Menu Entries (Post-Installation)
+
+After installation, rEFInd will auto-detect kernels in `/boot`:
+
+**Dual-kernel mode** (INSTALL_DUAL_KERNEL="yes"):
+```bash
+# List detected kernels
+ls -1 /boot/vmlinuz-*
+
+# Expected output:
+# /boot/vmlinuz-6.12.58-gentoo-dist      # Kernel A (fallback)
+# /boot/vmlinuz-6.12.58-um890-tuned      # Kernel B (tuned)
+```
+
+**Single-kernel mode**:
+```bash
+# Single kernel entry
+ls -1 /boot/vmlinuz-*
+
+# Expected output (binary kernel):
+# /boot/vmlinuz-6.12.58-gentoo-dist
+```
+
+rEFInd automatically creates boot menu entries for all detected kernels.
+
 ## Pre-Installation Checklist
 
 - [ ] BIOS updated to latest version
@@ -304,6 +329,20 @@ sysbench memory --memory-total-size=10G --memory-oper=write run
 lspci | grep VGA
 glxinfo | grep "OpenGL renderer"
 vulkaninfo | grep deviceName
+
+# Kernel info - verify installation mode
+uname -r
+# Dual-kernel mode: Shows <VERSION>-gentoo-dist OR <VERSION>-um890-tuned
+# Single-kernel mode: Shows <VERSION>-gentoo-dist OR <VERSION>-gentoo
+
+# List all installed kernels
+ls -1 /boot/vmlinuz-* | sed 's/.*vmlinuz-//'
+
+# Verify initramfs for each kernel
+ls -1 /boot/initramfs-*.img
+
+# Check module directories match boot kernels
+ls -1d /lib/modules/*/
 
 # Storage info
 lsblk
