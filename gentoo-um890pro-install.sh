@@ -50,7 +50,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="1.0.0"
+VERSION="1.0.6"
 
 # Logging
 # By default, the script writes a timestamped log capturing stdout+stderr.
@@ -542,10 +542,11 @@ EOF
   # qtbase is configured with Vulkan backend for AMD Radeon 780M RDNA3 iGPU
   # This configuration supports KDE Plasma 6, Wayland, and modern graphics applications
   cat > "${MNT}/etc/portage/package.use/qt-base" <<EOF
-# Qt 6 base library with Vulkan support for AMD RDNA3 graphics
-# Note: This configuration uses Vulkan backend (OpenGL is disabled)
+# Qt 6 base library with Vulkan and OpenGL support for AMD RDNA3 graphics
+# Note: OpenGL is required when wayland USE flag is enabled (REQUIRED_USE: wayland? ( opengl ))
+# Both OpenGL and Vulkan are enabled to satisfy the Wayland REQUIRED_USE constraint while using the Vulkan backend
 # dev-util/vulkan-headers is unmasked via package.accept_keywords
-dev-qt/qtbase libproxy icu cups -opengl vulkan
+dev-qt/qtbase libproxy icu cups opengl vulkan
 dev-qt/qt5compat qml icu
 app-text/xmlto text
 sys-libs/zlib minizip
