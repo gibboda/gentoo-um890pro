@@ -566,7 +566,7 @@ If you install ZFS after initial setup:
 ```bash
 # dracut automatically includes ZFS if sys-fs/zfs is installed
 # Rebuild initramfs for Kernel B
-KVER="<VERSION>-um890-tuned"
+KVER="6.12.58-um890-tuned"
 dracut --force --hostonly --kver "${KVER}" "/boot/initramfs-${KVER}.img"
 ```
 
