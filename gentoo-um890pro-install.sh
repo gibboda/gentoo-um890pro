@@ -732,7 +732,11 @@ install_kernel() {
     chroot_run "emerge sys-kernel/gentoo-kernel-bin"
     
     # Get the kernel version that was just installed
-    KERNEL_A_VERSION=$(chroot_run "eselect kernel list 2>/dev/null | grep -oP 'gentoo-kernel-bin-\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo 'unknown'")
+    KERNEL_A_VERSION=$(chroot_run "eselect kernel list 2>/dev/null | grep -oP 'gentoo-kernel-bin-\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo ''")
+    if [[ -z "${KERNEL_A_VERSION}" ]]; then
+      # Fallback: try to get version from /boot files
+      KERNEL_A_VERSION=$(chroot_run "ls /boot/vmlinuz-*-gentoo-dist 2>/dev/null | head -n1 | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' || echo 'unknown'")
+    fi
     echo "  Installed: gentoo-kernel-bin-${KERNEL_A_VERSION}"
     echo "  Note: Kernel A initramfs was generated automatically and will NOT be touched again"
     echo
@@ -776,12 +780,18 @@ EOF
     # This is the key to avoiding /lib/modules and /boot collisions
     echo "  Setting LOCALVERSION=-um890-tuned for unique kernel identification..."
     
-    # Get the latest gentoo-sources version
-    KERNEL_B_BASE_VERSION=$(chroot_run "eselect kernel list 2>/dev/null | grep 'gentoo-sources' | grep -oP 'gentoo-sources-\K[0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?' | head -n1 || echo 'unknown'")
+    # Get the latest gentoo-sources version and verify it was found
+    KERNEL_B_BASE_VERSION=$(chroot_run "eselect kernel list 2>/dev/null | grep 'gentoo-sources' | grep -oP 'gentoo-sources-\K[0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?' | head -n1 || echo ''")
+    
+    if [[ -z "${KERNEL_B_BASE_VERSION}" ]]; then
+      echo "ERROR: Failed to detect gentoo-sources version. Ensure gentoo-sources is installed."
+      exit 1
+    fi
+    
     echo "  Base version: ${KERNEL_B_BASE_VERSION}"
     
-    # Select gentoo-sources for configuration
-    chroot_run "eselect kernel set 1 || eselect kernel set gentoo-sources-${KERNEL_B_BASE_VERSION}"
+    # Select gentoo-sources for configuration - try by number first, then by name
+    chroot_run "eselect kernel set gentoo-sources-${KERNEL_B_BASE_VERSION} || eselect kernel set 1"
     
     # Configure the kernel with LOCALVERSION
     # Copy binary kernel config as base, then set LOCALVERSION
@@ -792,13 +802,16 @@ set -Eeuo pipefail
 cd /usr/src/linux
 
 # Start with the binary kernel config as a base (it's known to work)
-if [[ -f /boot/config-* ]]; then
-    cp /boot/config-* .config
-    echo "Using binary kernel config as base"
+# Find the most recent config file in /boot
+LATEST_CONFIG=$(ls -t /boot/config-* 2>/dev/null | head -n1 || echo "")
+
+if [[ -n "${LATEST_CONFIG}" && -f "${LATEST_CONFIG}" ]]; then
+    cp "${LATEST_CONFIG}" .config
+    echo "Using binary kernel config as base: ${LATEST_CONFIG}"
 else
     # Fallback to default config
     make defconfig
-    echo "Using default config as base"
+    echo "Using default config as base (no existing config found)"
 fi
 
 # Set LOCALVERSION to make this kernel unique
@@ -877,11 +890,11 @@ KBUILD
     echo "Step 3/3: Verifying dual-kernel installation..."
     
     # Verify both kernels are present with unique names
-    echo "  Checking /boot artifacts..."
-    chroot_run "ls -lh /boot/vmlinuz-* /boot/initramfs-* 2>/dev/null || true"
+    echo "  Checking /boot artifacts for installed kernels..."
+    chroot_run "ls -lh /boot/vmlinuz-*-gentoo-dist /boot/vmlinuz-*-um890-tuned /boot/initramfs-*-gentoo-dist.img /boot/initramfs-*-um890-tuned.img 2>/dev/null || echo 'WARNING: Expected kernel files not found'"
     
-    echo "  Checking /lib/modules directories..."
-    chroot_run "ls -ld /lib/modules/* 2>/dev/null || true"
+    echo "  Checking /lib/modules directories for installed kernels..."
+    chroot_run "ls -ld /lib/modules/*-gentoo-dist /lib/modules/*-um890-tuned 2>/dev/null || echo 'WARNING: Expected module directories not found'"
     
     echo
     echo "================================================================================"
