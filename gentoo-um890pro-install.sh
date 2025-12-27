@@ -355,7 +355,8 @@ EMERGE_DEFAULT_OPTS="--ask=n --verbose --keep-going"
 
 # For ZFS + system tools
 # Desktop target: KDE Plasma 6 + Wayland
-USE="btrfs zfs X wayland kde plasma elogind -gnome"
+# Note: opengl is required globally for qtbase when wayland is enabled (REQUIRED_USE: wayland? ( opengl ))
+USE="btrfs zfs X wayland kde plasma elogind opengl -gnome"
 
 # GPU/input for this platform
 VIDEO_CARDS="amdgpu radeonsi"

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Qt/Wayland USE flags**: Added `opengl` to global USE flags in make.conf
+  - Resolves REQUIRED_USE constraint: `wayland? ( opengl )`
+  - When wayland is enabled globally, opengl must also be enabled globally
+  - Fixes dependency resolution for packages requiring `qtbase[opengl=]`
+  - Prevents conflict between `-opengl` suggestion and wayland requirement
+  - Affects KDE Plasma 6 with Wayland on AMD Radeon 780M iGPU
+
 ## [1.0.7] - 2025-12-27
 
 ### Added
