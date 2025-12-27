@@ -30,6 +30,16 @@ All notable changes to this project will be documented in this file.
 - Explicit config file selection via `ls -t` handles multiple files correctly
 - Verification uses specific version variables to confirm exact files installed
 
+## [1.0.6] - 2025-12-27
+### Fixed
+- **Qt/Wayland Dependency**: Fixed `dev-qt/qtbase` REQUIRED_USE constraint violation
+  - Changed qtbase USE flags from `-opengl vulkan` to `opengl vulkan`
+  - Resolves error: "wayland? ( opengl )" constraint requires OpenGL when Wayland is enabled
+  - Both OpenGL and Vulkan are now enabled to satisfy wayland dependency
+  - Qt can still use Vulkan backend while OpenGL support satisfies the wayland requirement
+  - Fixes dependency chain: networkmanager → elogind → polkit → polkit-kde-agent → qtbase
+  - This prevents package installation failures when KDE Plasma with Wayland is enabled
+
 ## [1.0.5] - 2025-12-26
 ### Fixed
 - **Kernel Installation**: Properly fixed blocking conflict when `INSTALL_DUAL_KERNEL=yes`
