@@ -111,10 +111,12 @@ INSTALL_ROCM="yes"        # yes/no - Install ROCm for AMD GPU compute
 # Pure 64-bit (no multilib). The script will try to pick a no-multilib profile.
 PURE_64BIT="yes"  # yes/no
 
-# DEPRECATED: Dual-kernel setup. Now behaves the same as USE_BINARY_KERNEL=yes.
-# Binary and source kernels of the same version cannot coexist (soft-block conflict).
-# For kernel fallback, keep old kernel versions instead of trying to install both types.
-INSTALL_DUAL_KERNEL="no"  # yes/no - Deprecated, use USE_BINARY_KERNEL instead
+# Safe dual-kernel setup: installs BOTH a stable binary kernel AND a custom source kernel
+# with unique LOCALVERSION to avoid collisions. Provides maximum fallback safety.
+# - Kernel A: gentoo-kernel-bin (stable fallback, never modified)
+# - Kernel B: gentoo-sources with LOCALVERSION=-um890-tuned (custom optimized)
+# Both kernels will have unique uname -r, separate /lib/modules, and versioned /boot artifacts.
+INSTALL_DUAL_KERNEL="no"  # yes/no - Set to "yes" for safe dual-kernel installation
 
 # Enable snapshot management for Btrfs
 ENABLE_SNAPSHOTS="yes"  # yes/no - Set up automated snapshot management
@@ -706,12 +708,209 @@ EOF
 install_kernel() {
   echo "Installing kernel..."
 
-  # Note: INSTALL_DUAL_KERNEL is deprecated and now behaves the same as USE_BINARY_KERNEL=yes
-  # The binary and source kernels of the same version cannot coexist (they soft-block each other).
-  # For kernel fallback/safety, keep old kernel versions around rather than trying to install both types.
-  if [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]] || [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
+  # Safe dual-kernel installation strategy:
+  # - Kernel A (stable fallback): gentoo-kernel-bin - installed first, never modified
+  # - Kernel B (tuned experimental): gentoo-sources with LOCALVERSION - custom build
+  # Both kernels have unique uname -r, separate /lib/modules, and versioned /boot artifacts
+
+  if [[ "${INSTALL_DUAL_KERNEL:-no}" == "yes" ]]; then
+    echo "================================================================================"
+    echo "Safe Dual-Kernel Installation"
+    echo "================================================================================"
+    echo "Installing two independent kernels for maximum safety:"
+    echo "  - Kernel A: Binary dist-kernel (stable fallback)"
+    echo "  - Kernel B: Custom source kernel with LOCALVERSION (tuned for UM890)"
+    echo
+    
+    # ========== KERNEL A: Stable Binary Fallback ==========
+    echo "Step 1/3: Installing Kernel A (stable binary fallback)..."
+    echo "  Package: sys-kernel/gentoo-kernel-bin"
+    echo "  Purpose: Stable fallback kernel, never modified by this script"
+    echo
+    
+    # Install binary kernel first - this gives us a working fallback
+    chroot_run "emerge sys-kernel/gentoo-kernel-bin"
+    
+    # Get the kernel version that was just installed
+    KERNEL_A_VERSION=$(chroot_run "eselect kernel list 2>/dev/null | grep -oP 'gentoo-kernel-bin-\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo 'unknown'")
+    echo "  Installed: gentoo-kernel-bin-${KERNEL_A_VERSION}"
+    echo "  Note: Kernel A initramfs was generated automatically and will NOT be touched again"
+    echo
+    
+    # ========== KERNEL B: Custom Source Kernel ==========
+    echo "Step 2/3: Installing Kernel B (custom tuned kernel)..."
+    echo "  Package: sys-kernel/gentoo-sources"
+    echo "  LOCALVERSION: -um890-tuned"
+    echo "  Purpose: Optimized kernel for UM890 Pro hardware"
+    echo
+    
+    # Install gentoo-sources for manual kernel build
+    chroot_run "emerge sys-kernel/gentoo-sources"
+    
+    # Configure dracut to generate per-kernel initramfs with versioned names
+    # This prevents collisions between Kernel A and Kernel B
+    mkdir -p "${MNT}/etc/dracut.conf.d"
+    cat > "${MNT}/etc/dracut.conf.d/10-versioned.conf" <<'EOF'
+# Per-kernel initramfs configuration
+# Generate initramfs-<kernel-version>.img for each kernel
+# This prevents collisions between binary and source kernels
+
+# Use versioned naming: initramfs-<kernel-version>.img
+# Do NOT use generic names like "initramfs.img"
+hostonly="yes"
+hostonly_cmdline="no"
+compress="zstd"
+
+# Early microcode for AMD
+early_microcode="yes"
+
+# Essential modules for UM890 Pro
+add_drivers+=" amdgpu btrfs zfs nvme "
+add_dracutmodules+=" kernel-modules rootfs-block btrfs resume "
+
+# Ensure unique naming per kernel version
+# dracut will automatically append kernel version to output filename
+EOF
+
+    # Set LOCALVERSION for Kernel B to ensure unique uname -r
+    # This is the key to avoiding /lib/modules and /boot collisions
+    echo "  Setting LOCALVERSION=-um890-tuned for unique kernel identification..."
+    
+    # Get the latest gentoo-sources version
+    KERNEL_B_BASE_VERSION=$(chroot_run "eselect kernel list 2>/dev/null | grep 'gentoo-sources' | grep -oP 'gentoo-sources-\K[0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?' | head -n1 || echo 'unknown'")
+    echo "  Base version: ${KERNEL_B_BASE_VERSION}"
+    
+    # Select gentoo-sources for configuration
+    chroot_run "eselect kernel set 1 || eselect kernel set gentoo-sources-${KERNEL_B_BASE_VERSION}"
+    
+    # Configure the kernel with LOCALVERSION
+    # Copy binary kernel config as base, then set LOCALVERSION
+    cat > "${MNT}/tmp/kernel-config.sh" <<'KCONFIG'
+#!/bin/bash
+set -Eeuo pipefail
+
+cd /usr/src/linux
+
+# Start with the binary kernel config as a base (it's known to work)
+if [[ -f /boot/config-* ]]; then
+    cp /boot/config-* .config
+    echo "Using binary kernel config as base"
+else
+    # Fallback to default config
+    make defconfig
+    echo "Using default config as base"
+fi
+
+# Set LOCALVERSION to make this kernel unique
+# This ensures uname -r differs from Kernel A
+echo "CONFIG_LOCALVERSION=\"-um890-tuned\"" >> .config
+echo "# CONFIG_LOCALVERSION_AUTO is not set" >> .config
+
+# Update config for new options
+make olddefconfig
+
+# Verify LOCALVERSION is set
+if grep -q "CONFIG_LOCALVERSION=\"-um890-tuned\"" .config; then
+    echo "LOCALVERSION successfully set to -um890-tuned"
+else
+    echo "ERROR: Failed to set LOCALVERSION" >&2
+    exit 1
+fi
+
+echo "Kernel configuration complete for Kernel B"
+KCONFIG
+    
+    chmod +x "${MNT}/tmp/kernel-config.sh"
+    chroot_run "/tmp/kernel-config.sh"
+    
+    # Build Kernel B with the custom config
+    echo "  Building Kernel B (this will take 30-60 minutes)..."
+    echo "  Note: Kernel B will have unique version suffix: -um890-tuned"
+    
+    # Build kernel, modules, and install
+    # Use per-kernel initramfs generation (not --regenerate-all)
+    cat > "${MNT}/tmp/kernel-build.sh" <<'KBUILD'
+#!/bin/bash
+set -Eeuo pipefail
+
+cd /usr/src/linux
+
+# Build kernel and modules
+echo "Building kernel..."
+make -j$(nproc)
+
+echo "Installing modules..."
+make modules_install
+
+# Get kernel version with LOCALVERSION
+KVER=$(make kernelrelease)
+echo "Kernel version: ${KVER}"
+
+# Install kernel to /boot with versioned name
+echo "Installing kernel to /boot/vmlinuz-${KVER}..."
+install -m 0644 arch/x86/boot/bzImage "/boot/vmlinuz-${KVER}"
+install -m 0644 .config "/boot/config-${KVER}"
+install -m 0644 System.map "/boot/System.map-${KVER}"
+
+# Generate initramfs for THIS kernel only (not --regenerate-all)
+echo "Generating initramfs for kernel ${KVER}..."
+dracut --force --hostonly --kver "${KVER}" "/boot/initramfs-${KVER}.img"
+
+# Verify artifacts were created with correct names
+echo "Verifying installation..."
+ls -lh "/boot/vmlinuz-${KVER}" "/boot/initramfs-${KVER}.img" "/lib/modules/${KVER}"
+
+echo "Kernel B installation complete"
+echo "  vmlinuz: /boot/vmlinuz-${KVER}"
+echo "  initramfs: /boot/initramfs-${KVER}.img"
+echo "  modules: /lib/modules/${KVER}"
+KBUILD
+    
+    chmod +x "${MNT}/tmp/kernel-build.sh"
+    chroot_run "/tmp/kernel-build.sh"
+    
+    # Clean up temporary scripts
+    rm -f "${MNT}/tmp/kernel-config.sh" "${MNT}/tmp/kernel-build.sh"
+    
+    # ========== VERIFICATION ==========
+    echo
+    echo "Step 3/3: Verifying dual-kernel installation..."
+    
+    # Verify both kernels are present with unique names
+    echo "  Checking /boot artifacts..."
+    chroot_run "ls -lh /boot/vmlinuz-* /boot/initramfs-* 2>/dev/null || true"
+    
+    echo "  Checking /lib/modules directories..."
+    chroot_run "ls -ld /lib/modules/* 2>/dev/null || true"
+    
+    echo
+    echo "================================================================================"
+    echo "Dual-kernel installation complete!"
+    echo "================================================================================"
+    echo
+    echo "Kernel A (stable fallback):"
+    echo "  - Package: gentoo-kernel-bin-${KERNEL_A_VERSION}"
+    echo "  - Located: /boot/vmlinuz-${KERNEL_A_VERSION}-gentoo-dist"
+    echo "  - initramfs: /boot/initramfs-${KERNEL_A_VERSION}-gentoo-dist.img"
+    echo "  - Purpose: Always bootable fallback kernel"
+    echo
+    echo "Kernel B (tuned experimental):"
+    echo "  - Package: gentoo-sources-${KERNEL_B_BASE_VERSION}"
+    echo "  - Located: /boot/vmlinuz-${KERNEL_B_BASE_VERSION}-um890-tuned"
+    echo "  - initramfs: /boot/initramfs-${KERNEL_B_BASE_VERSION}-um890-tuned.img"
+    echo "  - Purpose: Optimized kernel for UM890 Pro"
+    echo
+    echo "Both kernels will appear in rEFInd boot menu for easy selection."
+    echo "Default boot: rEFInd will auto-select the most recent kernel."
+    echo "================================================================================"
+    
+  elif [[ "${USE_BINARY_KERNEL}" == "yes" ]]; then
+    # Single binary kernel installation (original behavior)
+    echo "Installing single binary kernel (gentoo-kernel-bin)..."
     chroot_run "emerge sys-kernel/gentoo-kernel-bin"
   else
+    # Single source kernel installation (original behavior)
+    echo "Installing single source kernel (gentoo-kernel)..."
     chroot_run "emerge sys-kernel/gentoo-kernel"
   fi
 }
