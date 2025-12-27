@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Safe Dual-Kernel Installation**: Reimplemented `INSTALL_DUAL_KERNEL` with LOCALVERSION isolation
+  - Kernel A: `sys-kernel/gentoo-kernel-bin` (stable fallback, never modified after installation)
+  - Kernel B: `sys-kernel/gentoo-sources` with `CONFIG_LOCALVERSION="-um890-tuned"` (custom optimized)
+  - Both kernels coexist with unique `uname -r` values (e.g., `6.12.58-gentoo-dist` vs `6.12.58-um890-tuned`)
+  - Separate `/lib/modules/` directories and versioned `/boot` artifacts prevent collisions
+  - Per-kernel initramfs generation using `dracut --kver` (never `--regenerate-all`)
+  - Kernel A initramfs generated once by dist-kernel and never touched again
+  - Created `/etc/dracut.conf.d/10-versioned.conf` to enforce per-kernel naming
+  - rEFInd automatically detects both kernels for easy boot selection
+  - Provides maximum fallback safety: Kernel A always remains bootable
+
+### Changed
+- **INSTALL_DUAL_KERNEL**: Removed "DEPRECATED" status and re-enabled with proper implementation
+  - Previous deprecation was due to slot conflicts (binary and source kernels of same version)
+  - New implementation uses `LOCALVERSION` to create truly independent kernels
+  - No longer conflicts: different `uname -r` values ensure complete isolation
+  - Default remains `no` for backward compatibility
+
+### Technical Details
+- Uses kernel's `scripts/config` tool for safe LOCALVERSION setting (fallback to sed if unavailable)
+- Robust error handling: validates gentoo-sources detection, fails fast if missing
+- Fallback version extraction from `/boot` if `eselect` fails
+- Explicit config file selection via `ls -t` handles multiple files correctly
+- Verification uses specific version variables to confirm exact files installed
+
 ## [1.0.5] - 2025-12-26
 ### Fixed
 - **Kernel Installation**: Properly fixed blocking conflict when `INSTALL_DUAL_KERNEL=yes`
