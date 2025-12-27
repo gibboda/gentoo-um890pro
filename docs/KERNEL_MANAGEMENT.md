@@ -474,7 +474,7 @@ dracut --force --regenerate-all
    ```
 3. Rebuild initramfs:
    ```bash
-   KVER="<VERSION>-um890-tuned"
+   KVER="6.12.58-um890-tuned"
    dracut --force --hostonly --kver "${KVER}" "/boot/initramfs-${KVER}.img"
    ```
 
