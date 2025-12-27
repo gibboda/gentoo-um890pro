@@ -16,6 +16,17 @@ This guide covers comprehensive system optimizations for the Minisforum EliteMin
 
 ## Kernel Optimization
 
+### Boot Configuration with rEFInd
+
+The system uses rEFInd bootloader which auto-detects kernels in `/boot`:
+
+**Dual-kernel mode** (INSTALL_DUAL_KERNEL="yes"):
+- Kernel A (fallback): `/boot/vmlinuz-<VERSION>-gentoo-dist`
+- Kernel B (tuned): `/boot/vmlinuz-<VERSION>-um890-tuned`
+
+**Single-kernel mode**:
+- Single kernel: `/boot/vmlinuz-<VERSION>-gentoo(-dist)`
+
 ### Kernel Command Line Parameters
 
 Add these to `/boot/refind_linux.conf`:
@@ -28,9 +39,14 @@ mitigations=auto
 transparent_hugepage=madvise
 ```
 
+Example `/boot/refind_linux.conf`:
+```bash
+"Gentoo (Btrfs subvol=@)"  "root=UUID=<UUID> rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active amd_iommu=on transparent_hugepage=madvise"
+```
+
 ### Kernel Configuration
 
-For AI/ML workloads, ensure these options:
+For custom source kernels or Kernel B in dual-kernel mode, ensure these AI/ML-optimized options:
 
 ```
 CONFIG_AMDGPU=y

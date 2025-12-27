@@ -115,8 +115,14 @@ Before running the installer, verify:
    INIT_SYSTEM="openrc"  # or "systemd"
    
    # Kernel choice
-   USE_BINARY_KERNEL="yes"  # Recommended: use binary kernel for speed
-   # Note: INSTALL_DUAL_KERNEL is deprecated (binary and source of same version conflict)
+   USE_BINARY_KERNEL="yes"  # Single binary kernel (fast, recommended for initial setup)
+   
+   # Dual-kernel mode: Install both stable fallback AND custom tuned kernel
+   INSTALL_DUAL_KERNEL="no"  # Set to "yes" for maximum safety (dual-kernel setup)
+   # When INSTALL_DUAL_KERNEL="yes":
+   #   - Kernel A: gentoo-kernel-bin (stable fallback, never modified)
+   #   - Kernel B: gentoo-sources with LOCALVERSION=-um890-tuned (custom build)
+   #   - Both have unique uname -r, separate /boot and /lib/modules directories
    
    # Desktop and features
    INSTALL_KDE_PLASMA="yes"
@@ -149,7 +155,11 @@ Before running the installer, verify:
 3. **Wait for installation** (2-4 hours depending on network and CPU):
    - Stage3 download and extraction: ~10 min
    - Base system packages: ~20-40 min
-   - Kernel compilation: ~30-60 min (source) or ~5 min (binary)
+   - Kernel installation:
+     - Binary kernel (USE_BINARY_KERNEL="yes"): ~5 min
+     - Dual-kernel (INSTALL_DUAL_KERNEL="yes"): ~35-65 min total
+       - Kernel A (binary): ~5 min
+       - Kernel B (source build): ~30-60 min
    - ZFS installation: ~10-20 min
    - KDE Plasma: ~40-90 min
    - Blender (if enabled): ~60-120 min
@@ -169,8 +179,14 @@ Before running the installer, verify:
 ## First Boot
 
 1. **rEFInd Boot Menu**:
-   - Select "Gentoo Linux (Current)"
-   - Or "Gentoo Linux (Binary Kernel Fallback)" if issues
+   - System will show rEFInd boot menu with 20-second timeout
+   - Available entries (dual-kernel mode):
+     - "Gentoo Linux" with `vmlinuz-<VERSION>-um890-tuned` (Kernel B - custom)
+     - "Gentoo Linux" with `vmlinuz-<VERSION>-gentoo-dist` (Kernel A - fallback)
+     - "Gentoo (Snapshot Recovery)" for Btrfs snapshot boot
+   - Available entries (single-kernel mode):
+     - "Gentoo Linux (Current)"
+   - Default: Most recent kernel auto-selected
 
 2. **Login**:
    - Use root or the user account you created
@@ -291,9 +307,11 @@ blender --background --python benchmark.py
 ### Boot Issues
 
 If system doesn't boot:
-1. At rEFInd menu, select "Gentoo Linux (Snapshot Recovery)"
-2. Or select "Gentoo Linux (Binary Kernel Fallback)"
-3. Or boot from Live USB and use `chroot` to fix issues
+1. At rEFInd menu, select alternate kernel entry:
+   - **Dual-kernel mode**: Try Kernel A (fallback) with `-gentoo-dist` suffix
+   - **Single-kernel mode**: Try "Gentoo Linux (Snapshot Recovery)"
+2. Or boot from Live USB and use `chroot` to fix issues
+3. See [KERNEL_MANAGEMENT.md](KERNEL_MANAGEMENT.md) for detailed rollback procedures
 
 ### GPU Not Detected
 
@@ -378,7 +396,9 @@ sudo less /var/log/messages  # OpenRC
 ## Summary
 
 You now have a fully optimized Gentoo Linux system on your UM890 Pro with:
-- ✅ Dual-kernel setup for safety
+- ✅ Safe kernel setup (dual-kernel if INSTALL_DUAL_KERNEL="yes", single otherwise)
+  - Dual-kernel: Stable fallback (Kernel A) + custom tuned (Kernel B)
+  - Single-kernel: Binary or source kernel with version management
 - ✅ Btrfs snapshots for rollback
 - ✅ ZFS for AI/data storage
 - ✅ ROCm for GPU compute
@@ -386,5 +406,12 @@ You now have a fully optimized Gentoo Linux system on your UM890 Pro with:
 - ✅ Blender with GPU rendering
 - ✅ ComfyUI for AI image generation
 - ✅ Optimized for 96GB UMA architecture
+
+### Kernel Management
+
+- **Dual-kernel mode**: Two independent kernels, boot either via rEFInd
+- **Single-kernel mode**: Keep 2-3 versions for safety
+- **Fallback**: Always boot Kernel A if Kernel B fails (dual-kernel)
+- **Documentation**: See [KERNEL_MANAGEMENT.md](KERNEL_MANAGEMENT.md) for complete guide
 
 Enjoy your high-performance AI/ML workstation!

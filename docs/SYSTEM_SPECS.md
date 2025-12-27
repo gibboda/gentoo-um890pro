@@ -93,7 +93,18 @@
 
 ### Operating System
 - **OS**: Gentoo Linux (custom installation)
-- **Kernel**: Dual-kernel (gentoo-kernel + gentoo-kernel-bin)
+- **Kernel**: 
+  - Dual-kernel mode (when INSTALL_DUAL_KERNEL="yes"):
+    - Kernel A: gentoo-kernel-bin (stable fallback)
+      - Naming: `<VERSION>-gentoo-dist` (e.g., `6.12.58-gentoo-dist`)
+      - Boot: `/boot/vmlinuz-<VERSION>-gentoo-dist`
+      - initramfs: `/boot/initramfs-<VERSION>-gentoo-dist.img`
+    - Kernel B: gentoo-sources (custom tuned)
+      - Naming: `<VERSION>-um890-tuned` (e.g., `6.12.58-um890-tuned`)
+      - Boot: `/boot/vmlinuz-<VERSION>-um890-tuned`
+      - initramfs: `/boot/initramfs-<VERSION>-um890-tuned.img`
+  - Single-kernel mode (default):
+    - gentoo-kernel-bin OR gentoo-kernel with standard naming
 - **Init System**: OpenRC (default) or systemd
 - **Desktop**: KDE Plasma 6 with Wayland
 - **Bootloader**: rEFInd
