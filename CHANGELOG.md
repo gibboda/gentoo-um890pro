@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **Blender Dependency USE Flags**: Added missing USE flags for Blender dependencies
+  - `media-libs/freetype` now includes `brotli` (required by Blender's font rendering system)
+  - `sci-physics/bullet` now includes `double-precision` (required by Blender with bullet physics)
+  - `media-video/ffmpeg` now includes `jpeg2k xvid lame` (required by Blender with ffmpeg support)
+  - `sci-libs/fftw` now includes `threads` (required by Blender with Fast Fourier Transform)
+  - `media-libs/openpgl` now includes `cpu_flags_x86_sse4_2` (satisfies REQUIRED_USE for amd64 path guiding library)
+  - These changes resolve autounmask requirements when installing Blender 3D with full feature set
+  - All changes are additive and do not remove or modify existing USE flags
+  - Changes only affect systems where `INSTALL_BLENDER=yes` is configured
 - **Qt/Wayland USE flags**: Added `opengl` to global USE flags in make.conf
   - Resolves `dev-qt/qtbase` REQUIRED_USE constraint: `wayland? ( opengl )`
   - With `wayland` enabled globally, `opengl` should also be enabled globally

@@ -624,8 +624,20 @@ media-libs/opencolorio opengl
 media-libs/embree tbb
 sci-libs/openvdb abi8-compat blosc numpy openvdb-compression python zlib
 
-# Additional media libraries for Blender
-media-video/ffmpeg x264 x265 vpx opus mp3 theora vorbis
+# Blender dependency USE flags (required by media-gfx/blender-4.4.3)
+# Required by Blender's font rendering system
+media-libs/freetype brotli
+# Required by Blender with bullet physics simulation
+sci-physics/bullet double-precision
+# Required by Blender with ffmpeg video support
+media-video/ffmpeg x264 x265 vpx opus mp3 theora vorbis jpeg2k xvid lame
+# Required by Blender with fftw (Fast Fourier Transform)
+sci-libs/fftw threads
+# Required by Blender with openpgl (path guiding library for ray tracing)
+# CPU flags needed to satisfy REQUIRED_USE: amd64? ( any-of ( cpu_flags_x86_sse4_2 cpu_flags_x86_avx2 cpu_flags_x86_avx512dq ) )
+media-libs/openpgl cpu_flags_x86_sse4_2
+
+# Additional graphics support
 media-libs/mesa vulkan
 EOF
 
