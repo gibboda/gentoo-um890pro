@@ -135,7 +135,9 @@ need_cmd() { command -v "$1" >/dev/null 2>&1; }
 
 format_elapsed_time() {
   # Format elapsed time from SCRIPT_START_TIME to now
-  local elapsed=$((SECONDS - SCRIPT_START_TIME))
+  # Safety check: ensure SCRIPT_START_TIME is set, default to 0 if not
+  local start_time="${SCRIPT_START_TIME:-0}"
+  local elapsed=$((SECONDS - start_time))
   local hours=$((elapsed / 3600))
   local minutes=$(((elapsed % 3600) / 60))
   local secs=$((elapsed % 60))
@@ -661,7 +663,7 @@ EOF
 
   # If Blender is not requested, remove the Blender-specific package.use file
   if [[ "${INSTALL_BLENDER:-no}" != "yes" ]]; then
-    rm -f /mnt/gentoo/etc/portage/package.use/blender
+    rm -f "${MNT}/etc/portage/package.use/blender"
   fi
 
   # ROCm - AMD GPU compute for AI workloads on Radeon 780M iGPU
