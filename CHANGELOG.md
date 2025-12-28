@@ -49,8 +49,6 @@ All notable changes to this project will be documented in this file.
   - Previous disabling attempted to work around observed stability issues, which were later traced to the graphics stack (Mesa/driver combination) rather than Vulkan itself
   - Vulkan is now enabled consistently across `qtbase` and dependent Qt/KDE components (kinfocenter, kscreen, qtquick3d, qtmultimedia, qtdeclarative) to avoid USE/slot conflicts while keeping OpenGL enabled for Wayland
 
-## [1.0.7] - 2025-12-27
-
 ### Added
 - **Safe Dual-Kernel Installation**: Reimplemented `INSTALL_DUAL_KERNEL` with LOCALVERSION isolation
   - Kernel A: `sys-kernel/gentoo-kernel-bin` (stable fallback, never modified after installation)
