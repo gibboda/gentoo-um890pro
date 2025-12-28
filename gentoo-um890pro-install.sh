@@ -52,6 +52,9 @@ trap on_err ERR
 # ---- CONFIG (edit if needed) ------------------------------------------------
 VERSION="1.0.7"
 
+# Track script start time for elapsed time reporting
+SCRIPT_START_TIME="${SECONDS}"
+
 # Logging
 # By default, the script writes a timestamped log capturing stdout+stderr.
 # - Set LOG_ENABLED="no" to disable.
@@ -129,6 +132,21 @@ LOCALE="en_US.UTF-8 UTF-8"
 
 
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+format_elapsed_time() {
+  # Format elapsed time from SCRIPT_START_TIME to now
+  local elapsed=$((SECONDS - SCRIPT_START_TIME))
+  local hours=$((elapsed / 3600))
+  local minutes=$(((elapsed % 3600) / 60))
+  local secs=$((elapsed % 60))
+  printf "%02d:%02d:%02d" "$hours" "$minutes" "$secs"
+}
+
+log_with_elapsed() {
+  # Log a message with elapsed time prefix
+  local message="$*"
+  echo "[$(format_elapsed_time)] ${message}"
+}
 
 init_logging() {
   [[ "${LOG_ENABLED}" == "yes" ]] || return 0
@@ -254,7 +272,7 @@ stop_mounts() {
 }
 
 partition_disks() {
-  echo "Partitioning disks..."
+  log_with_elapsed "Partitioning disks..."
 
   need_cmd sgdisk || { echo "ERROR: sgdisk not found (package: gptfdisk)."; exit 1; }
   need_cmd wipefs || { echo "ERROR: wipefs not found."; exit 1; }
@@ -283,7 +301,7 @@ partition_disks() {
 }
 
 format_os() {
-  echo "Formatting OS disk..."
+  log_with_elapsed "Formatting OS disk..."
   need_cmd mkfs.vfat || { echo "ERROR: mkfs.vfat not found."; exit 1; }
   need_cmd mkfs.btrfs || { echo "ERROR: mkfs.btrfs not found."; exit 1; }
 
@@ -292,7 +310,7 @@ format_os() {
 }
 
 mount_btrfs_layout() {
-  echo "Creating Btrfs subvolume layout..."
+  log_with_elapsed "Creating Btrfs subvolume layout..."
   mkdir -p "${MNT}"
   mount -t btrfs "${OS_ROOT}" "${MNT}"
 
@@ -314,7 +332,7 @@ mount_btrfs_layout() {
 }
 
 fetch_stage3_and_prep() {
-  echo "Fetching Stage3 and preparing chroot..."
+  log_with_elapsed "Fetching Stage3 and preparing chroot..."
 
   need_cmd tar || { echo "ERROR: tar not found."; exit 1; }
   need_cmd wget || { echo "ERROR: wget not found. Install it in the live environment."; exit 1; }
@@ -441,7 +459,7 @@ chroot_run_maybe() {
 }
 
 install_base_system() {
-  echo "Installing base system inside chroot..."
+  log_with_elapsed "Installing base system inside chroot..."
 
   # Sync repo
   chroot_run "emerge-webrsync || true"
@@ -698,16 +716,16 @@ EOF
   fi
   
   # Firmware, essentials, filesystems + boot essentials (split for better error visibility)
-  echo "Installing firmware and essential system packages..."
+  log_with_elapsed "Installing firmware and essential system packages..."
   echo "This may take several minutes (especially sys-kernel/linux-firmware which is a large package)..."
 
-  echo "Installing linux-firmware..."
+  log_with_elapsed "Installing linux-firmware..."
   chroot_run "emerge sys-kernel/linux-firmware"
 
-  echo "Installing system utilities..."
+  log_with_elapsed "Installing system utilities..."
   chroot_run "emerge sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd"
 
-  echo "Installing filesystem and boot tools..."
+  log_with_elapsed "Installing filesystem and boot tools..."
   chroot_run "emerge sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
 
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -720,7 +738,7 @@ EOF
 }
 
 install_kernel() {
-  echo "Installing kernel..."
+  log_with_elapsed "Installing kernel..."
 
   # Safe dual-kernel installation strategy:
   # - Kernel A (stable fallback): gentoo-kernel-bin - installed first, never modified
@@ -958,7 +976,7 @@ KBUILD
 }
 
 configure_fstab_bootloader() {
-  echo "Configuring fstab + rEFInd..."
+  log_with_elapsed "Configuring fstab + rEFInd..."
 
   # Get UUIDs from the live environment (outside chroot) for accuracy
   ESP_UUID="$(blkid -s UUID -o value "${OS_ESP}")"
@@ -1006,7 +1024,7 @@ EOF
 }
 
 enable_network_and_services() {
-  echo "Enabling networking + basic services..."
+  log_with_elapsed "Enabling networking + basic services..."
 
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     # systemd-networkd + resolved is straightforward in minimal builds
@@ -1154,7 +1172,7 @@ EOF
 }
 
 install_zfs_and_create_pool() {
-  echo "Installing ZFS + creating pool/datasets..."
+  log_with_elapsed "Installing ZFS + creating pool/datasets..."
 
   # ZFS packages
   # NOTE: sys-fs/zfs-kmod builds kernel modules. On some setups (notably when only a binary kernel is installed),
@@ -1202,7 +1220,7 @@ install_zfs_and_create_pool() {
 install_kde_plasma() {
   [[ "${INSTALL_KDE_PLASMA}" == "yes" ]] || return 0
 
-  echo "Installing KDE Plasma 6 (with Wayland support)..."
+  log_with_elapsed "Installing KDE Plasma 6 (with Wayland support)..."
 
   # Base desktop plumbing
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
@@ -1232,7 +1250,7 @@ EOF
 install_blender() {
   [[ "${INSTALL_BLENDER}" == "yes" ]] || return 0
 
-  echo "Installing Blender 3D creation suite..."
+  log_with_elapsed "Installing Blender 3D creation suite..."
   echo "This will take 1-2 hours depending on CPU performance and network speed."
   echo "Blender will be configured with OpenGL and Vulkan support for GPU rendering."
 
@@ -1287,7 +1305,7 @@ EOF
 install_rocm() {
   [[ "${INSTALL_ROCM}" == "yes" ]] || return 0
 
-  echo "Installing ROCm for AMD GPU compute..."
+  log_with_elapsed "Installing ROCm for AMD GPU compute..."
   echo "This enables GPU acceleration for AI/ML workloads on the Radeon 780M iGPU."
   
   # Install ROCm runtime and OpenCL
@@ -1311,7 +1329,7 @@ EOF
 install_comfyui_and_sdxl() {
   [[ "${INSTALL_COMFYUI}" == "yes" ]] || return 0
 
-  echo "Installing ComfyUI and SDXL models..."
+  log_with_elapsed "Installing ComfyUI and SDXL models..."
   
   # Install Python and dependencies
   chroot_run "emerge dev-lang/python:3.12 dev-python/pip dev-vcs/git"
@@ -1443,7 +1461,7 @@ EOF
 setup_snapshot_management() {
   [[ "${ENABLE_SNAPSHOTS}" == "yes" ]] || return 0
   
-  echo "Setting up Btrfs snapshot management..."
+  log_with_elapsed "Setting up Btrfs snapshot management..."
   
   # Install snapper for snapshot management
   chroot_run "emerge app-backup/snapper"
@@ -1622,7 +1640,7 @@ EOF
 }
 
 setup_ml_boot_selector() {
-  echo "Setting up ML-based boot target selection system..."
+  log_with_elapsed "Setting up ML-based boot target selection system..."
   
   # Create boot selection ML script
   cat > "${MNT}/usr/local/bin/ml-boot-selector" <<'EOF'
@@ -1795,7 +1813,7 @@ EOF
 }
 
 finalize_users_passwords() {
-  echo "Setting root password and creating a user..."
+  log_with_elapsed "Setting root password and creating a user..."
 
   # If DEBUG tracing is enabled, temporarily disable xtrace while we do
   # interactive steps to keep logs cleaner.
@@ -1820,7 +1838,7 @@ finalize_users_passwords() {
 }
 
 configure_nvme_optimizations() {
-  echo "Configuring NVMe optimizations for Crucial P3 Plus..."
+  log_with_elapsed "Configuring NVMe optimizations for Crucial P3 Plus..."
   
   # Create udev rules for NVMe optimization
   cat > "${MNT}/etc/udev/rules.d/60-nvme-crucial-p3.rules" <<'EOF'
@@ -1848,7 +1866,7 @@ EOF
 }
 
 create_kernel_switch_helper() {
-  echo "Creating kernel switch helper script..."
+  log_with_elapsed "Creating kernel switch helper script..."
   
   # Ensure target directory exists for the helper script
   mkdir -p "${MNT}/usr/local/bin"
@@ -2039,7 +2057,7 @@ EOF
 }
 
 create_kernel_management_helper() {
-  echo "Creating kernel management helper script..."
+  log_with_elapsed "Creating kernel management helper script..."
   
   # Ensure target directory exists before creating the helper script
   mkdir -p "${MNT}/usr/local/bin"
@@ -2249,7 +2267,8 @@ main() {
   init_logging
   enable_debug_trace
 
-  echo "gentoo-um890pro-installer version: ${VERSION}"
+  log_with_elapsed "gentoo-um890pro-installer version: ${VERSION}"
+  log_with_elapsed "Installation started"
 
   for c in lsblk blkid awk sed; do
     need_cmd "$c" || { echo "ERROR: missing required command: $c"; exit 1; }
@@ -2279,9 +2298,10 @@ main() {
   create_kernel_management_helper
   finalize_users_passwords
 
+  log_with_elapsed "Installation completed successfully"
   echo
   echo "============================================================"
-  echo "Install complete."
+  echo "Install complete. Total elapsed time: $(format_elapsed_time)"
   echo "Next steps:"
   echo "  1) Exit chroot (if you entered manually), then:"
   echo "  2) umount -R ${MNT}"

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Elapsed Time Tracking**: Added elapsed time reporting to installation log
+  - New `format_elapsed_time()` function formats elapsed time as HH:MM:SS
+  - New `log_with_elapsed()` function prefixes log messages with elapsed time
+  - All major installation phases now log with elapsed time: [00:00:00] format
+  - Total installation time displayed at completion
+  - Helps debug long-running operations and identify performance bottlenecks
+  - Elapsed time tracked from `SCRIPT_START_TIME` using bash `$SECONDS`
+
 ### Fixed
 - **Blender Dependency USE Flags**: Added missing USE flags for Blender dependencies
   - `media-libs/freetype` now includes `brotli` (required by Blender's font rendering system)
