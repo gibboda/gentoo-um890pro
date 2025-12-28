@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.8] - 2025-12-28
+
+### Fixed
+- **Blender Dependencies**: Added `glfw` USE flag to `media-libs/opensubdiv`
+  - Resolves REQUIRED_USE constraint: `ptex? ( glfw )`
+  - When `ptex` is enabled on opensubdiv, `glfw` must also be enabled
+  - Fixes dependency issue: "media-libs/opensubdiv-3.6.1::gentoo has unmet requirements"
+  - Error was: "The following REQUIRED_USE flag constraints are unsatisfied: ptex? ( glfw )"
+  - Updated comment to clarify that glfw is required by ptex
+  - This allows Blender installation to proceed without USE flag conflicts
+
+## [1.0.7] - 2025-12-27
+
 ### Added
 - **Elapsed Time Tracking**: Added elapsed time reporting to installation log
   - New `format_elapsed_time()` function formats elapsed time as HH:MM:SS
