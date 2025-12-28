@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.9] - 2025-12-28
+
+### Fixed
+- **OpenSubdiv cmake Configuration**: Added `wayland` USE flag to `media-libs/glfw`
+  - Resolves cmake configuration failure during opensubdiv-3.6.1 build
+  - GLFW needs wayland backend enabled for opensubdiv's cmake to detect it properly
+  - Error was: "media-libs/opensubdiv-3.6.1::gentoo failed (configure phase): cmake failed"
+  - Without wayland USE flag, GLFW is built without display server support, causing cmake detection failure
+  - This allows Blender 4.4.3 installation to proceed without cmake errors
+  - Only affects systems where `INSTALL_BLENDER=yes` is configured
+
 ## [1.0.8] - 2025-12-28
 
 ### Fixed
