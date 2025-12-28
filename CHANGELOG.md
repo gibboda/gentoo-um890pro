@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ## [1.0.9] - 2025-12-28
 
 ### Fixed
-- **OpenSubdiv CMake Configuration**: Added `wayland` USE flag to `media-libs/glfw`
+- **OpenSubdiv cmake Configuration**: Added `wayland` USE flag to `media-libs/glfw`
   - Resolves cmake configuration failure during opensubdiv-3.6.1 build
   - GLFW needs wayland backend enabled for opensubdiv's cmake to detect it properly
   - Error was: "media-libs/opensubdiv-3.6.1::gentoo failed (configure phase): cmake failed"
