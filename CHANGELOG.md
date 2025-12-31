@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.10] - 2025-12-31
+- Version synchronization: synced script VERSION variable with VERSION file
+
 ## [1.0.9] - 2025-12-28
 
 ### Fixed
