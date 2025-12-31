@@ -637,8 +637,8 @@ media-gfx/blender opengl vulkan cycles openexr openvdb bullet ffmpeg fftw jack j
 
 # Blender dependencies - ensure proper graphics support
 media-libs/openimageio opengl
-# Note: opencl enables OpenCL rendering; opengl for viewport; ptex for texture mapping; glfw required by ptex
-media-libs/opensubdiv opencl opengl ptex glfw tbb
+# Note: opencl enables OpenCL rendering; opengl for viewport; ptex for texture mapping; glfw required by ptex; openmp required by blender
+media-libs/opensubdiv opencl opengl openmp ptex glfw tbb
 # GLFW required by opensubdiv - needs wayland backend for cmake to find it properly
 media-libs/glfw wayland
 dev-cpp/tbb malloc-proxy

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **OpenSubdiv openmp Support**: Added `openmp` USE flag to `media-libs/opensubdiv`
+  - Resolves cmake configuration failure during opensubdiv-3.6.1 build
+  - Blender 4.4.3 requires `>=media-libs/opensubdiv-3.6.0-r2[opengl,openmp,tbb]`
+  - Without openmp USE flag, opensubdiv build fails with: "media-libs/opensubdiv-3.6.1::gentoo failed (configure phase): cmake failed"
+  - This allows Blender 4.4.3 installation to proceed without dependency conflicts
+  - Only affects systems where `INSTALL_BLENDER=yes` is configured
+
 ## [1.0.10] - 2025-12-31
 - Version synchronization: synced script VERSION variable with VERSION file
 
