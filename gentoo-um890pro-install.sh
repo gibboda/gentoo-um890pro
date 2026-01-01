@@ -638,7 +638,7 @@ media-gfx/blender opengl vulkan cycles openexr openvdb bullet ffmpeg fftw jack j
 # Blender dependencies - ensure proper graphics support
 media-libs/openimageio opengl
 # Note: opencl enables OpenCL rendering; opengl for viewport; openmp and tbb required by blender
-media-libs/opensubdiv opencl opengl openmp tbb
+media-libs/opensubdiv opencl opengl openmp tbb -ptex -glfw
 dev-cpp/tbb malloc-proxy
 media-libs/opencolorio opengl
 media-libs/embree tbb
