@@ -5,11 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
-- **OpenSubdiv openmp Support**: Added `openmp` USE flag to `media-libs/opensubdiv`
+- **OpenSubdiv Build Configuration**: Removed `ptex` and `glfw` USE flags from `media-libs/opensubdiv`
   - Resolves cmake configuration failure during opensubdiv-3.6.1 build
-  - Blender 4.4.3 requires `>=media-libs/opensubdiv-3.6.0-r2[opengl,openmp,tbb]`
-  - Without openmp USE flag, opensubdiv build fails with: "media-libs/opensubdiv-3.6.1::gentoo failed (configure phase): cmake failed"
-  - This allows Blender 4.4.3 installation to proceed without dependency conflicts
+  - The `ptex` and `glfw` flags were causing cmake dependency resolution issues
+  - Simplified configuration to: `opencl opengl openmp tbb`
+  - Satisfies Blender 4.4.3 requirement: `>=media-libs/opensubdiv-3.6.0-r2[opengl,openmp,tbb]`
+  - Retains OpenCL support for AMD Radeon 780M GPU acceleration
+  - Removed now-unnecessary `media-libs/glfw wayland` configuration line
   - Only affects systems where `INSTALL_BLENDER=yes` is configured
 
 ## [1.0.10] - 2025-12-31
