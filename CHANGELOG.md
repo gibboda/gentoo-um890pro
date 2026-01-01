@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
   - Satisfies Blender 4.4.3 requirement: `>=media-libs/opensubdiv-3.6.0-r2[opengl,openmp,tbb]`
   - Retains OpenCL support for AMD Radeon 780M GPU acceleration
   - Removed now-unnecessary `media-libs/glfw wayland` configuration line
+  - Explicitly disables `ptex`/`glfw` in package.use to prevent Blender 4.4.3 cmake configure failures
   - Only affects systems where `INSTALL_BLENDER=yes` is configured
 
 ## [1.0.10] - 2025-12-31
