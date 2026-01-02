@@ -5,17 +5,21 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
-- **OpenBLAS Configuration for Blender**: Added OpenBLAS environment configuration for AMD Zen 4
+- **OpenBLAS Configuration for Blender**: Enhanced OpenBLAS environment configuration for AMD Zen 4
   - Resolves CMake configuration failures in Blender 4.4.3 and dependencies
   - **Root Cause Analysis**: Blender and its dependencies (numpy, scipy, etc.) use OpenBLAS for BLAS/LAPACK operations
     - Without explicit CPU target configuration, OpenBLAS may use suboptimal defaults
     - CMake configure phase can fail if OpenBLAS is not properly optimized for the target architecture
     - Build failures often manifest as "cmake failed" without specific details
-  - **Solution**: Created `/etc/portage/env/openblas-zen4.conf` with optimized settings:
+    - Previous fix used `package.env` which only applies when building OpenBLAS itself
+    - Dependent packages like Blender need these variables during their own CMake configuration
+  - **Solution**: Added OpenBLAS environment variables to `make.conf` for global availability:
     - `OPENBLAS_TARGET="ZEN"` - Explicitly targets AMD Zen architecture (Zen/Zen2/Zen3/Zen4)
     - `OPENBLAS_NTHREAD="16"` - Matches Ryzen 9 8945HS thread count (8 cores / 16 threads)
     - `OPENBLAS_NPARALLEL="4"` - Balanced for 16-thread CPU with shared iGPU memory (UMA architecture)
   - **Configuration Details**:
+    - Variables set in `make.conf` are available to all package builds, including CMake configuration
+    - Also retained `/etc/portage/env/openblas-zen4.conf` for OpenBLAS package itself
     - `OPENBLAS_TARGET`: Auto-detection from toolchain can miss optimal target; explicit "ZEN" ensures correct kernels
     - `OPENBLAS_NTHREAD`: Default is 64, but setting to actual thread count (16) prevents oversubscription
     - `OPENBLAS_NPARALLEL`: Default is 8; reduced to 4 to balance memory usage on UMA system (iGPU shares RAM)
@@ -23,13 +27,13 @@ All notable changes to this project will be documented in this file.
     - ZEN target provides optimized BLAS kernels for AMD Zen family (better than GENERIC or AUTO)
     - 16 threads matches physical CPU capability, avoiding thread thrashing
     - NPARALLEL=4 reduces concurrent BLAS operations, lowering memory pressure on 96GB shared with iGPU
-  - Applied via Portage's `package.env` mechanism to `sci-libs/openblas`
   - Improves numerical computation performance for Blender, scientific packages, and AI workloads
   - Configuration is applied unconditionally (benefits all OpenBLAS-dependent packages)
   - **Alternative Solutions Considered**:
     - Using AUTO target: Rejected - may not detect ZEN on all toolchains
     - Higher NPARALLEL (8+): Rejected - excessive memory usage on UMA architecture
     - Lower NTHREAD (<16): Rejected - underutilizes CPU, hurts Blender/AI performance
+    - package.env only: Rejected - variables not available during dependent package builds
   - **References**: 
     - OpenBLAS documentation: https://github.com/xianyi/OpenBLAS/wiki
     - Gentoo ebuild message visible during `sci-libs/openblas` installation
