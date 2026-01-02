@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - **OpenBLAS Configuration for Blender**: Added OpenBLAS environment configuration for AMD Zen 4
-  - Resolves potential CMake configuration failures in Blender 4.4.3 and dependencies
+  - Resolves CMake configuration failures in Blender 4.4.3 and dependencies
   - **Root Cause Analysis**: Blender and its dependencies (numpy, scipy, etc.) use OpenBLAS for BLAS/LAPACK operations
     - Without explicit CPU target configuration, OpenBLAS may use suboptimal defaults
     - CMake configure phase can fail if OpenBLAS is not properly optimized for the target architecture
