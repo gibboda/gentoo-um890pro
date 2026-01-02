@@ -675,7 +675,7 @@ EOF
   cat > "${MNT}/etc/portage/env/openblas-zen4.conf" <<EOF
 # OpenBLAS build configuration for AMD Zen 4 (Ryzen 9 8945HS)
 # OPENBLAS_TARGET: Set to ZEN for AMD Zen/Zen2/Zen3/Zen4 architectures
-#   - AUTO-detects from toolchain but explicit setting ensures correct target
+#   - The AUTO option detects the target from the toolchain, but an explicit setting ensures the correct target
 #   - ZEN target provides optimized kernels for AMD Zen family CPUs
 # OPENBLAS_NTHREAD: Maximum number of threads OpenBLAS can use (default=64)
 #   - Set to number of CPU threads for optimal performance
