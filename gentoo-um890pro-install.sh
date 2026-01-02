@@ -157,9 +157,10 @@ init_logging() {
 
   # Strip accidental surrounding quotes if the user pasted them (use parameter expansion)
   if [[ -n "${LOG_FILE}" ]]; then
-    # Strip one layer of surrounding quotes (single or double), if present.
+    # Strip one layer of matching surrounding quotes (single or double), if present.
     case "${LOG_FILE}" in
-      \"*\"|\'*\') LOG_FILE="${LOG_FILE:1:${#LOG_FILE}-2}" ;;
+      \"*\") LOG_FILE="${LOG_FILE:1:${#LOG_FILE}-2}" ;;
+      \'*\') LOG_FILE="${LOG_FILE:1:${#LOG_FILE}-2}" ;;
     esac
   fi
 
