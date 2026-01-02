@@ -33,8 +33,6 @@ All notable changes to this project will be documented in this file.
   - **References**: 
     - OpenBLAS documentation: https://github.com/xianyi/OpenBLAS/wiki
     - Gentoo ebuild message visible during `sci-libs/openblas` installation
-    - AMD Zen 4 optimization guide
-
 - **OpenSubdiv Build Configuration**: Removed `ptex` and `glfw` USE flags from `media-libs/opensubdiv`
   - Resolves cmake configuration failure during opensubdiv-3.6.1 build
   - The `ptex` and `glfw` flags were causing cmake dependency resolution issues
