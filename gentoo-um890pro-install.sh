@@ -666,6 +666,35 @@ EOF
     rm -f "${MNT}/etc/portage/package.use/blender"
   fi
 
+  # OpenBLAS configuration for AMD Zen 4 architecture
+  # Configure OpenBLAS to optimize for AMD Ryzen 9 8945HS (Zen 4 / znver4)
+  # This prevents CMake configuration failures in packages that depend on OpenBLAS
+  # (e.g., Blender, numpy, scipy, and other scientific computing packages)
+  # Applied unconditionally as it benefits all OpenBLAS-dependent packages
+  mkdir -p "${MNT}/etc/portage/env"
+  cat > "${MNT}/etc/portage/env/openblas-zen4.conf" <<EOF
+# OpenBLAS build configuration for AMD Zen 4 (Ryzen 9 8945HS)
+# OPENBLAS_TARGET: Set to ZEN for AMD Zen/Zen2/Zen3/Zen4 architectures
+#   - The AUTO option detects the target from the toolchain, but an explicit setting ensures the correct target
+#   - ZEN target provides optimized kernels for AMD Zen family CPUs
+# OPENBLAS_NTHREAD: Maximum number of threads OpenBLAS can use (default=64)
+#   - Set to number of CPU threads for optimal performance
+#   - Ryzen 9 8945HS: 8 cores / 16 threads
+# OPENBLAS_NPARALLEL: Number of parallel BLAS calls before queuing (default=8)
+#   - Higher values = more parallel calls but more memory
+#   - Lower values = less memory usage but may queue operations
+#   - Set to 4 for balance on 16-thread CPU with shared iGPU memory
+OPENBLAS_TARGET="ZEN"
+OPENBLAS_NTHREAD="16"
+OPENBLAS_NPARALLEL="4"
+EOF
+
+  mkdir -p "${MNT}/etc/portage/package.env"
+  cat > "${MNT}/etc/portage/package.env/openblas" <<EOF
+# Apply OpenBLAS Zen 4 configuration
+sci-libs/openblas openblas-zen4.conf
+EOF
+
   # ROCm - AMD GPU compute for AI workloads on Radeon 780M iGPU
   # Configure ROCm with support for the UM890 Pro's integrated graphics
   cat > "${MNT}/etc/portage/package.use/rocm" <<EOF
