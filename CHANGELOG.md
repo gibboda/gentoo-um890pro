@@ -19,7 +19,7 @@ All notable changes to this project will be documented in this file.
     - `OPENBLAS_NPARALLEL="4"` - Balanced for 16-thread CPU with shared iGPU memory (UMA architecture)
   - **Configuration Details**:
     - Variables set in `make.conf` are available to all package builds, including CMake configuration
-    - Also retained `/etc/portage/env/openblas-zen4.conf` for OpenBLAS package itself
+    - Existing `/etc/portage/env/openblas-zen4.conf` configuration is still applied for the OpenBLAS package itself
     - `OPENBLAS_TARGET`: Auto-detection from toolchain can miss optimal target; explicit "ZEN" ensures correct kernels
     - `OPENBLAS_NTHREAD`: Default is 64, but setting to actual thread count (16) prevents oversubscription
     - `OPENBLAS_NPARALLEL`: Default is 8; reduced to 4 to balance memory usage on UMA system (iGPU shares RAM)
