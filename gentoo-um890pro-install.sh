@@ -390,6 +390,15 @@ ABI_X86="64"
 # Multiple targets allow packages with different Python versions to coexist
 PYTHON_TARGETS="python3_12 python3_13"
 PYTHON_SINGLE_TARGET="python3_12"
+
+# OpenBLAS build configuration for AMD Zen 4 (Ryzen 9 8945HS)
+# Set globally to ensure availability during CMake configuration for dependent packages
+# OPENBLAS_TARGET: Explicitly targets AMD Zen architecture for optimized BLAS kernels
+# OPENBLAS_NTHREAD: Matches CPU thread count (8 cores / 16 threads)
+# OPENBLAS_NPARALLEL: Balanced for 16-thread CPU with shared iGPU memory (UMA architecture)
+OPENBLAS_TARGET="ZEN"
+OPENBLAS_NTHREAD="16"
+OPENBLAS_NPARALLEL="4"
 EOF
 
   # Configure Portage to keep old kernel versions for backup/fallback
