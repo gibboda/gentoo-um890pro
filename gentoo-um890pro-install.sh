@@ -306,22 +306,24 @@ format_os() {
 
 mount_btrfs_layout() {
   log_with_elapsed "Creating Btrfs subvolume layout..."
+  local btrfs_opts="noatime,compress=zstd:3,ssd,space_cache=v2"
+  
   mkdir -p "${MNT}"
   mount -t btrfs "${OS_ROOT}" "${MNT}"
 
-  # Subvols
-  btrfs subvolume create "${MNT}/@"
-  btrfs subvolume create "${MNT}/@home"
-  btrfs subvolume create "${MNT}/@var"
-  btrfs subvolume create "${MNT}/@snapshots"
+  # Create subvolumes
+  local subvol
+  for subvol in @ @home @var @snapshots; do
+    btrfs subvolume create "${MNT}/${subvol}"
+  done
   umount "${MNT}"
 
-  # Mount with common options
-  mount -t btrfs -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@ "${OS_ROOT}" "${MNT}"
+  # Mount subvolumes with optimized options
+  mount -t btrfs -o "${btrfs_opts},subvol=@" "${OS_ROOT}" "${MNT}"
   mkdir -p "${MNT}/"{home,var,.snapshots,boot}
-  mount -t btrfs -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@home "${OS_ROOT}" "${MNT}/home"
-  mount -t btrfs -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@var "${OS_ROOT}" "${MNT}/var"
-  mount -t btrfs -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@snapshots "${OS_ROOT}" "${MNT}/.snapshots"
+  mount -t btrfs -o "${btrfs_opts},subvol=@home" "${OS_ROOT}" "${MNT}/home"
+  mount -t btrfs -o "${btrfs_opts},subvol=@var" "${OS_ROOT}" "${MNT}/var"
+  mount -t btrfs -o "${btrfs_opts},subvol=@snapshots" "${OS_ROOT}" "${MNT}/.snapshots"
 
   mount "${OS_ESP}" "${ESP_MNT}"
 }
