@@ -154,33 +154,27 @@ init_logging() {
   [[ "${LOG_ENABLED}" == "yes" ]] || return 0
 
   need_cmd tee || { echo "ERROR: tee not found; cannot enable logging." >&2; exit 1; }
-  need_cmd date || { echo "ERROR: date not found; cannot enable logging." >&2; exit 1; }
 
-  # Strip accidental surrounding quotes if the user pasted them.
+  # Strip accidental surrounding quotes if the user pasted them (use parameter expansion)
   if [[ -n "${LOG_FILE}" ]]; then
     # Strip one layer of surrounding quotes (single or double), if present.
-    if [[ ( "${LOG_FILE:0:1}" == "\"" && "${LOG_FILE: -1}" == "\"" ) || ( "${LOG_FILE:0:1}" == "'" && "${LOG_FILE: -1}" == "'" ) ]]; then
-      LOG_FILE="${LOG_FILE:1:${#LOG_FILE}-2}"
-    fi
+    case "${LOG_FILE}" in
+      \"*\"|\'*\') LOG_FILE="${LOG_FILE:1:${#LOG_FILE}-2}" ;;
+    esac
   fi
 
   if [[ -z "${LOG_FILE}" ]]; then
-    local ts log_dir
-    ts="$(date +%Y%m%d-%H%M%S)"
-    log_dir="/root"
+    local log_dir="/root"
     [[ -w "${log_dir}" ]] || log_dir="/tmp"
-    LOG_FILE="${log_dir}/gentoo-um890pro-install-${ts}.log"
+    LOG_FILE="${log_dir}/gentoo-um890pro-install-$(date +%Y%m%d-%H%M%S).log"
   fi
 
   # Ensure the log directory exists and the log file can be created.
   # If the configured location isn't writable/valid, fall back to /tmp.
-  local log_dir
-  log_dir="$(dirname -- "${LOG_FILE}")"
+  local log_dir="${LOG_FILE%/*}"
   if ! mkdir -p "${log_dir}" 2>/dev/null || ! touch "${LOG_FILE}" 2>/dev/null; then
-    local ts
-    ts="$(date +%Y%m%d-%H%M%S)"
-    LOG_FILE="/tmp/gentoo-um890pro-install-${ts}.log"
-    mkdir -p "$(dirname -- "${LOG_FILE}")" || { echo "ERROR: cannot create fallback log directory for: ${LOG_FILE}" >&2; exit 1; }
+    LOG_FILE="/tmp/gentoo-um890pro-install-$(date +%Y%m%d-%H%M%S).log"
+    mkdir -p "${LOG_FILE%/*}" || { echo "ERROR: cannot create fallback log directory for: ${LOG_FILE}" >&2; exit 1; }
     touch "${LOG_FILE}" || { echo "ERROR: cannot write fallback log file: ${LOG_FILE}" >&2; exit 1; }
     if [[ -w /dev/tty ]]; then
       echo "WARN: configured LOG_FILE was not writable; using fallback: ${LOG_FILE}" > /dev/tty
@@ -277,21 +271,20 @@ partition_disks() {
   log_with_elapsed "Partitioning disks..."
 
   need_cmd sgdisk || { echo "ERROR: sgdisk not found (package: gptfdisk)."; exit 1; }
-  need_cmd wipefs || { echo "ERROR: wipefs not found."; exit 1; }
 
   # OS disk: GPT -> ESP + Btrfs
-  wipefs -a "${OS_DISK}"
+  # sgdisk --zap-all clears partition table and protective MBR (wipefs redundant)
   sgdisk --zap-all "${OS_DISK}"
-  sgdisk -n 1:1MiB:+${ESP_SIZE_MIB}MiB -t 1:EF00 -c 1:"${ESP_LABEL}" "${OS_DISK}"
-  sgdisk -n 2:0:0              -t 2:8300 -c 2:"${BTRFS_LABEL}" "${OS_DISK}"
-  partprobe "${OS_DISK}"
-
+  sgdisk -n 1:1MiB:+${ESP_SIZE_MIB}MiB -t 1:EF00 -c 1:"${ESP_LABEL}" \
+         -n 2:0:0              -t 2:8300 -c 2:"${BTRFS_LABEL}" "${OS_DISK}"
+  
   # DATA disk: GPT -> one big ZFS partition
-  wipefs -a "${DATA_DISK}"
-  sgdisk --zap-all "${DATA_DISK}"
   # bf00 is "Solaris root" type often used for ZFS on GPT; Linux doesn't require it, but it's tidy.
-  sgdisk -n 1:1MiB:0 -t 1:BF00 -c 1:"ZFS-${ZPOOL}" "${DATA_DISK}"
-  partprobe "${DATA_DISK}"
+  sgdisk --zap-all "${DATA_DISK}" \
+         -n 1:1MiB:0 -t 1:BF00 -c 1:"ZFS-${ZPOOL}"
+  
+  # Inform kernel of partition changes for both disks
+  partprobe "${OS_DISK}" "${DATA_DISK}"
 
   OS_ESP="${OS_DISK}p1"
   OS_ROOT="${OS_DISK}p2"
@@ -405,8 +398,7 @@ EOF
   # This prevents emerge --depclean from removing old kernels automatically.
   # Kernel preservation is handled via the dedicated Portage set below.
 
-  # Add configuration to preserve multiple kernel slots
-  mkdir -p "${MNT}/etc/portage/sets"
+  # Add configuration to preserve multiple kernel slots (sets directory already created above)
   cat > "${MNT}/etc/portage/sets/kernels" <<'EOF'
 # Kernel preservation set
 # Add specific kernel versions here to prevent removal
@@ -509,8 +501,10 @@ install_base_system() {
 127.0.1.1   ${HOSTNAME}.localdomain ${HOSTNAME}
 EOF
 
+  # Create all portage config directories upfront (reduces mkdir overhead)
+  mkdir -p "${MNT}/etc/portage/"{package.license,package.accept_keywords,package.use,env,package.env,sets}
+  
   # Configure package.license for linux-firmware
-  mkdir -p "${MNT}/etc/portage/package.license"
   cat > "${MNT}/etc/portage/package.license/linux-firmware" <<EOF
 # Accept licenses for firmware packages
 sys-kernel/linux-firmware linux-fw-redistributable no-source-code
@@ -518,14 +512,12 @@ EOF
 
   # Accept testing keyword for linux-firmware (required for AMD Radeon 780M RDNA3 support)
   # The UM890 Pro's Radeon 780M (gfx1103) requires recent firmware for proper GPU functionality
-  mkdir -p "${MNT}/etc/portage/package.accept_keywords"
   cat > "${MNT}/etc/portage/package.accept_keywords/linux-firmware" <<EOF
 # AMD Radeon 780M (RDNA3, gfx1103) requires latest firmware for GPU acceleration
 sys-kernel/linux-firmware ~amd64
 EOF
 
   # Configure package.use for installkernel based on selected init system
-  mkdir -p "${MNT}/etc/portage/package.use"
   
   # Python packages - Global Python target configuration
   # This prevents infinite loop of USE flag changes across the entire system
@@ -680,7 +672,6 @@ EOF
   # This prevents CMake configuration failures in packages that depend on OpenBLAS
   # (e.g., Blender, numpy, scipy, and other scientific computing packages)
   # Applied unconditionally as it benefits all OpenBLAS-dependent packages
-  mkdir -p "${MNT}/etc/portage/env"
   cat > "${MNT}/etc/portage/env/openblas-zen4.conf" <<EOF
 # OpenBLAS build configuration for AMD Zen 4 (Ryzen 9 8945HS)
 # OPENBLAS_TARGET: Set to ZEN for AMD Zen/Zen2/Zen3/Zen4 architectures
@@ -698,7 +689,6 @@ OPENBLAS_NTHREAD="16"
 OPENBLAS_NPARALLEL="4"
 EOF
 
-  mkdir -p "${MNT}/etc/portage/package.env"
   cat > "${MNT}/etc/portage/package.env/openblas" <<EOF
 # Apply OpenBLAS Zen 4 configuration
 sci-libs/openblas openblas-zen4.conf
@@ -762,11 +752,8 @@ EOF
   log_with_elapsed "Installing linux-firmware..."
   chroot_run "emerge sys-kernel/linux-firmware"
 
-  log_with_elapsed "Installing system utilities..."
-  chroot_run "emerge sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd"
-
-  log_with_elapsed "Installing filesystem and boot tools..."
-  chroot_run "emerge sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
+  log_with_elapsed "Installing system utilities, filesystem and boot tools..."
+  chroot_run "emerge sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
 
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     echo "Installing systemd..."
