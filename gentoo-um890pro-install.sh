@@ -1293,8 +1293,9 @@ install_blender() {
   echo "Blender will be configured with OpenGL and Vulkan support for GPU rendering."
 
   # Blender has many dependencies and takes time to compile
+  # Install git first so Blender's CMake configure step can detect it
   # We install it separately to provide clear progress feedback
-  chroot_run "emerge media-gfx/blender"
+  chroot_run "emerge dev-vcs/git media-gfx/blender"
   
   echo "Blender installation complete."
   

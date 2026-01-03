@@ -87,6 +87,9 @@ All notable changes to this project will be documented in this file.
   - Removed now-unnecessary `media-libs/glfw wayland` configuration line
   - Explicitly disables `ptex`/`glfw` in package.use to prevent Blender 4.4.3 cmake configure failures
   - Only affects systems where `INSTALL_BLENDER=yes` is configured
+- **Blender Build Dependency**: Ensure `dev-vcs/git` is installed before building Blender
+  - Fixes CMake error: `Git required but not found` during Blender configuration
+  - Applies only when `INSTALL_BLENDER=yes` to avoid unnecessary packages otherwise
 
 ## [1.0.10] - 2025-12-31
 - Version synchronization: synced script VERSION variable with VERSION file
