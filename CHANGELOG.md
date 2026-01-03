@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.11] - 2026-01-03
+
+### Fixed
+- **Portage Sets Directory Creation**: Fixed directory creation ordering issue in installation script
+  - Resolved error: `./gentoo-um890pro-install.sh: line 413: /mnt/gentoo/etc/portage/sets/kernels: No such file or directory`
+  - **Root Cause**: Script attempted to write to `/mnt/gentoo/etc/portage/sets/kernels` before creating the `sets` directory
+    - Kernel preservation configuration (previously at line 416) ran before directory creation (previously at line 516)
+    - Directory creation was incorrectly placed after hostname/hosts configuration
+  - **Solution**: Moved portage directory creation to line 408-409 (immediately after make.conf configuration)
+    - All portage subdirectories (package.license, package.accept_keywords, package.use, env, package.env, sets) are now created before first use
+    - Kernel preservation configuration now runs after directories exist
+  - **Impact**: Eliminates installation script failure during portage configuration phase
+
+
 ### Changed
 - **Performance Optimizations**: Improved script efficiency and reduced execution time
   - Reduced script size from 2,374 to 2,372 lines (2 lines / 0.1% reduction)

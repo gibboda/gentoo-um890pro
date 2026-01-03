@@ -50,7 +50,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="1.0.10"
+VERSION="1.0.11"
 
 # Track script start time for elapsed time reporting
 SCRIPT_START_TIME="${SECONDS}"
@@ -405,11 +405,14 @@ OPENBLAS_NTHREAD="16"
 OPENBLAS_NPARALLEL="4"
 EOF
 
+  # Create all portage config directories upfront (reduces mkdir overhead)
+  mkdir -p "${MNT}/etc/portage/"{package.license,package.accept_keywords,package.use,env,package.env,sets}
+
   # Configure Portage to keep old kernel versions for backup/fallback
   # This prevents emerge --depclean from removing old kernels automatically.
   # Kernel preservation is handled via the dedicated Portage set below.
 
-  # Add configuration to preserve multiple kernel slots (sets directory already created above)
+  # Add configuration to preserve multiple kernel slots
   cat > "${MNT}/etc/portage/sets/kernels" <<'EOF'
 # Kernel preservation set
 # Add specific kernel versions here to prevent removal
@@ -512,9 +515,6 @@ install_base_system() {
 127.0.1.1   ${HOSTNAME}.localdomain ${HOSTNAME}
 EOF
 
-  # Create all portage config directories upfront (reduces mkdir overhead)
-  mkdir -p "${MNT}/etc/portage/"{package.license,package.accept_keywords,package.use,env,package.env,sets}
-  
   # Configure package.license for linux-firmware
   cat > "${MNT}/etc/portage/package.license/linux-firmware" <<EOF
 # Accept licenses for firmware packages
