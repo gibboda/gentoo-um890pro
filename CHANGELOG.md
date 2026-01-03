@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - **Performance Optimizations**: Improved script efficiency and reduced execution time
-  - Reduced script size from 2,374 to 2,363 lines (11 lines / 0.5% reduction)
+  - Reduced script size from 2,374 to 2,364 lines (10 lines / 0.4% reduction)
   - **Disk Operations**: Optimized `partition_disks()` function
     - Removed redundant `wipefs` calls (sgdisk --zap-all already clears disk)
     - Consolidated sgdisk partition creation flags into single commands

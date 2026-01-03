@@ -173,6 +173,14 @@ init_logging() {
   # Ensure the log directory exists and the log file can be created.
   # If the configured location isn't writable/valid, fall back to /tmp.
   local log_dir="${LOG_FILE%/*}"
+  # Handle edge cases for parameter expansion:
+  # - If no slash: log_dir equals LOG_FILE, use current directory "."
+  # - If root path (/file.log): log_dir is empty, use "/"
+  if [[ "${log_dir}" == "${LOG_FILE}" ]]; then
+    log_dir="."
+  elif [[ -z "${log_dir}" ]]; then
+    log_dir="/"
+  fi
   if ! mkdir -p "${log_dir}" 2>/dev/null || ! touch "${LOG_FILE}" 2>/dev/null; then
     LOG_FILE="/tmp/gentoo-um890pro-install-$(date +%Y%m%d-%H%M%S).log"
     mkdir -p "${LOG_FILE%/*}" || { echo "ERROR: cannot create fallback log directory for: ${LOG_FILE}" >&2; exit 1; }
