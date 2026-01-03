@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.11] - 2026-01-03
+- Fix portage sets directory creation ordering - create directories before writing kernels file
+
+
 ### Changed
 - **Performance Optimizations**: Improved script efficiency and reduced execution time
   - Reduced script size from 2,374 to 2,372 lines (2 lines / 0.1% reduction)
