@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- ### Fixed
-  - Unmasked `dev-libs/rocm-device-libs` (~amd64) to allow ROCm 7.1 runtime installation
+### Fixed
+- Unmasked `dev-libs/rocm-device-libs` (~amd64) to allow ROCm 7.1 runtime installation
 
 ## [1.0.11] - 2026-01-03
 
