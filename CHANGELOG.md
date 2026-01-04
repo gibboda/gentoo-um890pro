@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- Unmasked `dev-build/rocm-cmake` (~amd64) to resolve ROCm build dependency issues
+  - Required as a build-time dependency by `dev-libs/rocm-device-libs`, `dev-libs/rocr-runtime`, and `dev-util/rocminfo`
+  - Fixes error: "All ebuilds that could satisfy 'dev-build/rocm-cmake' have been masked"
 - Unmasked `dev-libs/rocm-device-libs` (~amd64) to allow ROCm 7.1 runtime installation
 
 ## [1.0.11] - 2026-01-03
