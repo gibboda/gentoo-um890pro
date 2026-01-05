@@ -12,6 +12,11 @@ set -euo pipefail
 
 ALLOW_DIRTY=false
 
+# Version bump thresholds
+MAJOR_FIX_THRESHOLD=7  # >= this many fixes triggers major bump
+MINOR_FIX_MIN=2        # Minimum fixes for minor bump
+MINOR_FIX_MAX=6        # Maximum fixes for minor bump
+
 # Parse flags
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -46,6 +51,20 @@ if [[ "$ALLOW_DIRTY" == "false" ]]; then
     exit 1
   fi
 fi
+
+# Helper function to update file with sed in a portable way
+sed_inplace() {
+  local file="$1"
+  local pattern="$2"
+  
+  if sed --version >/dev/null 2>&1; then
+    # GNU sed
+    sed -i "$pattern" "$file"
+  else
+    # BSD sed (macOS)
+    sed -i '' "$pattern" "$file"
+  fi
+}
 
 # Function to get the current version from VERSION file
 get_current_version() {
@@ -155,13 +174,13 @@ calculate_auto_version() {
   local bump_type=""
   local new_version=""
   
-  if [[ "$has_major_trigger" == "true" ]] || [[ $fix_count -ge 7 ]]; then
+  if [[ "$has_major_trigger" == "true" ]] || [[ $fix_count -ge $MAJOR_FIX_THRESHOLD ]]; then
     # Major bump
     ((major++)) || true
     minor=0
     patch=0
     bump_type="major"
-  elif [[ $fix_count -ge 2 && $fix_count -le 6 ]]; then
+  elif [[ $fix_count -ge $MINOR_FIX_MIN && $fix_count -le $MINOR_FIX_MAX ]]; then
     # Minor bump
     ((minor++)) || true
     patch=0
@@ -320,14 +339,7 @@ if [[ ${#} -ge 1 && "$1" == "auto" ]]; then
   # Update installer file
   INSTALLER_FILE="$ROOT_DIR/gentoo-um890pro-install.sh"
   if [[ -f "$INSTALLER_FILE" ]]; then
-    # Use sed with portable syntax for macOS/Linux
-    if sed --version >/dev/null 2>&1; then
-      # GNU sed
-      sed -i "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$INSTALLER_FILE"
-    else
-      # BSD sed (macOS)
-      sed -i '' "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$INSTALLER_FILE"
-    fi
+    sed_inplace "$INSTALLER_FILE" "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/"
   fi
   
   # Print summary
@@ -407,14 +419,7 @@ INSTALLER_FILE="$ROOT_DIR/gentoo-um890pro-install.sh"
 echo "$NEW_VERSION" > "$VERSION_FILE"
 
 if [[ -f "$INSTALLER_FILE" ]]; then
-  # Use sed with portable syntax for macOS/Linux
-  if sed --version >/dev/null 2>&1; then
-    # GNU sed
-    sed -i "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$INSTALLER_FILE"
-  else
-    # BSD sed (macOS)
-    sed -i '' "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/" "$INSTALLER_FILE"
-  fi
+  sed_inplace "$INSTALLER_FILE" "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/"
 fi
 
 date_str=$(date -u +"%Y-%m-%d")

@@ -70,7 +70,7 @@ verify_version() {
   
   cd "$test_dir"
   
-  local version_file=$(cat VERSION | tr -d '\r\n')
+  local version_file=$(tr -d '\r\n' < VERSION)
   local installer_version=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | sed 's/VERSION="\([^"]*\)"/\1/')
   
   if [[ "$version_file" != "$expected_version" ]]; then
