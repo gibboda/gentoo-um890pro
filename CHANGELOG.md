@@ -24,9 +24,21 @@ All notable changes to this project will be documented in this file.
   - Required as a build-time dependency by `dev-libs/rocm-device-libs`, `dev-libs/rocr-runtime`, and `dev-util/rocminfo`
   - Fixes error: "All ebuilds that could satisfy 'dev-build/rocm-cmake' have been masked"
 - Unmasked `dev-libs/rocm-device-libs` (~amd64) to allow ROCm 7.1 runtime installation
-- **Code Quality**: Fixed ShellCheck SC2155 warnings in version bump scripts
-  - Separated variable declarations from command substitution assignments (18 instances)
-  - Improves error detection by avoiding masked return values
+- **Code Quality**: Fixed 18 ShellCheck SC2155 warnings in version bump scripts
+  - Separated variable declarations from command substitution assignments to avoid masking return values
+  - **scripts/bump-version.sh** (7 fixes):
+    1. `latest_commit` - git rev-parse HEAD command
+    2. `subject` - git show commit subject
+    3. `body` - git show commit body
+    4. `parse_result` - parse_commit function output
+    5. `type` - commit type extraction
+    6. `has_breaking` - breaking change flag extraction
+    7. `date_str` - date formatting command
+  - **tools/test-bump-version.sh** (11 fixes):
+    8. `version_file` - VERSION file content validation
+    9. `installer_version` - installer script version extraction
+    10-18. `test_dir` - mktemp directory creation (9 test functions: test_a through test_i)
+  - Improves error detection by allowing command failures to be properly caught instead of masked by `local` keyword
 
 ## [1.0.11] - 2026-01-03
 
