@@ -733,6 +733,7 @@ EOF
   cat > "${MNT}/etc/portage/package.accept_keywords/rocm" <<EOF
 # ROCm packages (testing required for AMD Radeon 780M gfx1103 support)
 dev-build/rocm-cmake ~amd64
+dev-libs/rocm-comgr ~amd64
 dev-libs/rocm-device-libs ~amd64
 dev-libs/rocm-opencl-runtime ~amd64
 dev-libs/rocr-runtime ~amd64
