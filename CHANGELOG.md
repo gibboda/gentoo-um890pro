@@ -4,11 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Version Bumping Automation**: Added `auto` mode to `scripts/bump-version.sh` with Conventional Commits support
+  - Automatically determines version bump (major/minor/patch) based on commit message types since last tag
+  - Bump rules: major for feat/refactor/perf/BREAKING CHANGE or ≥7 fixes, minor for 2-6 fixes, patch for 0-1 fixes
+  - Parses commit history using Conventional Commits format (fix, feat, refactor, perf, docs, test, chore, etc.)
+  - Automatically updates CHANGELOG.md with grouped sections (Fixes, Changes, Performance, Refactors, Other)
+  - Added shortcut modes (`patch`, `minor`, `major`) for quick version increments
+  - Cross-platform compatibility with macOS and Linux (portable sed implementation)
+  - Git safety checks (dirty repo detection with `--allow-dirty` override)
+  - Configurable thresholds via constants (MAJOR_FIX_THRESHOLD, MINOR_FIX_MIN, MINOR_FIX_MAX)
+- **Testing Infrastructure**: Added comprehensive test suite in `tools/test-bump-version.sh`
+  - 9 test cases covering all bump scenarios (patch, minor, major triggers)
+  - Tests commit type classification, breaking change detection, and CHANGELOG structure
+  - Debug mode support via `PRESERVE_TEST_DIRS` environment variable
+
 ### Fixed
 - Unmasked `dev-build/rocm-cmake` (~amd64) to resolve ROCm build dependency issues
   - Required as a build-time dependency by `dev-libs/rocm-device-libs`, `dev-libs/rocr-runtime`, and `dev-util/rocminfo`
   - Fixes error: "All ebuilds that could satisfy 'dev-build/rocm-cmake' have been masked"
 - Unmasked `dev-libs/rocm-device-libs` (~amd64) to allow ROCm 7.1 runtime installation
+- **Code Quality**: Fixed ShellCheck SC2155 warnings in version bump scripts
+  - Separated variable declarations from command substitution assignments (18 instances)
+  - Improves error detection by avoiding masked return values
 
 ## [1.0.11] - 2026-01-03
 
