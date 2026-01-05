@@ -73,8 +73,10 @@ verify_version() {
   
   cd "$test_dir"
   
-  local version_file=$(tr -d '\r\n' < VERSION)
-  local installer_version=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | sed 's/VERSION="\([^"]*\)"/\1/')
+  local version_file
+  local installer_version
+  version_file=$(tr -d '\r\n' < VERSION)
+  installer_version=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | sed 's/VERSION="\([^"]*\)"/\1/')
   
   if [[ "$version_file" != "$expected_version" ]]; then
     log_fail "VERSION file has $version_file, expected $expected_version"
@@ -144,7 +146,8 @@ run_test() {
 test_a() {
   log_test "Test A: 1 fix commit -> v1.0.1"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"
@@ -163,7 +166,8 @@ test_a() {
 test_b() {
   log_test "Test B: 2 fix commits -> v1.1.0"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"
@@ -186,7 +190,8 @@ test_b() {
 test_c() {
   log_test "Test C: 7 fix commits -> v2.0.0"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"
@@ -207,7 +212,8 @@ test_c() {
 test_d() {
   log_test "Test D: 1 perf commit -> v2.0.0"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"
@@ -226,7 +232,8 @@ test_d() {
 test_e() {
   log_test "Test E: docs-only commits -> v1.0.1"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"
@@ -249,7 +256,8 @@ test_e() {
 test_f() {
   log_test "Test F: Breaking change marker (!) -> v2.0.0"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"
@@ -268,7 +276,8 @@ test_f() {
 test_g() {
   log_test "Test G: feat commit -> v2.0.0"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"
@@ -287,7 +296,8 @@ test_g() {
 test_h() {
   log_test "Test H: refactor commit -> v2.0.0"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"
@@ -306,7 +316,8 @@ test_h() {
 test_i() {
   log_test "Test I: 2 update commits -> v1.1.0"
   
-  local test_dir=$(mktemp -d)
+  local test_dir
+  test_dir=$(mktemp -d)
   create_test_repo "$test_dir"
   
   cd "$test_dir"

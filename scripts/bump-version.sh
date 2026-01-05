@@ -140,7 +140,8 @@ calculate_auto_version() {
     commit_range="${base_tag}..HEAD"
   else
     # When no tag exists, avoid scanning the entire history; only use the latest commit
-    local latest_commit=$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo "")
+    local latest_commit
+    latest_commit=$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo "")
     if [[ -n "$latest_commit" ]]; then
       # Check if this is the initial commit (no parent)
       if git -C "$ROOT_DIR" rev-parse "${latest_commit}^" >/dev/null 2>&1; then
@@ -164,12 +165,17 @@ calculate_auto_version() {
       continue
     fi
     
-    local subject=$(git -C "$ROOT_DIR" show -s --format=%s "$commit_sha")
-    local body=$(git -C "$ROOT_DIR" show -s --format=%b "$commit_sha")
+    local subject
+    local body
+    subject=$(git -C "$ROOT_DIR" show -s --format=%s "$commit_sha")
+    body=$(git -C "$ROOT_DIR" show -s --format=%b "$commit_sha")
     
-    local parse_result=$(parse_commit "$subject" "$body")
-    local type=$(echo "$parse_result" | cut -d'|' -f1)
-    local has_breaking=$(echo "$parse_result" | cut -d'|' -f2)
+    local parse_result
+    local type
+    local has_breaking
+    parse_result=$(parse_commit "$subject" "$body")
+    type=$(echo "$parse_result" | cut -d'|' -f1)
+    has_breaking=$(echo "$parse_result" | cut -d'|' -f2)
     
     # Use ASCII record separator (RS) as delimiter to avoid issues with pipes in commit messages
     commits_data="${commits_data}${commit_sha}"$'\x1E'"${type}"$'\x1E'"${has_breaking}"$'\x1E'"${subject}"$'\n'
@@ -238,7 +244,8 @@ update_changelog_auto() {
   local commits_data="$2"
   local changelog_file="$ROOT_DIR/CHANGELOG.md"
   
-  local date_str=$(date -u +"%Y-%m-%d")
+  local date_str
+  date_str=$(date -u +"%Y-%m-%d")
   
   # Group commits by type (using ASCII record separator as delimiter)
   local fixes=""
