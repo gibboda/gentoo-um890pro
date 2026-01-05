@@ -57,11 +57,28 @@ sed_inplace() {
   local file="$1"
   local pattern="$2"
   
-  if sed --version >/dev/null 2>&1; then
-    # GNU sed
+  # Detect sed behavior once and cache in _SED_INPLACE_MODE
+  if [[ "${_SED_INPLACE_MODE-}" != "gnu" && "${_SED_INPLACE_MODE-}" != "bsd" ]]; then
+    local tmp
+    tmp="$(mktemp "${TMPDIR:-/tmp}/sed-inplace-test.XXXXXX")" || {
+      echo "ERROR: failed to create temporary file for sed detection" >&2
+      exit 1
+    }
+    printf 'test' > "$tmp"
+
+    if sed -i 's/test/gnu/' "$tmp" >/dev/null 2>&1 && grep -q 'gnu' "$tmp" 2>/dev/null; then
+      _SED_INPLACE_MODE="gnu"
+    else
+      # Assume BSD-style sed -i '' if GNU-style in-place edit fails
+      _SED_INPLACE_MODE="bsd"
+    fi
+
+    rm -f "$tmp"
+  fi
+
+  if [[ "$_SED_INPLACE_MODE" == "gnu" ]]; then
     sed -i "$pattern" "$file"
   else
-    # BSD sed (macOS)
     sed -i '' "$pattern" "$file"
   fi
 }
@@ -99,14 +116,14 @@ parse_commit() {
     has_breaking=true
   fi
   
-  # Parse type from subject line
-  if echo "$commit_msg" | grep -Eq '^[a-z]+(\([^)]+\))?!:'; then
+  # Parse type from subject line (case-insensitive)
+  if echo "$commit_msg" | grep -Eqi '^[A-Za-z]+(\([^)]+\))?!:'; then
     # Has ! marker (breaking change)
     has_breaking=true
-    type=$(echo "$commit_msg" | sed -E 's/^([a-z]+)(\([^)]+\))?!:.*/\1/')
-  elif echo "$commit_msg" | grep -Eq '^[a-z]+(\([^)]+\))?:'; then
+    type=$(echo "$commit_msg" | sed -E 's/^([A-Za-z]+)(\([^)]+\))?!:.*/\1/' | tr '[:upper:]' '[:lower:]')
+  elif echo "$commit_msg" | grep -Eqi '^[A-Za-z]+(\([^)]+\))?:'; then
     # Normal format
-    type=$(echo "$commit_msg" | sed -E 's/^([a-z]+)(\([^)]+\))?:.*/\1/')
+    type=$(echo "$commit_msg" | sed -E 's/^([A-Za-z]+)(\([^)]+\))?:.*/\1/' | tr '[:upper:]' '[:lower:]')
   fi
   
   echo "$type|$has_breaking"
@@ -117,12 +134,18 @@ calculate_auto_version() {
   local base_tag="$1"
   local current_version="$2"
   
-  # Get commits since tag (or all commits if no tag)
+  # Get commits since tag; if no tag, only consider the latest commit
   local commit_range=""
   if [[ -n "$base_tag" ]]; then
     commit_range="${base_tag}..HEAD"
   else
-    commit_range="HEAD"
+    # When no tag exists, avoid scanning the entire history; only use the latest commit
+    local latest_commit=$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo "")
+    if [[ -n "$latest_commit" ]]; then
+      commit_range="${latest_commit}^..${latest_commit}"
+    else
+      commit_range="HEAD"
+    fi
   fi
   
   local fix_count=0
@@ -142,8 +165,8 @@ calculate_auto_version() {
     local type=$(echo "$parse_result" | cut -d'|' -f1)
     local has_breaking=$(echo "$parse_result" | cut -d'|' -f2)
     
-    # Store commit data for changelog
-    commits_data="${commits_data}${commit_sha}|${type}|${has_breaking}|${subject}"$'\n'
+    # Use ASCII record separator (RS) as delimiter to avoid issues with pipes in commit messages
+    commits_data="${commits_data}${commit_sha}"$'\x1E'"${type}"$'\x1E'"${has_breaking}"$'\x1E'"${subject}"$'\n'
     
     # Count fixes/updates
     if [[ "$type" == "fix" || "$type" == "update" ]]; then
@@ -199,7 +222,7 @@ calculate_auto_version() {
   echo "FIX_COUNT=${fix_count}"
   echo "BASE_TAG=${base_tag}"
   echo "COMMITS_DATA_START"
-  echo -n "$commits_data"
+  printf '%s' "$commits_data"
   echo "COMMITS_DATA_END"
 }
 
@@ -211,14 +234,14 @@ update_changelog_auto() {
   
   local date_str=$(date -u +"%Y-%m-%d")
   
-  # Group commits by type
+  # Group commits by type (using ASCII record separator as delimiter)
   local fixes=""
   local changes=""
   local performance=""
   local refactors=""
   local other=""
   
-  while IFS='|' read -r commit_sha type has_breaking subject; do
+  while IFS=$'\x1E' read -r commit_sha type has_breaking subject; do
     if [[ -z "$commit_sha" ]]; then
       continue
     fi
@@ -275,7 +298,11 @@ update_changelog_auto() {
   
   # Update or create CHANGELOG.md
   if [[ -f "$changelog_file" ]]; then
-    local tmpfile=$(mktemp)
+    local tmpfile
+    if ! tmpfile=$(mktemp); then
+      echo "ERROR: failed to create temporary file for updating CHANGELOG" >&2
+      exit 1
+    fi
     if grep -Eq '^##[[:space:]]+\[?Unreleased\]?' "$changelog_file"; then
       # Insert after Unreleased header
       awk -v section="$release_section" '

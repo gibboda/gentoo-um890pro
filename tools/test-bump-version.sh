@@ -11,6 +11,9 @@ BUMP_SCRIPT="$ROOT_DIR/scripts/bump-version.sh"
 TEST_FAILED=0
 TEST_PASSED=0
 
+# Set to 1 to preserve test directories on failure for debugging
+PRESERVE_TEST_DIRS="${PRESERVE_TEST_DIRS:-0}"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -101,6 +104,41 @@ verify_changelog() {
   return 0
 }
 
+# Helper function to run test and cleanup
+run_test() {
+  local test_name="$1"
+  local test_dir="$2"
+  local expected_version="$3"
+  
+  # Run auto mode on a clean repository
+  local bump_output
+  if ! bump_output=$(bash scripts/bump-version.sh auto 2>&1); then
+    log_fail "$test_name: bump-version.sh exited with non-zero status"
+    echo "$bump_output"
+    if [[ "$PRESERVE_TEST_DIRS" == "1" ]]; then
+      echo "Test directory preserved at: $test_dir"
+    else
+      rm -rf "$test_dir"
+    fi
+    return 1
+  fi
+  
+  if verify_version "$expected_version" "$test_dir" && verify_changelog "$expected_version" "$test_dir"; then
+    log_pass "$test_name: correctly bumped to v${expected_version}"
+    rm -rf "$test_dir"
+    return 0
+  else
+    log_fail "$test_name: Failed"
+    echo "Bump output: $bump_output"
+    if [[ "$PRESERVE_TEST_DIRS" == "1" ]]; then
+      echo "Test directory preserved at: $test_dir"
+    else
+      rm -rf "$test_dir"
+    fi
+    return 1
+  fi
+}
+
 # Test A: 1 fix commit -> v1.0.1 (patch bump)
 test_a() {
   log_test "Test A: 1 fix commit -> v1.0.1"
@@ -117,16 +155,7 @@ test_a() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "1.0.1" "$test_dir" && verify_changelog "1.0.1" "$test_dir"; then
-    log_pass "Test A: 1 fix commit correctly bumped to v1.0.1"
-  else
-    log_fail "Test A: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test A" "$test_dir" "1.0.1"
 }
 
 # Test B: 2 fix commits -> v1.1.0 (minor bump)
@@ -149,16 +178,7 @@ test_b() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "1.1.0" "$test_dir" && verify_changelog "1.1.0" "$test_dir"; then
-    log_pass "Test B: 2 fix commits correctly bumped to v1.1.0"
-  else
-    log_fail "Test B: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test B" "$test_dir" "1.1.0"
 }
 
 # Test C: 7 fix commits -> v2.0.0 (major bump)
@@ -179,16 +199,7 @@ test_c() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "2.0.0" "$test_dir" && verify_changelog "2.0.0" "$test_dir"; then
-    log_pass "Test C: 7 fix commits correctly bumped to v2.0.0"
-  else
-    log_fail "Test C: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test C" "$test_dir" "2.0.0"
 }
 
 # Test D: 1 perf commit -> v2.0.0 (major trigger)
@@ -207,16 +218,7 @@ test_d() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "2.0.0" "$test_dir" && verify_changelog "2.0.0" "$test_dir"; then
-    log_pass "Test D: 1 perf commit correctly bumped to v2.0.0"
-  else
-    log_fail "Test D: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test D" "$test_dir" "2.0.0"
 }
 
 # Test E: docs-only commits -> v1.0.1 (patch bump, no fix/update/major triggers)
@@ -239,16 +241,7 @@ test_e() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "1.0.1" "$test_dir" && verify_changelog "1.0.1" "$test_dir"; then
-    log_pass "Test E: docs-only commits correctly bumped to v1.0.1"
-  else
-    log_fail "Test E: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test E" "$test_dir" "1.0.1"
 }
 
 # Test F: Breaking change marker (!) -> v2.0.0
@@ -267,16 +260,7 @@ test_f() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "2.0.0" "$test_dir" && verify_changelog "2.0.0" "$test_dir"; then
-    log_pass "Test F: Breaking change marker correctly bumped to v2.0.0"
-  else
-    log_fail "Test F: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test F" "$test_dir" "2.0.0"
 }
 
 # Test G: feat commit -> v2.0.0 (major trigger)
@@ -295,16 +279,7 @@ test_g() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "2.0.0" "$test_dir" && verify_changelog "2.0.0" "$test_dir"; then
-    log_pass "Test G: feat commit correctly bumped to v2.0.0"
-  else
-    log_fail "Test G: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test G" "$test_dir" "2.0.0"
 }
 
 # Test H: refactor commit -> v2.0.0 (major trigger)
@@ -323,16 +298,7 @@ test_h() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "2.0.0" "$test_dir" && verify_changelog "2.0.0" "$test_dir"; then
-    log_pass "Test H: refactor commit correctly bumped to v2.0.0"
-  else
-    log_fail "Test H: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test H" "$test_dir" "2.0.0"
 }
 
 # Test I: update type commit -> counted as fix
@@ -355,16 +321,7 @@ test_i() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  # Run auto mode
-  bash scripts/bump-version.sh auto --allow-dirty >/dev/null 2>&1
-  
-  if verify_version "1.1.0" "$test_dir" && verify_changelog "1.1.0" "$test_dir"; then
-    log_pass "Test I: 2 update commits correctly bumped to v1.1.0"
-  else
-    log_fail "Test I: Failed"
-  fi
-  
-  rm -rf "$test_dir"
+  run_test "Test I" "$test_dir" "1.1.0"
 }
 
 # Run all tests
