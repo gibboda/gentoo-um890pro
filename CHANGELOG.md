@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Unmasked `dev-libs/rocm-comgr` (~amd64) to resolve ROCm OpenCL runtime dependency
-  - Required as a dependency by `dev-libs/rocm-opencl-runtime` (dev-libs/rocm-comgr:0/7.1)
+  - Required as a dependency by `dev-libs/rocm-opencl-runtime` (`dev-libs/rocm-comgr:0/7.1`)
   - Fixes error: "All ebuilds that could satisfy 'dev-libs/rocm-comgr:0/7.1' have been masked"
 - Unmasked `dev-build/rocm-cmake` (~amd64) to resolve ROCm build dependency issues
   - Required as a build-time dependency by `dev-libs/rocm-device-libs`, `dev-libs/rocr-runtime`, and `dev-util/rocminfo`
