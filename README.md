@@ -180,10 +180,33 @@ The installer uses `sys-fs/zfs-kmod`, which builds kernel modules. If `USE_BINAR
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
 - Bumping versions: [scripts/bump-version.sh](scripts/bump-version.sh)
 
+The bump-version.sh script supports multiple modes:
+
+**Auto mode** (Conventional Commits-based):
 ```bash
-chmod +x scripts/bump-version.sh
+./scripts/bump-version.sh auto
+```
+- Automatically determines version bump based on commit messages since last tag
+- Follows Conventional Commits specification
+- Version bump rules:
+  - **Major** (X+1.0.0): `feat`, `refactor`, `perf`, breaking changes (! or BREAKING CHANGE), or ≥7 fixes
+  - **Minor** (X.Y+1.0): 2-6 `fix` or `update` commits
+  - **Patch** (X.Y.Z+1): 0-1 `fix` or `update` commits
+- Groups CHANGELOG.md entries by type (Fixes, Changes, Performance, Refactors, Other)
+
+**Shortcut modes**:
+```bash
+./scripts/bump-version.sh patch   # Increment patch version
+./scripts/bump-version.sh minor   # Increment minor version
+./scripts/bump-version.sh major   # Increment major version
+```
+
+**Manual mode** (explicit version):
+```bash
 ./scripts/bump-version.sh 0.1.2 "Short summary of changes"
 ```
+
+All modes update VERSION, gentoo-um890pro-install.sh, and CHANGELOG.md consistently.
 
 Note: `VERSION` is enforced as `X.Y.Z` semver by CI.
 
