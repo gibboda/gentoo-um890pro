@@ -110,7 +110,8 @@ run_test() {
   local test_dir="$2"
   local expected_version="$3"
   
-  # Run auto mode on a clean repository
+  # Run auto mode on a clean repository (no --allow-dirty needed for tests since
+  # all changes are committed before running the script)
   local bump_output
   if ! bump_output=$(bash scripts/bump-version.sh auto 2>&1); then
     log_fail "$test_name: bump-version.sh exited with non-zero status"

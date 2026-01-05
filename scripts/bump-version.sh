@@ -142,7 +142,13 @@ calculate_auto_version() {
     # When no tag exists, avoid scanning the entire history; only use the latest commit
     local latest_commit=$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo "")
     if [[ -n "$latest_commit" ]]; then
-      commit_range="${latest_commit}^..${latest_commit}"
+      # Check if this is the initial commit (no parent)
+      if git -C "$ROOT_DIR" rev-parse "${latest_commit}^" >/dev/null 2>&1; then
+        commit_range="${latest_commit}^..${latest_commit}"
+      else
+        # Initial commit, use -1 to get just this commit
+        commit_range="${latest_commit}"
+      fi
     else
       commit_range="HEAD"
     fi
