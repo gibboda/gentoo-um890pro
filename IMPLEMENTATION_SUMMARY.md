@@ -185,7 +185,7 @@
 - HSA_OVERRIDE_GFX_VERSION=11.0.3
 - HIP support enabled
 - RADV Vulkan driver optimizations
-- Mesa with OpenCL support
+- Mesa with OpenCL disabled (ROCm provides OpenCL via rocm-opencl-runtime)
 
 ## Documentation Structure
 
