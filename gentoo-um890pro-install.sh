@@ -621,7 +621,7 @@ EOF
 x11-libs/libdrm video_cards_radeon
 # Wayland display server support with libei for input emulation
 x11-base/xwayland libei
-# Mesa with Vulkan and OpenCL support for AMD RDNA3
+# Mesa with Vulkan support for AMD RDNA3
 media-libs/mesa vulkan video_cards_radeon
 # freetype harfbuzz needed by the pango stack pulled by PipeWire/GStreamer
 media-libs/freetype harfbuzz
