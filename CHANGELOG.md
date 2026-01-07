@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.12] - 2026-01-07
+
 ### Added
 - **Version Bumping Automation**: Added `auto` mode to `scripts/bump-version.sh` with Conventional Commits support
   - Automatically determines version bump (major/minor/patch) based on commit message types since last tag
