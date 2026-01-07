@@ -720,7 +720,8 @@ sys-devel/llvm rocm
 sys-devel/clang rocm
 
 # Mesa with ROCm support
-media-libs/mesa opencl
+# Note: opencl disabled to avoid conflict with rocm-opencl-runtime
+media-libs/mesa -opencl
 
 # Python packages for AI/ML
 dev-python/torch rocm
@@ -739,6 +740,7 @@ dev-libs/rocm-opencl-runtime ~amd64
 dev-libs/rocr-runtime ~amd64
 dev-libs/roct-thunk-interface ~amd64
 dev-util/hip ~amd64
+dev-util/hipcc ~amd64
 dev-util/rocminfo ~amd64
 EOF
 
