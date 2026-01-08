@@ -50,7 +50,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="1.0.12"
+VERSION="1.0.13"
 
 # Track script start time for elapsed time reporting
 SCRIPT_START_TIME="${SECONDS}"
