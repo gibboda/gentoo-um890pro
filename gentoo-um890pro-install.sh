@@ -1245,7 +1245,9 @@ install_zfs_and_create_pool() {
   # We set mountpoints under ${ZFS_MNT_BASE}
   # Note: Batched into single chroot call for performance (reduces overhead).
   # The && chain ensures any failure stops the sequence (errexit behavior).
-  chroot_run "zpool create -f -o ashift=12 \
+  # Remove mountpoint directory if it exists to avoid "mountpoint exists and is not empty" error
+  chroot_run "rm -rf ${ZFS_MNT_BASE} && \
+    zpool create -f -o ashift=12 \
     -O atime=off -O xattr=sa -O acltype=posixacl -O compression=zstd \
     -O normalization=formD -O mountpoint=${ZFS_MNT_BASE} \
     ${ZPOOL} ${DATA_PART} && \
