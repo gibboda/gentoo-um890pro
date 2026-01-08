@@ -6,7 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.13] - 2026-01-08
 
-- Maintenance release.
+### Fixed
+
+- Fixed ZFS pool creation failure when mountpoint directory exists and is not empty.
 
 ## [1.0.12] - 2026-01-07
 
