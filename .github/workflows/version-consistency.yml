@@ -1,0 +1,96 @@
+name: Version Consistency Check
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  version-consistency:
+    name: Verify bump-version.sh was applied
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check VERSION file exists and is valid
+        id: check_version
+        run: |
+          set -euo pipefail
+          
+          if [ ! -f VERSION ]; then
+            echo "ERROR: VERSION file missing" >&2
+            exit 1
+          fi
+          
+          VERSION=$(cat VERSION | tr -d '\r\n')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Found VERSION: ${VERSION}"
+          
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: VERSION must be in X.Y.Z semantic version format" >&2
+            exit 1
+          fi
+
+      - name: Check installer script version matches
+        run: |
+          set -euo pipefail
+          
+          VERSION="${{ steps.check_version.outputs.version }}"
+          
+          if [ ! -f gentoo-um890pro-install.sh ]; then
+            echo "ERROR: gentoo-um890pro-install.sh not found" >&2
+            exit 1
+          fi
+          
+          # Extract VERSION from installer script
+          INSTALLER_VERSION=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | sed 's/VERSION="\([^"]*\)"/\1/' || echo "")
+          
+          if [ -z "$INSTALLER_VERSION" ]; then
+            echo "ERROR: Could not find VERSION declaration in gentoo-um890pro-install.sh" >&2
+            exit 1
+          fi
+          
+          echo "Installer VERSION: ${INSTALLER_VERSION}"
+          
+          if [ "$VERSION" != "$INSTALLER_VERSION" ]; then
+            echo "ERROR: Version mismatch!" >&2
+            echo "  VERSION file:       ${VERSION}" >&2
+            echo "  Installer script:   ${INSTALLER_VERSION}" >&2
+            echo "" >&2
+            echo "This suggests bump-version.sh was not properly applied." >&2
+            echo "Please run: ./scripts/bump-version.sh <version> \"<changelog entry>\"" >&2
+            exit 1
+          fi
+          
+          echo "✓ Installer script version matches VERSION file"
+
+      - name: Check CHANGELOG has current version
+        run: |
+          set -euo pipefail
+          
+          VERSION="${{ steps.check_version.outputs.version }}"
+          
+          if [ ! -f CHANGELOG.md ]; then
+            echo "ERROR: CHANGELOG.md not found" >&2
+            exit 1
+          fi
+          
+          if ! grep -q "^## \[${VERSION}\]" CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION}" >&2
+            echo "" >&2
+            echo "This suggests bump-version.sh was not properly applied." >&2
+            echo "Please run: ./scripts/bump-version.sh <version> \"<changelog entry>\"" >&2
+            exit 1
+          fi
+          
+          echo "✓ CHANGELOG.md contains version ${VERSION}"
+
+      - name: All checks passed
+        run: |
+          echo "✓ All version consistency checks passed"
+          echo "✓ bump-version.sh appears to have been properly applied"
