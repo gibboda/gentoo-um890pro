@@ -251,8 +251,6 @@ To clean up branches:
 ./scripts/cleanup-branches.sh --execute
 ```
 
-For more details, see [BRANCH_CLEANUP.md](BRANCH_CLEANUP.md).
-
 ## License
 
 Licensed under the GNU General Public License v3.0 (GPL-3.0-only). See [LICENSE](LICENSE).
