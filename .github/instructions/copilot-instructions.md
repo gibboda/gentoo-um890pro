@@ -1,8 +1,8 @@
 # Repository rules (must follow)
 
 ## Versioning & Changelog (MANDATORY)
-- If you change any code, you MUST run: ./bump-version.sh
-- ./bump-version.sh is the single source of truth for:
+- If you change any code, you MUST run: ./scripts/bump-version.sh
+- ./scripts/bump-version.sh is the single source of truth for:
   - version numbers across the repo
   - CHANGELOG updates
 - If changes do not require a version bump, explicitly state why in the PR description.
