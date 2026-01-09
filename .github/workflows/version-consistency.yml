@@ -27,7 +27,7 @@ jobs:
             exit 1
           fi
           
-          VERSION=$(cat VERSION | tr -d '\r\n')
+          VERSION=$(tr -d '\r\n' < VERSION)
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Found VERSION: ${VERSION}"
           
@@ -48,7 +48,7 @@ jobs:
           fi
           
           # Extract VERSION from installer script
-          INSTALLER_VERSION=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | cut -d= -f2 | tr -d '"') || INSTALLER_VERSION=""
+          INSTALLER_VERSION=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | cut -d= -f2 | tr -d '"' || true)
           
           if [ -z "$INSTALLER_VERSION" ]; then
             echo "ERROR: Could not find VERSION declaration in gentoo-um890pro-install.sh" >&2
