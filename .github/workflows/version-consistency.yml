@@ -48,7 +48,7 @@ jobs:
           fi
           
           # Extract VERSION from installer script
-          INSTALLER_VERSION=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | sed 's/VERSION="\([^"]*\)"/\1/' || echo "")
+          INSTALLER_VERSION=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | cut -d= -f2 | tr -d '"' || echo "")
           
           if [ -z "$INSTALLER_VERSION" ]; then
             echo "ERROR: Could not find VERSION declaration in gentoo-um890pro-install.sh" >&2
@@ -80,7 +80,7 @@ jobs:
             exit 1
           fi
           
-          if ! grep -q "^## \[${VERSION}\]" CHANGELOG.md; then
+          if ! grep -q "^## \\[${VERSION}\\]" CHANGELOG.md; then
             echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION}" >&2
             echo "" >&2
             echo "This suggests bump-version.sh was not properly applied." >&2
