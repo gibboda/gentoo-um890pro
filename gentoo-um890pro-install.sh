@@ -50,7 +50,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="1.0.12"
+VERSION="1.0.13"
 
 # Track script start time for elapsed time reporting
 SCRIPT_START_TIME="${SECONDS}"
@@ -1245,7 +1245,9 @@ install_zfs_and_create_pool() {
   # We set mountpoints under ${ZFS_MNT_BASE}
   # Note: Batched into single chroot call for performance (reduces overhead).
   # The && chain ensures any failure stops the sequence (errexit behavior).
-  chroot_run "zpool create -f -o ashift=12 \
+  # Remove mountpoint directory if it exists to avoid "mountpoint exists and is not empty" error
+  chroot_run "if [ -n '${ZFS_MNT_BASE}' ] && [ '${ZFS_MNT_BASE}' != '/' ]; then rm -rf '${ZFS_MNT_BASE}' || true; else echo 'ERROR: invalid ZFS_MNT_BASE=${ZFS_MNT_BASE}' >&2; exit 1; fi && \
+    zpool create -f -o ashift=12 \
     -O atime=off -O xattr=sa -O acltype=posixacl -O compression=zstd \
     -O normalization=formD -O mountpoint=${ZFS_MNT_BASE} \
     ${ZPOOL} ${DATA_PART} && \
