@@ -63,7 +63,7 @@ jobs:
         id: version_changed
         run: |
           set -euo pipefail
-          if echo "${{ steps.determine.outputs.changed_files }}" | grep -qx 'VERSION'; then
+          if echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^VERSION$'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "VERSION file was changed"
           else
