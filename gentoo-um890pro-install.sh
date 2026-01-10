@@ -1395,17 +1395,36 @@ MODELS_DIR="${COMFYUI_DIR}/models"
 
 echo "Setting up ComfyUI for AMD Radeon 780M with UMA optimizations..."
 
-# Clone ComfyUI if not present
+# Clone ComfyUI if not present, pinned to a specific trusted commit
+# This mitigates supply-chain risks by ensuring a known, verified version
+# Commit: dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2
+# Date: 2026-01-09
+# Description: Latest stable commit with proper mixed ops save functionality
+COMFYUI_PINNED_COMMIT="dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2"
+
 if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
+    echo "Cloning ComfyUI repository (pinned to commit ${COMFYUI_PINNED_COMMIT})..."
     git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"
+    cd "${COMFYUI_DIR}"
+    git checkout "${COMFYUI_PINNED_COMMIT}"
+    
+    # Verify the commit hash matches expected value
+    ACTUAL_COMMIT=$(git rev-parse HEAD)
+    if [[ "${ACTUAL_COMMIT}" != "${COMFYUI_PINNED_COMMIT}" ]]; then
+        echo "ERROR: ComfyUI commit verification failed!"
+        echo "Expected: ${COMFYUI_PINNED_COMMIT}"
+        echo "Got: ${ACTUAL_COMMIT}"
+        exit 1
+    fi
+    echo "✓ ComfyUI commit verified successfully"
+else
+    cd "${COMFYUI_DIR}"
 fi
 
 if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
     echo "ComfyUI repository not found at ${COMFYUI_DIR}."
     exit 1
 fi
-
-cd "${COMFYUI_DIR}"
 
 # Create virtual environment
 python3.12 -m venv venv
