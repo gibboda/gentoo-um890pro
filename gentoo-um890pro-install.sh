@@ -1404,9 +1404,18 @@ COMFYUI_PINNED_COMMIT="dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2"
 
 if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
     echo "Cloning ComfyUI repository (pinned to commit ${COMFYUI_PINNED_COMMIT})..."
-    git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"
-    cd "${COMFYUI_DIR}"
-    git checkout "${COMFYUI_PINNED_COMMIT}"
+    if ! git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"; then
+        echo "ERROR: Failed to clone ComfyUI repository"
+        exit 1
+    fi
+    
+    cd "${COMFYUI_DIR}" || { echo "ERROR: Failed to change directory to ${COMFYUI_DIR}"; exit 1; }
+    
+    echo "Checking out pinned commit ${COMFYUI_PINNED_COMMIT}..."
+    if ! git checkout "${COMFYUI_PINNED_COMMIT}"; then
+        echo "ERROR: Failed to checkout commit ${COMFYUI_PINNED_COMMIT}"
+        exit 1
+    fi
     
     # Verify the commit hash matches expected value
     ACTUAL_COMMIT=$(git rev-parse HEAD)
@@ -1418,7 +1427,7 @@ if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
     fi
     echo "✓ ComfyUI commit verified successfully"
 else
-    cd "${COMFYUI_DIR}"
+    cd "${COMFYUI_DIR}" || { echo "ERROR: Failed to change directory to ${COMFYUI_DIR}"; exit 1; }
 fi
 
 # Create virtual environment
