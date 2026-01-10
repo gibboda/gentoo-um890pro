@@ -255,7 +255,7 @@ ls /sys/firmware/efi
 # View EFI boot entries
 efibootmgr -v
 
-# After installation, you should see rEFInd entry
+# After installation, you should see a rEFInd entry
 efibootmgr | grep -i refind
 ```
 
