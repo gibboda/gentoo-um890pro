@@ -292,9 +292,29 @@ test_g() {
   run_test "Test G" "$test_dir" "2.0.0"
 }
 
-# Test H: refactor commit -> v2.0.0 (major trigger)
+# Test H: BREAKING CHANGE in body -> v2.0.0
 test_h() {
-  log_test "Test H: refactor commit -> v2.0.0"
+  log_test "Test H: BREAKING CHANGE in body -> v2.0.0"
+  
+  local test_dir
+  test_dir=$(mktemp -d)
+  create_test_repo "$test_dir"
+  
+  cd "$test_dir"
+  echo "breaking change body" >> file1.txt
+  git add file1.txt
+  git commit -q -m "feat: adjust configuration" -m "BREAKING CHANGE: removed legacy flag"
+  
+  # Copy bump script
+  mkdir -p scripts
+  cp "$BUMP_SCRIPT" scripts/
+  
+  run_test "Test H" "$test_dir" "2.0.0"
+}
+
+# Test I: refactor commit -> v2.0.0 (major trigger)
+test_i() {
+  log_test "Test I: refactor commit -> v2.0.0"
   
   local test_dir
   test_dir=$(mktemp -d)
@@ -309,12 +329,12 @@ test_h() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  run_test "Test H" "$test_dir" "2.0.0"
+  run_test "Test I" "$test_dir" "2.0.0"
 }
 
-# Test I: update type commit -> counted as fix
-test_i() {
-  log_test "Test I: 2 update commits -> v1.1.0"
+# Test J: update type commit -> counted as fix
+test_j() {
+  log_test "Test J: 2 update commits -> v1.1.0"
   
   local test_dir
   test_dir=$(mktemp -d)
@@ -333,7 +353,7 @@ test_i() {
   mkdir -p scripts
   cp "$BUMP_SCRIPT" scripts/
   
-  run_test "Test I" "$test_dir" "1.1.0"
+  run_test "Test J" "$test_dir" "1.1.0"
 }
 
 # Run all tests
@@ -351,6 +371,7 @@ test_f
 test_g
 test_h
 test_i
+test_j
 
 echo ""
 echo "=========================================="
