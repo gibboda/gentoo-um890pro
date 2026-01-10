@@ -1421,11 +1421,6 @@ else
     cd "${COMFYUI_DIR}"
 fi
 
-if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
-    echo "ComfyUI repository not found at ${COMFYUI_DIR}."
-    exit 1
-fi
-
 # Create virtual environment
 python3.12 -m venv venv
 source venv/bin/activate
