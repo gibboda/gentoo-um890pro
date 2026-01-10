@@ -432,7 +432,7 @@ EOF
 chroot_run() {
   # Run a command inside the chroot
   local cmd="$*"
-  echo ">>> chroot: ${cmd}"
+  echo ">>> chroot: ${cmd}" >&2
   
   # Flush any pending output to log before running the command
   sync 2>/dev/null || true
@@ -449,13 +449,32 @@ chroot_run() {
   chroot "${MNT}" /bin/bash -lc "${cmd}"
   
   # Log completion for long-running commands
-  echo ">>> chroot completed: ${cmd}"
+  echo ">>> chroot completed: ${cmd}" >&2
+}
+
+chroot_capture() {
+  # Run a command inside the chroot and return only its stdout
+  local cmd="$*"
+
+  # Flush any pending output to log before running the command
+  sync 2>/dev/null || true
+
+  if [[ ! -d "${MNT}" ]]; then
+    echo "ERROR: chroot root not found: ${MNT}" >&2
+    exit 1
+  fi
+  if [[ ! -x "${MNT}/bin/bash" ]]; then
+    echo "ERROR: ${MNT}/bin/bash not found; stage3 may not be extracted." >&2
+    exit 1
+  fi
+
+  chroot "${MNT}" /bin/bash -lc "${cmd}"
 }
 
 chroot_run_maybe() {
   # Like chroot_run, but does not abort the outer script.
   local cmd="$*"
-  echo ">>> chroot(maybe): ${cmd}"
+  echo ">>> chroot(maybe): ${cmd}" >&2
   
   # Flush any pending output to log before running the command
   sync 2>/dev/null || true
@@ -467,9 +486,9 @@ chroot_run_maybe() {
   
   # Log completion status
   if [[ ${rc} -eq 0 ]]; then
-    echo ">>> chroot(maybe) completed successfully: ${cmd}"
+    echo ">>> chroot(maybe) completed successfully: ${cmd}" >&2
   else
-    echo ">>> chroot(maybe) failed with exit code ${rc}: ${cmd}"
+    echo ">>> chroot(maybe) failed with exit code ${rc}: ${cmd}" >&2
   fi
   
   return $rc
@@ -807,10 +826,10 @@ install_kernel() {
     chroot_run "emerge sys-kernel/gentoo-kernel-bin"
     
     # Get the kernel version that was just installed
-    KERNEL_A_VERSION=$(chroot_run "eselect kernel list 2>/dev/null | grep -oP 'gentoo-kernel-bin-\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo ''")
+    KERNEL_A_VERSION=$(chroot_capture "eselect kernel list 2>/dev/null | grep -oP 'gentoo-kernel-bin-\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo ''")
     if [[ -z "${KERNEL_A_VERSION}" ]]; then
       # Fallback: try to get version from /boot files
-      KERNEL_A_VERSION=$(chroot_run "ls /boot/vmlinuz-*-gentoo-dist 2>/dev/null | head -n1 | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' || echo 'unknown'")
+      KERNEL_A_VERSION=$(chroot_capture "ls /boot/vmlinuz-*-gentoo-dist 2>/dev/null | head -n1 | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' || echo 'unknown'")
     fi
     echo "  Installed: gentoo-kernel-bin-${KERNEL_A_VERSION}"
     echo "  Note: Kernel A initramfs was generated automatically and will NOT be touched again"
@@ -857,7 +876,7 @@ EOF
     echo "  Setting LOCALVERSION=-um890-tuned for unique kernel identification..."
     
     # Get the latest gentoo-sources version and verify it was found
-    KERNEL_B_BASE_VERSION=$(chroot_run "eselect kernel list 2>/dev/null | grep 'gentoo-sources' | grep -oP 'gentoo-sources-\K[0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?' | head -n1 || echo ''")
+    KERNEL_B_BASE_VERSION=$(chroot_capture "eselect kernel list 2>/dev/null | grep 'gentoo-sources' | grep -oP 'gentoo-sources-\K[0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?' | head -n1 || echo ''")
     
     if [[ -z "${KERNEL_B_BASE_VERSION}" ]]; then
       echo "ERROR: Failed to detect gentoo-sources version. Ensure gentoo-sources is installed."
