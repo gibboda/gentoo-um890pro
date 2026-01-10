@@ -1396,8 +1396,13 @@ MODELS_DIR="${COMFYUI_DIR}/models"
 echo "Setting up ComfyUI for AMD Radeon 780M with UMA optimizations..."
 
 # Clone ComfyUI if not present
-if [[ ! -d "${COMFYUI_DIR}" ]]; then
+if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
     git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"
+fi
+
+if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
+    echo "ComfyUI repository not found at ${COMFYUI_DIR}."
+    exit 1
 fi
 
 cd "${COMFYUI_DIR}"
