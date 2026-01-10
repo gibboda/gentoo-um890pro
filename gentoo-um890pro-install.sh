@@ -1400,6 +1400,16 @@ echo "Setting up ComfyUI for AMD Radeon 780M with UMA optimizations..."
 # Commit: dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2
 # Date: 2026-01-09
 # Description: Latest stable commit with proper mixed ops save functionality
+#
+# To verify this commit exists in the upstream repository:
+#   git ls-remote https://github.com/comfyanonymous/ComfyUI.git dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2
+#
+# To update to a newer commit:
+#   1. Clone the repo: git clone https://github.com/comfyanonymous/ComfyUI.git
+#   2. Review recent commits: git log --oneline -20
+#   3. Test the desired commit thoroughly
+#   4. Update COMFYUI_PINNED_COMMIT below with the new hash
+#   5. Update the Date and Description comments above
 COMFYUI_PINNED_COMMIT="dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2"
 
 if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
