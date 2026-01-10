@@ -48,7 +48,7 @@ jobs:
           fi
           
           # Extract VERSION from installer script
-          INSTALLER_VERSION=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | cut -d= -f2 | tr -d '"' || true)
+          INSTALLER_VERSION=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | cut -d= -f2 | tr -d '" \t\r\n' || true)
           
           if [ -z "$INSTALLER_VERSION" ]; then
             echo "ERROR: Could not find VERSION declaration in gentoo-um890pro-install.sh" >&2
