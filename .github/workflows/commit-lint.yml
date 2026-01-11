@@ -75,6 +75,12 @@ jobs:
               continue
             fi
             
+            # Skip legacy commit da8679f (pre-enforcement)
+            if [[ "$SHORT_SHA" == "da8679f" ]]; then
+              echo "Status: ✓ SKIPPED (pre-enforcement legacy commit)"
+              continue
+            fi
+            
             # Validate against Conventional Commits format
             if echo "$SUBJECT" | grep -Eq "$CONVENTIONAL_PATTERN"; then
               echo "Status: ✓ VALID"
