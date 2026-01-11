@@ -44,6 +44,8 @@ jobs:
       - name: Determine changelog requirement for user-visible changes
         id: changelog_requirement
         if: ${{ github.event_name == 'pull_request' }}
+        env:
+          CHANGED_FILES: ${{ steps.determine.outputs.changed_files }}
         run: |
           set -euo pipefail
           pr_title=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH")
@@ -53,6 +55,7 @@ jobs:
           head_sha=$(jq -r .pull_request.head.sha < "$GITHUB_EVENT_PATH")
           git fetch origin "$base_sha" || true
           commit_subjects=$(git log --pretty=%s "${base_sha}..${head_sha}" 2>/dev/null || true)
+          changed_files="${CHANGED_FILES:-}"
 
           requires_changelog=false
           label_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)$'
@@ -64,6 +67,14 @@ jobs:
             requires_changelog=true
           elif echo "$commit_subjects" | tr '[:upper:]' '[:lower:]' | grep -Eq "$title_pattern"; then
             requires_changelog=true
+          fi
+
+          if [ "$requires_changelog" = true ]; then
+            non_ci_changes=$(echo "$changed_files" | grep -Ev '^(\.github/|CHANGELOG\.md$|VERSION$)' || true)
+            if [ -z "$non_ci_changes" ]; then
+              requires_changelog=false
+              echo "Detected only CI/metadata changes; skipping changelog requirement."
+            fi
           fi
 
           echo "requires_changelog=$requires_changelog" >> "$GITHUB_OUTPUT"
@@ -130,8 +141,22 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags
+          SKIP_TAGS=("v1.0.6" "v0.1.5")
+          skip_tag() {
+            local tag=$1
+            for skip in "${SKIP_TAGS[@]}"; do
+              if [ "$skip" = "$tag" ]; then
+                return 0
+              fi
+            done
+            return 1
+          }
           missing_versions=()
           while IFS= read -r version; do
+            tag="v${version}"
+            if skip_tag "$tag"; then
+              continue
+            fi
             if ! git show-ref --tags --quiet -- "refs/tags/v${version}"; then
               missing_versions+=("v${version}")
             fi
