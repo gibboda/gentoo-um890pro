@@ -1,14 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Version Bump Script with Conventional Commits Enforcement
+#
+# This script manages version bumping and CHANGELOG updates.
+# In auto mode, it REQUIRES all commits to follow Conventional Commits format.
+#
 # Usage:
 #   ./scripts/bump-version.sh <new-version> "Short changelog entry"
 #   ./scripts/bump-version.sh auto [--allow-dirty]
 #   ./scripts/bump-version.sh patch|minor|major
+#
 # Examples:
 #   ./scripts/bump-version.sh 0.1.1 "Fix partition detection"
 #   ./scripts/bump-version.sh auto
 #   ./scripts/bump-version.sh patch
+#
+# Conventional Commits Format (required for auto mode):
+#   type(scope): description
+#   
+#   Valid types: feat, fix, update, docs, style, refactor, perf, test, build, ci, chore
+#   
+#   Examples:
+#     feat(rocm): add ROCm 7.1 support
+#     fix(installer): resolve directory creation order
+#     docs: update README with new instructions
+#
+# See CONTRIBUTING.md for detailed guidelines.
 
 ALLOW_DIRTY=false
 
@@ -16,6 +34,10 @@ ALLOW_DIRTY=false
 MAJOR_FIX_THRESHOLD=7  # >= this many fixes triggers major bump
 MINOR_FIX_MIN=2        # Minimum fixes for minor bump
 MINOR_FIX_MAX=6        # Maximum fixes for minor bump
+
+# Legacy commits to skip (pre-enforcement)
+# These commits were created before Conventional Commits enforcement was added
+LEGACY_COMMITS="da8679f"
 
 # Parse flags
 while [[ $# -gt 0 ]]; do
@@ -101,6 +123,32 @@ find_latest_tag() {
     tail -n 1 || echo ""
 }
 
+# Function to validate if commit follows Conventional Commits format
+validate_conventional_commit() {
+  local commit_msg="$1"
+  
+  # Skip merge commits
+  if echo "$commit_msg" | grep -Eq '^Merge (branch|pull request|remote-tracking branch)'; then
+    return 0
+  fi
+  
+  # Skip automated version bump commits from this script
+  if echo "$commit_msg" | grep -Eq '^Bump version: [0-9]+\.[0-9]+\.[0-9]+'; then
+    return 0
+  fi
+  
+  # Conventional Commits pattern
+  # Format: type[(scope)][!]: description
+  # Types: feat|fix|update|docs|style|refactor|perf|test|build|ci|chore
+  local conventional_pattern='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$'
+  
+  if echo "$commit_msg" | grep -Eqi "$conventional_pattern"; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 # Function to parse conventional commit type and detect breaking changes
 parse_commit() {
   local commit_msg="$1"
@@ -158,6 +206,7 @@ calculate_auto_version() {
   local fix_count=0
   local has_major_trigger=false
   local commits_data=""
+  local invalid_commits=""
   
   # Parse all commits
   while IFS= read -r commit_sha; do
@@ -169,6 +218,28 @@ calculate_auto_version() {
     local body
     subject=$(git -C "$ROOT_DIR" show -s --format=%s "$commit_sha")
     body=$(git -C "$ROOT_DIR" show -s --format=%b "$commit_sha")
+    
+    # Skip legacy commits (pre-enforcement)
+    local short_sha
+    short_sha=$(git -C "$ROOT_DIR" log -1 --format=%h "$commit_sha")
+    if echo "$LEGACY_COMMITS" | grep -qw "$short_sha"; then
+      # Still parse for changelog, but don't validate
+      local parse_result
+      local type
+      local has_breaking
+      parse_result=$(parse_commit "$subject" "$body")
+      type=$(echo "$parse_result" | cut -d'|' -f1)
+      has_breaking=$(echo "$parse_result" | cut -d'|' -f2)
+      
+      # Add to commits data
+      commits_data="${commits_data}${commit_sha}"$'\x1E'"${type}"$'\x1E'"${has_breaking}"$'\x1E'"${subject}"$'\n'
+      continue
+    fi
+    
+    # Validate commit follows Conventional Commits format
+    if ! validate_conventional_commit "$subject"; then
+      invalid_commits="${invalid_commits}  ${short_sha} ${subject}"$'\n'
+    fi
     
     local parse_result
     local type
@@ -192,6 +263,26 @@ calculate_auto_version() {
       has_major_trigger=true
     fi
   done < <(git -C "$ROOT_DIR" rev-list "$commit_range" 2>/dev/null || true)
+  
+  # Check for invalid commits
+  if [[ -n "$invalid_commits" ]]; then
+    echo "ERROR: The following commits do not follow Conventional Commits format:" >&2
+    echo "" >&2
+    echo "$invalid_commits" >&2
+    echo "Expected format: type(scope): description" >&2
+    echo "Valid types: feat, fix, update, docs, style, refactor, perf, test, build, ci, chore" >&2
+    echo "" >&2
+    echo "Examples:" >&2
+    echo "  feat(rocm): add ROCm 7.1 support" >&2
+    echo "  fix(installer): resolve directory creation order" >&2
+    echo "  docs: update README installation steps" >&2
+    echo "" >&2
+    echo "Please rewrite your commit messages using:" >&2
+    echo "  git rebase -i <base-commit>" >&2
+    echo "" >&2
+    echo "See CONTRIBUTING.md for detailed guidelines." >&2
+    exit 1
+  fi
   
   # Parse current version
   local major minor patch

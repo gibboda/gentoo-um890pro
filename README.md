@@ -26,6 +26,24 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 - **[System Specifications](docs/SYSTEM_SPECS.md)** - Complete hardware specifications
 - **[Optimization Guide](docs/OPTIMIZATION_GUIDE.md)** - Performance tuning and optimizations
 
+## Contributing
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages. This enables automated version bumping and changelog generation.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+- Commit message format and types
+- Version bumping workflow
+- Pull request requirements
+- CI validation process
+
+**Quick reference:**
+- `feat(scope): description` - New feature
+- `fix(scope): description` - Bug fix
+- `docs: description` - Documentation changes
+- `refactor(scope): description` - Code refactoring
+
+All commits must follow this format or CI checks will fail.
+
 ## Overview
 
 - OS disk: EFI System Partition (FAT32) + Btrfs root with subvolumes (`@`, `@home`, `@var`, `@snapshots`).
