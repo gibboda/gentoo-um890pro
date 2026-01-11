@@ -87,8 +87,20 @@ jobs:
             exit 1
           fi
 
+      - name: Check if VERSION file changed
+        id: version_changed
+        run: |
+          set -euo pipefail
+          if echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^VERSION$'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "VERSION file was changed"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "VERSION file was not changed"
+          fi
+
       - name: Enforce Unreleased changelog policy for user-visible changes
-        if: ${{ github.event_name == 'pull_request' && steps.changelog_requirement.outputs.requires_changelog == 'true' }}
+        if: ${{ github.event_name == 'pull_request' && steps.changelog_requirement.outputs.requires_changelog == 'true' && steps.version_changed.outputs.changed != 'true' }}
         run: |
           set -euo pipefail
           # Note: We intentionally only match the root-level CHANGELOG.md here (not e.g. docs/CHANGELOG.md).
@@ -128,18 +140,6 @@ jobs:
             echo "ERROR: Missing git tags for CHANGELOG versions:" >&2
             printf '%s\n' "${missing_versions[@]}" >&2
             exit 1
-          fi
-
-      - name: Check if VERSION file changed
-        id: version_changed
-        run: |
-          set -euo pipefail
-          if echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^VERSION$'; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "VERSION file was changed"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "VERSION file was not changed"
           fi
 
       - name: Validate when VERSION changed
