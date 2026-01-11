@@ -601,38 +601,13 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-wo
   else
     git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
   fi
-  # Only attempt a commit if there are staged changes
-  # Note: `git diff --cached --quiet` returns 0 (success) when there are NO changes,
-  # so we negate it with ! to check if there ARE changes
-  if ! git -C "$ROOT_DIR" diff --cached --quiet; then
-    # Check if tag already exists BEFORE committing to avoid partial state
-    if git -C "$ROOT_DIR" show-ref --tags --quiet -- "refs/tags/v$NEW_VERSION"; then
-      echo "ERROR: Git tag v$NEW_VERSION already exists. Refusing to overwrite." >&2
-      echo "Please use a different version number or delete the existing tag first." >&2
-      exit 1
-    fi
-    # Now commit the changes
-    if ! git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG"; then
-      echo "ERROR: Failed to create git commit for version bump to $NEW_VERSION." >&2
-      echo "Please review the git status and try again." >&2
-      exit 1
-    fi
-    # Create tag with proper error handling for race conditions
-    if git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG"; then
-      echo "Committed and tagged v$NEW_VERSION"
-    else
-      # If tag creation failed after commit, provide guidance on recovery
-      echo "ERROR: Failed to create git tag v$NEW_VERSION after committing changes." >&2
-      echo "The version bump has been committed but not tagged." >&2
-      echo "To recover:" >&2
-      echo "  - If the tag now exists due to a race condition, you're done." >&2
-      echo "  - If tagging failed due to permissions/network, retry: git tag -a \"v$NEW_VERSION\" -m \"$MSG\"" >&2
-      echo "  - To start over with a different version: git reset --soft HEAD~1" >&2
-      exit 1
-    fi
-  else
-    echo "No staged changes detected; skipping git commit and tag."
+  git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG"
+  if git -C "$ROOT_DIR" tag -l "v$NEW_VERSION" | grep -q "v$NEW_VERSION"; then
+    echo "ERROR: Git tag v$NEW_VERSION already exists. Refusing to overwrite." >&2
+    exit 1
   fi
+  git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG"
+  echo "Committed and tagged v$NEW_VERSION"
 fi
 
 echo "Bumped version to $NEW_VERSION"
