@@ -37,7 +37,7 @@ MINOR_FIX_MAX=6        # Maximum fixes for minor bump
 
 # Legacy commits to skip (pre-enforcement)
 # These commits were created before Conventional Commits enforcement was added
-LEGACY_COMMITS="da8679f 3194a59"
+LEGACY_COMMITS="da8679f 3194a59 bd98962"
 
 # Parse flags
 while [[ $# -gt 0 ]]; do
