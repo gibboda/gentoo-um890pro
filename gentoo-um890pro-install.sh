@@ -357,19 +357,19 @@ partition_disks() {
     if [[ -e "${os_esp_label_plain}" ]]; then
       os_esp_candidate="${os_esp_label_plain}"
     else
-      os_esp_candidate=$(find_encoded_partlabel_link "${ESP_LABEL}" 2>/dev/null) || os_esp_candidate=""
+      os_esp_candidate=$(find_encoded_partlabel_link "${ESP_LABEL}" 2>/dev/null)
     fi
 
     if [[ -e "${os_root_label_plain}" ]]; then
       os_root_candidate="${os_root_label_plain}"
     else
-      os_root_candidate=$(find_encoded_partlabel_link "${BTRFS_LABEL}" 2>/dev/null) || os_root_candidate=""
+      os_root_candidate=$(find_encoded_partlabel_link "${BTRFS_LABEL}" 2>/dev/null)
     fi
 
     if [[ -e "${data_label_plain}" ]]; then
       data_candidate="${data_label_plain}"
     else
-      data_candidate=$(find_encoded_partlabel_link "ZFS-${ZPOOL}" 2>/dev/null) || data_candidate=""
+      data_candidate=$(find_encoded_partlabel_link "ZFS-${ZPOOL}" 2>/dev/null)
     fi
 
     if [[ -n "${os_esp_candidate}" && -b "${os_esp_candidate}" && \
@@ -396,26 +396,28 @@ partition_disks() {
     local root_suffix="2"
     local data_suffix="1"
 
+    # Helper to determine the partition suffix for a given device path.
+    # Returns "p" for NVMe/MMC devices, "-part" for by-id paths, or "" for others.
+    get_partition_separator() {
+      local device="$1"
+      if [[ "${device}" == /dev/disk/by-id/* ]]; then
+        echo "-part"
+      elif [[ "${device}" =~ ^/dev/nvme[0-9]+n[0-9]+$ || "${device}" =~ ^/dev/mmcblk[0-9]+$ ]]; then
+        echo "p"
+      else
+        echo ""
+      fi
+    }
+
     # Determine partition suffix based on device type.
     # Use more precise pattern matching to avoid false positives.
-    if [[ "${OS_DISK}" == /dev/disk/by-id/* ]]; then
-      OS_ESP="${OS_DISK}-part${os_suffix}"
-      OS_ROOT="${OS_DISK}-part${root_suffix}"
-    elif [[ "${OS_DISK}" =~ ^/dev/nvme[0-9]+n[0-9]+$ || "${OS_DISK}" =~ ^/dev/mmcblk[0-9]+$ ]]; then
-      OS_ESP="${OS_DISK}p${os_suffix}"
-      OS_ROOT="${OS_DISK}p${root_suffix}"
-    else
-      OS_ESP="${OS_DISK}${os_suffix}"
-      OS_ROOT="${OS_DISK}${root_suffix}"
-    fi
+    local os_sep data_sep
+    os_sep=$(get_partition_separator "${OS_DISK}")
+    data_sep=$(get_partition_separator "${DATA_DISK}")
 
-    if [[ "${DATA_DISK}" == /dev/disk/by-id/* ]]; then
-      DATA_PART="${DATA_DISK}-part${data_suffix}"
-    elif [[ "${DATA_DISK}" =~ ^/dev/nvme[0-9]+n[0-9]+$ || "${DATA_DISK}" =~ ^/dev/mmcblk[0-9]+$ ]]; then
-      DATA_PART="${DATA_DISK}p${data_suffix}"
-    else
-      DATA_PART="${DATA_DISK}${data_suffix}"
-    fi
+    OS_ESP="${OS_DISK}${os_sep}${os_suffix}"
+    OS_ROOT="${OS_DISK}${os_sep}${root_suffix}"
+    DATA_PART="${DATA_DISK}${data_sep}${data_suffix}"
   fi
 
   # Verify that the computed partition device paths exist as block devices.
