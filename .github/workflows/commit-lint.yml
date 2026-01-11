@@ -88,8 +88,8 @@ jobs:
             if echo "$SUBJECT" | grep -Eqi "$CONVENTIONAL_PATTERN"; then
               echo "Status: ✓ VALID"
               
-              # Extract and display type
-              TYPE=$(echo "$SUBJECT" | sed -E 's/^([a-z]+)(\([^)]+\))?!?: .*/\1/')
+              # Extract and display type (allow mixed case, normalize to lowercase)
+              TYPE=$(echo "$SUBJECT" | sed -E 's/^([A-Za-z]+)(\([^)]+\))?!?: .*/\1/' | tr '[:upper:]' '[:lower:]')
               echo "Type: $TYPE"
               
               # Check for breaking change marker
