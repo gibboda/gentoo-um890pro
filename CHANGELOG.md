@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.14] - 2026-01-10
+
+### Fixed
+- Fix chroot logging for kernel version capture (#86)
+
 ## [1.0.13] - 2026-01-08
 
 ### Fixed
