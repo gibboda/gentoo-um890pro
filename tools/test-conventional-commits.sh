@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Test script for Conventional Commits validation
+
+set -euo pipefail
+
+echo "========================================="
+echo "Testing Conventional Commits Validation"
+echo "========================================="
+echo ""
+
+# Test function
+test_commit_message() {
+  local message="$1"
+  local expected="$2"
+  
+  # Create the validation function inline (copy from bump-version.sh)
+  validate_conventional_commit() {
+    local commit_msg="$1"
+    
+    # Skip merge commits
+    if echo "$commit_msg" | grep -Eq '^Merge (branch|pull request|remote-tracking branch)'; then
+      return 0
+    fi
+    
+    # Skip automated version bump commits
+    if echo "$commit_msg" | grep -Eq '^Bump version: [0-9]+\.[0-9]+\.[0-9]+'; then
+      return 0
+    fi
+    
+    # Conventional Commits pattern
+    local conventional_pattern='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$'
+    
+    if echo "$commit_msg" | grep -Eqi "$conventional_pattern"; then
+      return 0
+    else
+      return 1
+    fi
+  }
+  
+  # Run validation
+  if validate_conventional_commit "$message"; then
+    result="VALID"
+  else
+    result="INVALID"
+  fi
+  
+  # Check against expected
+  if [[ "$result" == "$expected" ]]; then
+    echo "✓ PASS: $message"
+    echo "  Expected: $expected, Got: $result"
+  else
+    echo "✗ FAIL: $message"
+    echo "  Expected: $expected, Got: $result"
+    return 1
+  fi
+}
+
+echo "Testing VALID commit messages:"
+echo "------------------------------"
+test_commit_message "feat: add new feature" "VALID"
+test_commit_message "feat(scope): add scoped feature" "VALID"
+test_commit_message "fix: fix a bug" "VALID"
+test_commit_message "fix(installer): fix installation bug" "VALID"
+test_commit_message "docs: update documentation" "VALID"
+test_commit_message "style: format code" "VALID"
+test_commit_message "refactor: refactor code" "VALID"
+test_commit_message "perf: improve performance" "VALID"
+test_commit_message "test: add tests" "VALID"
+test_commit_message "build: update build system" "VALID"
+test_commit_message "ci: update CI config" "VALID"
+test_commit_message "chore: update dependencies" "VALID"
+test_commit_message "feat!: breaking change" "VALID"
+test_commit_message "feat(scope)!: breaking change with scope" "VALID"
+test_commit_message "update: update something" "VALID"
+test_commit_message "update(kernel): update kernel config" "VALID"
+
+echo ""
+echo "Testing INVALID commit messages:"
+echo "--------------------------------"
+test_commit_message "Initial plan" "INVALID"
+test_commit_message "WIP commit" "INVALID"
+test_commit_message "Fix bug" "INVALID"
+test_commit_message "Add feature" "INVALID"
+test_commit_message "invalid: missing type" "INVALID"
+test_commit_message "feat missing colon" "INVALID"
+
+echo ""
+echo "Testing SKIPPED commit messages:"
+echo "--------------------------------"
+test_commit_message "Merge branch 'main' into develop" "VALID"
+test_commit_message "Merge pull request #123 from user/branch" "VALID"
+test_commit_message "Bump version: 1.2.3 - Release description" "VALID"
+
+echo ""
+echo "========================================="
+echo "All tests passed!"
+echo "========================================="
