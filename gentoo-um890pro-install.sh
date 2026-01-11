@@ -295,42 +295,157 @@ partition_disks() {
   # Inform kernel of partition changes for both disks
   partprobe "${OS_DISK}" "${DATA_DISK}"
 
+  # Best-effort: wait for udev to process partition events, but do not
+  # allow failures/timeouts here to abort the entire script.
   if command -v udevadm >/dev/null 2>&1; then
-    udevadm settle
+    (
+      set +e
+      if command -v timeout >/dev/null 2>&1; then
+        timeout 30s udevadm settle
+      else
+        udevadm settle
+      fi
+      rc=$?
+      if [ "${rc}" -ne 0 ]; then
+        echo "WARNING: 'udevadm settle' failed or timed out (exit=${rc}); continuing anyway." >&2
+      fi
+    )
   fi
 
-  local os_esp_label="/dev/disk/by-partlabel/${ESP_LABEL}"
-  local os_root_label="/dev/disk/by-partlabel/${BTRFS_LABEL}"
-  local data_label="/dev/disk/by-partlabel/ZFS-${ZPOOL}"
+  # Helper to locate a /dev/disk/by-partlabel symlink by decoded label.
+  # udev may URL-encode special characters (e.g. "ZFS-tank" -> "ZFS\x2dtank"),
+  # so we need to decode entry names when comparing to the expected label.
+  find_encoded_partlabel_link() {
+    local wanted_label="$1"
+    local entry name decoded
 
-  if [[ -e "${os_esp_label}" && -e "${os_root_label}" && -e "${data_label}" ]]; then
-    OS_ESP="${os_esp_label}"
-    OS_ROOT="${os_root_label}"
-    DATA_PART="${data_label}"
-  else
+    # If the directory is missing, nothing to do.
+    [[ -d /dev/disk/by-partlabel ]] || return 1
+
+    for entry in /dev/disk/by-partlabel/*; do
+      # Globs that match nothing can expand literally; skip non-existent paths.
+      [[ -e "${entry}" ]] || continue
+      name=${entry##*/}
+      # Decode "\xNN" sequences in the name.
+      decoded=$(printf '%b' "${name}")
+      if [[ "${decoded}" == "${wanted_label}" ]]; then
+        printf '%s\n' "${entry}"
+        return 0
+      fi
+    done
+
+    return 1
+  }
+
+  local os_esp_label_plain="/dev/disk/by-partlabel/${ESP_LABEL}"
+  local os_root_label_plain="/dev/disk/by-partlabel/${BTRFS_LABEL}"
+  local data_label_plain="/dev/disk/by-partlabel/ZFS-${ZPOOL}"
+
+  # Try to resolve the by-partlabel symlinks, allowing for URL-encoded names
+  # and giving udev a short window to create them.
+  local os_esp_candidate=""
+  local os_root_candidate=""
+  local data_candidate=""
+  local start_ts timeout_secs=10 now_ts
+  start_ts=$(date +%s)
+
+  while :; do
+    os_esp_candidate=""
+    os_root_candidate=""
+    data_candidate=""
+
+    if [[ -e "${os_esp_label_plain}" ]]; then
+      os_esp_candidate="${os_esp_label_plain}"
+    else
+      os_esp_candidate=$(find_encoded_partlabel_link "${ESP_LABEL}" 2>/dev/null)
+    fi
+
+    if [[ -e "${os_root_label_plain}" ]]; then
+      os_root_candidate="${os_root_label_plain}"
+    else
+      os_root_candidate=$(find_encoded_partlabel_link "${BTRFS_LABEL}" 2>/dev/null)
+    fi
+
+    if [[ -e "${data_label_plain}" ]]; then
+      data_candidate="${data_label_plain}"
+    else
+      data_candidate=$(find_encoded_partlabel_link "ZFS-${ZPOOL}" 2>/dev/null)
+    fi
+
+    if [[ -n "${os_esp_candidate}" && -b "${os_esp_candidate}" && \
+          -n "${os_root_candidate}" && -b "${os_root_candidate}" && \
+          -n "${data_candidate}" && -b "${data_candidate}" ]]; then
+      OS_ESP="${os_esp_candidate}"
+      OS_ROOT="${os_root_candidate}"
+      DATA_PART="${data_candidate}"
+      break
+    fi
+
+    now_ts=$(date +%s)
+    if (( now_ts - start_ts >= timeout_secs )); then
+      break
+    fi
+
+    sleep 1
+  done
+
+  # If by-partlabel symlinks could not be resolved, fall back to
+  # constructing partition paths from the base disk names.
+  if [[ -z "${OS_ESP:-}" || -z "${OS_ROOT:-}" || -z "${DATA_PART:-}" ]]; then
     local os_suffix="1"
     local root_suffix="2"
     local data_suffix="1"
 
-    if [[ "${OS_DISK}" == /dev/disk/by-id/* ]]; then
-      OS_ESP="${OS_DISK}-part${os_suffix}"
-      OS_ROOT="${OS_DISK}-part${root_suffix}"
-    elif [[ "${OS_DISK}" == *"nvme"* || "${OS_DISK}" == *"mmcblk"* ]]; then
-      OS_ESP="${OS_DISK}p${os_suffix}"
-      OS_ROOT="${OS_DISK}p${root_suffix}"
-    else
-      OS_ESP="${OS_DISK}${os_suffix}"
-      OS_ROOT="${OS_DISK}${root_suffix}"
+    # Helper to determine the partition suffix for a given device path.
+    # Returns "p" for NVMe/MMC devices, "-part" for by-id paths, or "" for others.
+    get_partition_separator() {
+      local device="$1"
+      if [[ "${device}" == /dev/disk/by-id/* ]]; then
+        echo "-part"
+      elif [[ "${device}" =~ ^/dev/nvme[0-9]+n[0-9]+$ || "${device}" =~ ^/dev/mmcblk[0-9]+$ ]]; then
+        echo "p"
+      else
+        echo ""
+      fi
+    }
+
+    # Determine partition suffix based on device type.
+    # Use more precise pattern matching to avoid false positives.
+    local os_sep data_sep
+    os_sep=$(get_partition_separator "${OS_DISK}")
+    data_sep=$(get_partition_separator "${DATA_DISK}")
+
+    OS_ESP="${OS_DISK}${os_sep}${os_suffix}"
+    OS_ROOT="${OS_DISK}${os_sep}${root_suffix}"
+    DATA_PART="${DATA_DISK}${data_sep}${data_suffix}"
+  fi
+
+  # Verify that the computed partition device paths exist as block devices.
+  # This guards against timing issues where udev has not yet created the nodes,
+  # even after an initial udevadm settle.
+  local dev_var dev_path attempts
+  for dev_var in OS_ESP OS_ROOT DATA_PART; do
+    dev_path="${!dev_var}"
+    if [[ -z "${dev_path}" ]]; then
+      echo "ERROR: Device variable ${dev_var} is empty after partitioning; aborting." >&2
+      exit 1
     fi
 
-    if [[ "${DATA_DISK}" == /dev/disk/by-id/* ]]; then
-      DATA_PART="${DATA_DISK}-part${data_suffix}"
-    elif [[ "${DATA_DISK}" == *"nvme"* || "${DATA_DISK}" == *"mmcblk"* ]]; then
-      DATA_PART="${DATA_DISK}p${data_suffix}"
-    else
-      DATA_PART="${DATA_DISK}${data_suffix}"
+    attempts=0
+    # Wait briefly for udev to create the block device node, if needed.
+    while [[ "${attempts}" -lt 10 && ! -b "${dev_path}" ]]; do
+      sleep 1
+      if command -v udevadm >/dev/null 2>&1; then
+        udevadm settle 2>/dev/null || true
+      fi
+      attempts=$((attempts + 1))
+    done
+
+    if [[ ! -b "${dev_path}" ]]; then
+      echo "ERROR: Expected block device for ${dev_var} not found at '${dev_path}' after waiting; aborting." >&2
+      exit 1
     fi
-  fi
+  done
 
   echo "OS_ESP  = ${OS_ESP}"
   echo "OS_ROOT = ${OS_ROOT}"
