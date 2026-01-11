@@ -56,7 +56,7 @@ jobs:
 
           requires_changelog=false
           label_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)$'
-          title_pattern='^(feat|fix|perf|refactor)(\([^)]+\))?(!)?:'
+          title_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)(\([^)]+\))?(!)?:'
 
           if echo "$label_names" | grep -Eq "$label_pattern"; then
             requires_changelog=true
