@@ -1,0 +1,148 @@
+name: Commit Message Validation
+
+permissions:
+  contents: read
+  pull-requests: read
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  commit-lint:
+    name: Validate Conventional Commits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: |
+          git fetch origin ${{ github.base_ref }}
+
+      - name: Validate commit messages
+        run: |
+          set -euo pipefail
+          
+          # Conventional Commits pattern
+          # Format: type[(scope)][!]: description
+          # Types: feat|fix|update|docs|style|refactor|perf|test|build|ci|chore
+          CONVENTIONAL_PATTERN='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$'
+          
+          echo "Validating commits against Conventional Commits format..."
+          echo "Pattern: type(scope): description"
+          echo "Valid types: feat, fix, update, docs, style, refactor, perf, test, build, ci, chore"
+          echo ""
+          
+          # Get list of commits in this PR
+          BASE_SHA=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          COMMITS=$(git rev-list ${BASE_SHA}..HEAD)
+          
+          if [ -z "$COMMITS" ]; then
+            echo "No commits found in this PR"
+            exit 0
+          fi
+          
+          INVALID_COUNT=0
+          TOTAL_COUNT=0
+          
+          echo "Checking commits:"
+          echo "----------------"
+          
+          for commit in $COMMITS; do
+            TOTAL_COUNT=$((TOTAL_COUNT + 1))
+            SUBJECT=$(git log -1 --format=%s "$commit")
+            AUTHOR=$(git log -1 --format="%an" "$commit")
+            SHORT_SHA=$(git log -1 --format=%h "$commit")
+            
+            echo ""
+            echo "Commit: $SHORT_SHA"
+            echo "Author: $AUTHOR"
+            echo "Message: $SUBJECT"
+            
+            # Skip merge commits
+            if echo "$SUBJECT" | grep -Eq '^Merge (branch|pull request|remote-tracking branch)'; then
+              echo "Status: ✓ SKIPPED (merge commit)"
+              continue
+            fi
+            
+            # Skip version bump commits from bump-version.sh
+            if echo "$SUBJECT" | grep -Eq '^Bump version: [0-9]+\.[0-9]+\.[0-9]+'; then
+              echo "Status: ✓ SKIPPED (automated version bump)"
+              continue
+            fi
+            
+            # Validate against Conventional Commits format
+            if echo "$SUBJECT" | grep -Eq "$CONVENTIONAL_PATTERN"; then
+              echo "Status: ✓ VALID"
+              
+              # Extract and display type
+              TYPE=$(echo "$SUBJECT" | sed -E 's/^([a-z]+)(\([^)]+\))?!?: .*/\1/')
+              echo "Type: $TYPE"
+              
+              # Check for breaking change marker
+              if echo "$SUBJECT" | grep -q '!:'; then
+                echo "Breaking: YES (! marker)"
+              fi
+            else
+              echo "Status: ✗ INVALID"
+              INVALID_COUNT=$((INVALID_COUNT + 1))
+              
+              # Provide helpful feedback
+              echo ""
+              echo "This commit does not follow Conventional Commits format."
+              echo ""
+              echo "Expected format:"
+              echo "  type(scope): description"
+              echo "  type: description"
+              echo ""
+              echo "Valid types:"
+              echo "  feat     - New feature"
+              echo "  fix      - Bug fix"
+              echo "  update   - Update or improvement"
+              echo "  docs     - Documentation changes"
+              echo "  style    - Code style changes (formatting)"
+              echo "  refactor - Code refactoring"
+              echo "  perf     - Performance improvements"
+              echo "  test     - Test changes"
+              echo "  build    - Build system changes"
+              echo "  ci       - CI configuration changes"
+              echo "  chore    - Other changes"
+              echo ""
+              echo "Examples:"
+              echo "  feat(rocm): add ROCm 7.1 support"
+              echo "  fix(installer): resolve directory creation order"
+              echo "  docs: update README installation steps"
+              echo "  feat!: breaking change with ! marker"
+              echo ""
+            fi
+          done
+          
+          echo ""
+          echo "=================="
+          echo "Validation Summary"
+          echo "=================="
+          echo "Total commits: $TOTAL_COUNT"
+          echo "Invalid commits: $INVALID_COUNT"
+          echo ""
+          
+          if [ $INVALID_COUNT -gt 0 ]; then
+            echo "❌ FAILED: $INVALID_COUNT commit(s) do not follow Conventional Commits format"
+            echo ""
+            echo "Please update your commit messages to follow the Conventional Commits format."
+            echo "See CONTRIBUTING.md for detailed guidelines."
+            echo ""
+            echo "To fix commits, use:"
+            echo "  git rebase -i HEAD~${TOTAL_COUNT}"
+            echo "  # Change 'pick' to 'reword' for invalid commits"
+            echo "  # Update the commit messages"
+            echo "  git push --force-with-lease"
+            echo ""
+            exit 1
+          else
+            echo "✓ SUCCESS: All commits follow Conventional Commits format"
+            exit 0
+          fi
