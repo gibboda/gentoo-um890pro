@@ -25,6 +25,7 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 - **[Hardware Setup](docs/HARDWARE_SETUP.md)** - BIOS configuration, hardware verification
 - **[System Specifications](docs/SYSTEM_SPECS.md)** - Complete hardware specifications
 - **[Optimization Guide](docs/OPTIMIZATION_GUIDE.md)** - Performance tuning and optimizations
+- **[Conventional Commits](docs/CONVENTIONAL_COMMITS.md)** - Commit linting and version bump rules
 
 ## Contributing
 
@@ -50,8 +51,12 @@ All commits must follow this format or CI checks will fail.
 - Data disk: single-partition ZFS pool with datasets under `ZFS_MNT_BASE` (default `/data`).
 - Init system: `openrc` (default) or `systemd` (controlled by `INIT_SYSTEM`).
 - Kernel: installs `gentoo-kernel-bin` by default for fast setup. Use `switch-to-source-kernel` after installation to optimize.
+- Kernel (optional): set `INSTALL_DUAL_KERNEL=yes` to install both a binary fallback and a tuned source kernel with separate boot entries.
 - Bootloader: rEFInd (UEFI).
 - Desktop: KDE Plasma 6 with Wayland (controlled by `INSTALL_KDE_PLASMA`).
+- Snapshots: optional automated Btrfs **root** snapshots (OS disk) with `manage-snapshots` (timer for systemd or cron for OpenRC) when `ENABLE_SNAPSHOTS=yes`—ZFS data disk remains unchanged.
+- Boot safety: ML-based boot target recommendations via `ml-boot-selector`, logged by `update-refind-default` and compatible with rEFInd entries.
+- AI stack: ROCm for Radeon 780M, ComfyUI setup script with SDXL/UMA optimizations, and Blender configured for HIP rendering.
 - Interactive: requires typed confirmation (`WIPE-AND-INSTALL`), prompts for root password, optional user creation.
 
 ### OpenRC zram swap (AI-friendly)
@@ -155,6 +160,16 @@ reboot
 ```
 
 After reboot, ZFS datasets are mounted under `ZFS_MNT_BASE` (default `/data`).
+
+### Post-install helpers
+
+The installer places helper commands in `/usr/local/bin`:
+
+- `setup-comfyui` — clones and configures ComfyUI with ROCm/UMA settings, installs dependencies, and creates `launch-comfyui-uma.sh`.
+- `manage-snapshots {create|list|rollback|cleanup}` — manual snapshot utility; a daily timer/cron is enabled when `ENABLE_SNAPSHOTS=yes`.
+- `ml-boot-selector` — ML heuristics that recommend the safest boot target; `update-refind-default` logs the recommendation for rEFInd.
+- `switch-to-source-kernel` — guided switch from `gentoo-kernel-bin` to `gentoo-kernel` while preserving existing kernels.
+- `manage-kernels {list|preserve|clean|info}` — inspect, preserve, or clean kernel versions.
 
 ### Kernel optimization and backup
 
