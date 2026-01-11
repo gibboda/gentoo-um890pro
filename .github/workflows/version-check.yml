@@ -41,6 +41,34 @@ jobs:
 
           printf 'changed_files<<EOF\n%s\nEOF\n' "$changed" >> "$GITHUB_OUTPUT"
 
+      - name: Determine changelog requirement for user-visible changes
+        id: changelog_requirement
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -euo pipefail
+          pr_title=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH")
+          label_names=$(jq -r '.pull_request.labels[].name' < "$GITHUB_EVENT_PATH" | tr '[:upper:]' '[:lower:]')
+
+          base_sha=$(jq -r .pull_request.base.sha < "$GITHUB_EVENT_PATH")
+          head_sha=$(jq -r .pull_request.head.sha < "$GITHUB_EVENT_PATH")
+          git fetch origin "$base_sha" --depth=1 || true
+          commit_subjects=$(git log --pretty=%s "${base_sha}..${head_sha}" 2>/dev/null || true)
+
+          requires_changelog=false
+          label_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)$'
+          title_pattern='^(feat|fix|perf|refactor)(\([^)]+\))?(!)?:'
+
+          if echo "$label_names" | grep -Eq "$label_pattern"; then
+            requires_changelog=true
+          elif echo "$pr_title" | tr '[:upper:]' '[:lower:]' | grep -Eq "$title_pattern"; then
+            requires_changelog=true
+          elif echo "$commit_subjects" | tr '[:upper:]' '[:lower:]' | grep -Eq "$title_pattern"; then
+            requires_changelog=true
+          fi
+
+          echo "requires_changelog=$requires_changelog" >> "$GITHUB_OUTPUT"
+          echo "Requires changelog update: $requires_changelog"
+
       - name: Basic VERSION/CHANGELOG validation
         run: |
           set -euo pipefail
@@ -56,6 +84,31 @@ jobs:
           fi
           if [ ! -f CHANGELOG.md ]; then
             echo "ERROR: CHANGELOG.md missing" >&2
+            exit 1
+          fi
+
+      - name: Enforce Unreleased changelog policy for user-visible changes
+        if: ${{ github.event_name == 'pull_request' && steps.changelog_requirement.outputs.requires_changelog == 'true' }}
+        run: |
+          set -euo pipefail
+          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^CHANGELOG.md$'; then
+            echo "ERROR: CHANGELOG.md must be updated for user-visible changes." >&2
+            exit 1
+          fi
+
+          if ! grep -Eq '^##[[:space:]]+\[?Unreleased\]?' CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md must include a '## [Unreleased]' section for user-visible changes." >&2
+            exit 1
+          fi
+
+          if ! awk '
+            BEGIN { in_unreleased=0; has_bullet=0 }
+            /^##[[:space:]]+\[?Unreleased\]?/ { in_unreleased=1; next }
+            /^##[[:space:]]+/ { if (in_unreleased) exit }
+            in_unreleased && /^[*-][[:space:]]+/ { has_bullet=1 }
+            END { if (!has_bullet) exit 1 }
+          ' CHANGELOG.md; then
+            echo "ERROR: Add at least one bullet under ## [Unreleased] describing the user-visible change(s)." >&2
             exit 1
           fi
 
