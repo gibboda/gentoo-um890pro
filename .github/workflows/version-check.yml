@@ -59,6 +59,23 @@ jobs:
             exit 1
           fi
 
+      - name: Verify changelog tags on main
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          git fetch --tags
+          missing_versions=()
+          while IFS= read -r version; do
+            if ! git tag -l "v${version}" | grep -q "v${version}"; then
+              missing_versions+=("v${version}")
+            fi
+          done < <(grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
+          if [ "${#missing_versions[@]}" -ne 0 ]; then
+            echo "ERROR: Missing git tags for CHANGELOG versions:" >&2
+            printf '%s\n' "${missing_versions[@]}" >&2
+            exit 1
+          fi
+
       - name: Check if VERSION file changed
         id: version_changed
         run: |

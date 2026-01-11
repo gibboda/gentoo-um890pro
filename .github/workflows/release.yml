@@ -80,8 +80,8 @@ jobs:
           if [ -n "$GIT_AUTH" ]; then
             git remote set-url origin "https://x-access-token:${GIT_AUTH}@github.com/${GITHUB_REPOSITORY}.git"
           fi
-          git push origin HEAD || true
-          git push origin --tags || true
+          git push origin HEAD
+          git push origin --tags
 
       - name: Tag on push to main
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}

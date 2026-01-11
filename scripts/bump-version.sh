@@ -601,8 +601,12 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-wo
   else
     git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
   fi
-  git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG" || true
-  git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG" || true
+  git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG"
+  if git -C "$ROOT_DIR" tag -l "v$NEW_VERSION" | grep -q "v$NEW_VERSION"; then
+    echo "ERROR: Git tag v$NEW_VERSION already exists. Refusing to overwrite." >&2
+    exit 1
+  fi
+  git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG"
   echo "Committed and tagged v$NEW_VERSION"
 fi
 
