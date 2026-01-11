@@ -148,8 +148,7 @@ jobs:
           set -euo pipefail
           git fetch --tags
           SKIP_TAGS=("v1.0.6" "v0.1.5")
-          # Legacy releases v1.0.6 and v0.1.5 were published without git tags; skip them in tag validation.
-          # Remove this exemption once tags are backfilled for those historic releases.
+          # Legacy releases v1.0.6 and v0.1.5 were published without git tags; this is a permanent exemption.
           skip_tag() {
             local tag=$1
             for skip in "${SKIP_TAGS[@]}"; do
