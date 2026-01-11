@@ -357,31 +357,19 @@ partition_disks() {
     if [[ -e "${os_esp_label_plain}" ]]; then
       os_esp_candidate="${os_esp_label_plain}"
     else
-      if os_esp_candidate=$(find_encoded_partlabel_link "${ESP_LABEL}" 2>/dev/null); then
-        :
-      else
-        os_esp_candidate=""
-      fi
+      os_esp_candidate=$(find_encoded_partlabel_link "${ESP_LABEL}" 2>/dev/null) || os_esp_candidate=""
     fi
 
     if [[ -e "${os_root_label_plain}" ]]; then
       os_root_candidate="${os_root_label_plain}"
     else
-      if os_root_candidate=$(find_encoded_partlabel_link "${BTRFS_LABEL}" 2>/dev/null); then
-        :
-      else
-        os_root_candidate=""
-      fi
+      os_root_candidate=$(find_encoded_partlabel_link "${BTRFS_LABEL}" 2>/dev/null) || os_root_candidate=""
     fi
 
     if [[ -e "${data_label_plain}" ]]; then
       data_candidate="${data_label_plain}"
     else
-      if data_candidate=$(find_encoded_partlabel_link "ZFS-${ZPOOL}" 2>/dev/null); then
-        :
-      else
-        data_candidate=""
-      fi
+      data_candidate=$(find_encoded_partlabel_link "ZFS-${ZPOOL}" 2>/dev/null) || data_candidate=""
     fi
 
     if [[ -n "${os_esp_candidate}" && -b "${os_esp_candidate}" && \
