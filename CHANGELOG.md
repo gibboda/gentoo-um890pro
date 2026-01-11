@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Fix chroot logging for kernel version capture (#86)
 
-## [1.0.13] - 2026-01-08
+## [1.0.13] - 2026-01-09
 
 ### Fixed
 
