@@ -295,9 +295,42 @@ partition_disks() {
   # Inform kernel of partition changes for both disks
   partprobe "${OS_DISK}" "${DATA_DISK}"
 
-  OS_ESP="${OS_DISK}p1"
-  OS_ROOT="${OS_DISK}p2"
-  DATA_PART="${DATA_DISK}p1"
+  if command -v udevadm >/dev/null 2>&1; then
+    udevadm settle
+  fi
+
+  local os_esp_label="/dev/disk/by-partlabel/${ESP_LABEL}"
+  local os_root_label="/dev/disk/by-partlabel/${BTRFS_LABEL}"
+  local data_label="/dev/disk/by-partlabel/ZFS-${ZPOOL}"
+
+  if [[ -e "${os_esp_label}" && -e "${os_root_label}" && -e "${data_label}" ]]; then
+    OS_ESP="${os_esp_label}"
+    OS_ROOT="${os_root_label}"
+    DATA_PART="${data_label}"
+  else
+    local os_suffix="1"
+    local root_suffix="2"
+    local data_suffix="1"
+
+    if [[ "${OS_DISK}" == /dev/disk/by-id/* ]]; then
+      OS_ESP="${OS_DISK}-part${os_suffix}"
+      OS_ROOT="${OS_DISK}-part${root_suffix}"
+    elif [[ "${OS_DISK}" == *"nvme"* || "${OS_DISK}" == *"mmcblk"* ]]; then
+      OS_ESP="${OS_DISK}p${os_suffix}"
+      OS_ROOT="${OS_DISK}p${root_suffix}"
+    else
+      OS_ESP="${OS_DISK}${os_suffix}"
+      OS_ROOT="${OS_DISK}${root_suffix}"
+    fi
+
+    if [[ "${DATA_DISK}" == /dev/disk/by-id/* ]]; then
+      DATA_PART="${DATA_DISK}-part${data_suffix}"
+    elif [[ "${DATA_DISK}" == *"nvme"* || "${DATA_DISK}" == *"mmcblk"* ]]; then
+      DATA_PART="${DATA_DISK}p${data_suffix}"
+    else
+      DATA_PART="${DATA_DISK}${data_suffix}"
+    fi
+  fi
 
   echo "OS_ESP  = ${OS_ESP}"
   echo "OS_ROOT = ${OS_ROOT}"
