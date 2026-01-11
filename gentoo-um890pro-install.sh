@@ -1562,12 +1562,50 @@ MODELS_DIR="${COMFYUI_DIR}/models"
 
 echo "Setting up ComfyUI for AMD Radeon 780M with UMA optimizations..."
 
-# Clone ComfyUI if not present
-if [[ ! -d "${COMFYUI_DIR}" ]]; then
-    git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"
-fi
+# Clone ComfyUI if not present, pinned to a specific trusted commit
+# This mitigates supply-chain risks by ensuring a known, verified version
+# Commit: dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2
+# Date: 2026-01-09
+# Description: Latest stable commit with proper mixed ops save functionality
+#
+# To verify this commit exists in the upstream repository:
+#   git ls-remote https://github.com/comfyanonymous/ComfyUI.git dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2
+#
+# To update to a newer commit:
+#   1. Clone the repo: git clone https://github.com/comfyanonymous/ComfyUI.git
+#   2. Review recent commits: git log --oneline -20
+#   3. Test the desired commit thoroughly
+#   4. Update COMFYUI_PINNED_COMMIT below with the new hash
+#   5. Update the Date and Description comments above
+COMFYUI_PINNED_COMMIT="dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2"
 
-cd "${COMFYUI_DIR}"
+if [[ ! -d "${COMFYUI_DIR}/.git" || ! -f "${COMFYUI_DIR}/main.py" ]]; then
+    echo "Cloning ComfyUI repository (pinned to commit ${COMFYUI_PINNED_COMMIT})..."
+    if ! git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"; then
+        echo "ERROR: Failed to clone ComfyUI repository"
+        exit 1
+    fi
+    
+    cd "${COMFYUI_DIR}" || { echo "ERROR: Failed to change directory to ${COMFYUI_DIR}"; exit 1; }
+    
+    echo "Checking out pinned commit ${COMFYUI_PINNED_COMMIT}..."
+    if ! git checkout "${COMFYUI_PINNED_COMMIT}"; then
+        echo "ERROR: Failed to checkout commit ${COMFYUI_PINNED_COMMIT}"
+        exit 1
+    fi
+    
+    # Verify the commit hash matches expected value
+    ACTUAL_COMMIT=$(git rev-parse HEAD)
+    if [[ "${ACTUAL_COMMIT}" != "${COMFYUI_PINNED_COMMIT}" ]]; then
+        echo "ERROR: ComfyUI commit verification failed!"
+        echo "Expected: ${COMFYUI_PINNED_COMMIT}"
+        echo "Got: ${ACTUAL_COMMIT}"
+        exit 1
+    fi
+    echo "✓ ComfyUI commit verified successfully"
+else
+    cd "${COMFYUI_DIR}" || { echo "ERROR: Failed to change directory to ${COMFYUI_DIR}"; exit 1; }
+fi
 
 # Create virtual environment
 python3.12 -m venv venv
