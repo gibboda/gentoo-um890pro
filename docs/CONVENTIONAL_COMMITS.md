@@ -66,7 +66,8 @@ type(scope): description
 - Tests valid formats: basic, with scope, with breaking changes
 - Tests invalid formats: non-conventional messages
 - Tests skip patterns: merge commits, version bump commits
-- All 26 test cases pass successfully
+- Tests edge cases: empty descriptions, long descriptions (>100 chars), uppercase types
+- All 32 test cases pass successfully
 
 ## Version Bump Rules
 

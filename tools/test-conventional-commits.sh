@@ -85,6 +85,19 @@ test_commit_message "invalid: missing type" "INVALID"
 test_commit_message "feat missing colon" "INVALID"
 
 echo ""
+echo "Testing EDGE CASES:"
+echo "-------------------"
+# Empty description after colon
+test_commit_message "feat:" "INVALID"
+test_commit_message "fix(scope):" "INVALID"
+# Description longer than 100 characters (description part is 101 chars)
+test_commit_message "feat: this is a very long commit message that exceeds the maximum allowed length of one hundred characters exactly!" "INVALID"
+# Uppercase types (case-insensitive matching should accept these)
+test_commit_message "FEAT: add feature with uppercase type" "VALID"
+test_commit_message "Fix(scope): fix with mixed case type" "VALID"
+test_commit_message "FIX: all uppercase type" "VALID"
+
+echo ""
 echo "Testing SKIPPED commit messages:"
 echo "--------------------------------"
 test_commit_message "Merge branch 'main' into develop" "VALID"
