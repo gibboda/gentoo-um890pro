@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.15] - 2026-01-11
+- Require release tags for version bumps
+
+
 ## [1.0.14] - 2026-01-10
 
 ### Fixed

@@ -225,6 +225,7 @@ The bump-version.sh script supports multiple modes:
 ```
 
 All modes update VERSION, gentoo-um890pro-install.sh, and CHANGELOG.md consistently.
+All version bumps must create an annotated Git tag (`vX.Y.Z`). `bump-version.sh` enforces tag creation and will fail if the tag already exists or cannot be created.
 
 Note: `VERSION` is enforced as `X.Y.Z` semver by CI.
 
