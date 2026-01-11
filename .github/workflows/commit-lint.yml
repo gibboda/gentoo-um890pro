@@ -27,6 +27,9 @@ jobs:
         run: |
           set -euo pipefail
           
+          # Legacy commits to skip (pre-enforcement)
+          LEGACY_COMMITS="da8679f"
+          
           # Conventional Commits pattern
           # Format: type[(scope)][!]: description
           # Types: feat|fix|update|docs|style|refactor|perf|test|build|ci|chore
@@ -75,8 +78,8 @@ jobs:
               continue
             fi
             
-            # Skip legacy commit da8679f (pre-enforcement)
-            if [[ "$SHORT_SHA" == "da8679f" ]]; then
+            # Skip legacy commits (pre-enforcement)
+            if echo "$LEGACY_COMMITS" | grep -qw "$SHORT_SHA"; then
               echo "Status: ✓ SKIPPED (pre-enforcement legacy commit)"
               continue
             fi

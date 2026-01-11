@@ -35,6 +35,10 @@ MAJOR_FIX_THRESHOLD=7  # >= this many fixes triggers major bump
 MINOR_FIX_MIN=2        # Minimum fixes for minor bump
 MINOR_FIX_MAX=6        # Maximum fixes for minor bump
 
+# Legacy commits to skip (pre-enforcement)
+# These commits were created before Conventional Commits enforcement was added
+LEGACY_COMMITS="da8679f"
+
 # Parse flags
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -215,10 +219,10 @@ calculate_auto_version() {
     subject=$(git -C "$ROOT_DIR" show -s --format=%s "$commit_sha")
     body=$(git -C "$ROOT_DIR" show -s --format=%b "$commit_sha")
     
-    # Skip legacy commit da8679f (pre-enforcement)
+    # Skip legacy commits (pre-enforcement)
     local short_sha
     short_sha=$(git -C "$ROOT_DIR" log -1 --format=%h "$commit_sha")
-    if [[ "$short_sha" == "da8679f" ]]; then
+    if echo "$LEGACY_COMMITS" | grep -qw "$short_sha"; then
       # Still parse for changelog, but don't validate
       local parse_result
       local type
