@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fixed Conventional Commits validation to properly handle legacy commits (grafted and initial commits)
+
 ## [1.0.15] - 2026-01-11
 - Require release tags for version bumps
 
