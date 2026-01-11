@@ -80,8 +80,17 @@ jobs:
           if [ -n "$GIT_AUTH" ]; then
             git remote set-url origin "https://x-access-token:${GIT_AUTH}@github.com/${GITHUB_REPOSITORY}.git"
           fi
-          git push origin HEAD
-          git push origin --tags
+          # Attempt both pushes and report any failures explicitly
+          set +e
+          head_push_status=0
+          tags_push_status=0
+          git push origin HEAD || head_push_status=$?
+          git push origin --tags || tags_push_status=$?
+          set -e
+          if [ "$head_push_status" -ne 0 ] || [ "$tags_push_status" -ne 0 ]; then
+            echo "Error: git push failed (HEAD exit code: ${head_push_status}, tags exit code: ${tags_push_status})" >&2
+            exit 1
+          fi
 
       - name: Tag on push to main
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -90,7 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           NEW_VERSION="${{ steps.vars.outputs.version }}"
-          if git tag -l "v${NEW_VERSION}" | grep -q "v${NEW_VERSION}"; then
+          if git show-ref --tags --quiet -- "refs/tags/v${NEW_VERSION}"; then
             echo "Tag exists; skipping"
             exit 0
           fi
