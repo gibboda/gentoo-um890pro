@@ -601,13 +601,29 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-wo
   else
     git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
   fi
-  git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG"
-  if git -C "$ROOT_DIR" tag -l "v$NEW_VERSION" | grep -q "v$NEW_VERSION"; then
-    echo "ERROR: Git tag v$NEW_VERSION already exists. Refusing to overwrite." >&2
-    exit 1
+  # Only attempt a commit if there are staged changes
+  if git -C "$ROOT_DIR" diff --cached --quiet; then
+    echo "No staged changes detected; skipping git commit and tag."
+  else
+    if ! git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG"; then
+      echo "ERROR: Failed to create git commit for version bump to $NEW_VERSION." >&2
+      echo "Please review the git status and try again." >&2
+      exit 1
+    fi
+    # Create tag with proper error handling for race conditions
+    if git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG"; then
+      echo "Committed and tagged v$NEW_VERSION"
+    else
+      # If tag creation failed, check if the tag now exists to distinguish
+      # "already exists" from other failures (avoids race with concurrent runs).
+      if git -C "$ROOT_DIR" rev-parse "v$NEW_VERSION^{tag}" >/dev/null 2>&1; then
+        echo "ERROR: Git tag v$NEW_VERSION already exists. Refusing to overwrite." >&2
+      else
+        echo "ERROR: Failed to create git tag v$NEW_VERSION." >&2
+      fi
+      exit 1
+    fi
   fi
-  git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG"
-  echo "Committed and tagged v$NEW_VERSION"
 fi
 
 echo "Bumped version to $NEW_VERSION"
