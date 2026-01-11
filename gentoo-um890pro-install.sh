@@ -1412,7 +1412,7 @@ echo "Setting up ComfyUI for AMD Radeon 780M with UMA optimizations..."
 #   5. Update the Date and Description comments above
 COMFYUI_PINNED_COMMIT="dc202a2e51bf7a6cd00e606b2d2941bc223f2ad2"
 
-if [[ ! -d "${COMFYUI_DIR}/.git" && ! -f "${COMFYUI_DIR}/main.py" ]]; then
+if [[ ! -d "${COMFYUI_DIR}/.git" || ! -f "${COMFYUI_DIR}/main.py" ]]; then
     echo "Cloning ComfyUI repository (pinned to commit ${COMFYUI_PINNED_COMMIT})..."
     if ! git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"; then
         echo "ERROR: Failed to clone ComfyUI repository"
