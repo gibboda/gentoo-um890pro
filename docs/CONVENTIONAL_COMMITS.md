@@ -196,7 +196,7 @@ Refactor code
 - [Conventional Commits Specification](https://www.conventionalcommits.org/)
 - [Semantic Versioning](https://semver.org/)
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Full guidelines
-- [bump-version.sh](scripts/bump-version.sh) - Implementation
+- [bump-version.sh](../scripts/bump-version.sh) - Implementation
 - [commit-lint.yml](../.github/workflows/commit-lint.yml) - CI enforcement
 
 ## Future Enhancements
