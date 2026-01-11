@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- fix: add legacy commits to exclusion list for Conventional Commits validation
 
 ## [1.0.15] - 2026-01-11
 - Require release tags for version bumps
