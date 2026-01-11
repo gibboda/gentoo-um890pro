@@ -51,7 +51,7 @@ jobs:
 
           base_sha=$(jq -r .pull_request.base.sha < "$GITHUB_EVENT_PATH")
           head_sha=$(jq -r .pull_request.head.sha < "$GITHUB_EVENT_PATH")
-          git fetch origin "$base_sha" --depth=1 || true
+          git fetch origin "$base_sha" || true
           commit_subjects=$(git log --pretty=%s "${base_sha}..${head_sha}" 2>/dev/null || true)
 
           requires_changelog=false
@@ -91,6 +91,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && steps.changelog_requirement.outputs.requires_changelog == 'true' }}
         run: |
           set -euo pipefail
+          # Note: We intentionally only match the root-level CHANGELOG.md here (not e.g. docs/CHANGELOG.md).
           if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^CHANGELOG.md$'; then
             echo "ERROR: CHANGELOG.md must be updated for user-visible changes." >&2
             exit 1
@@ -104,7 +105,7 @@ jobs:
           if ! awk '
             BEGIN { in_unreleased=0; has_bullet=0 }
             /^##[[:space:]]+\[?Unreleased\]?/ { in_unreleased=1; next }
-            /^##[[:space:]]+/ { if (in_unreleased) exit }
+            /^##[[:space:]]+/ { if (in_unreleased && !has_bullet) exit 1; in_unreleased=0 }
             in_unreleased && /^[*-][[:space:]]+/ { has_bullet=1 }
             END { if (!has_bullet) exit 1 }
           ' CHANGELOG.md; then
