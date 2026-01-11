@@ -624,9 +624,10 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-wo
       # If tag creation failed after commit, provide guidance on recovery
       echo "ERROR: Failed to create git tag v$NEW_VERSION after committing changes." >&2
       echo "The version bump has been committed but not tagged." >&2
-      echo "To recover, either:" >&2
-      echo "  1. Fix the issue and run: git tag -a \"v$NEW_VERSION\" -m \"$MSG\"" >&2
-      echo "  2. Or reset the commit: git reset --soft HEAD~1" >&2
+      echo "To recover:" >&2
+      echo "  - If the tag now exists due to a race condition, you're done." >&2
+      echo "  - If tagging failed due to permissions/network, retry: git tag -a \"v$NEW_VERSION\" -m \"$MSG\"" >&2
+      echo "  - To start over with a different version: git reset --soft HEAD~1" >&2
       exit 1
     fi
   else
