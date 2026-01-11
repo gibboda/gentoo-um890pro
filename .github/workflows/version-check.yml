@@ -58,6 +58,8 @@ jobs:
           changed_files="${CHANGED_FILES:-}"
 
           requires_changelog=false
+          # Update this pattern when adding new CI/metadata-only file locations.
+          CI_ONLY_PATTERN='^(\\.github/.*|README\\.md|\\.gitignore|docs/.*)$'
           label_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)$'
           title_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)(\([^)]+\))?(!)?:'
 
@@ -70,8 +72,12 @@ jobs:
           fi
 
           if [ "$requires_changelog" = true ]; then
-            non_ci_changes=$(echo "$changed_files" | grep -Ev '^(\.github/|CHANGELOG\.md$|VERSION$)' || true)
-            if [ -z "$non_ci_changes" ]; then
+            if [ -n "$changed_files" ]; then
+              user_visible_changes=$(printf '%s\n' "$changed_files" | grep -Ev "$CI_ONLY_PATTERN" || true)
+            else
+              user_visible_changes=""
+            fi
+            if [ -z "$user_visible_changes" ]; then
               requires_changelog=false
               echo "Detected only CI/metadata changes; skipping changelog requirement."
             fi
@@ -142,6 +148,8 @@ jobs:
           set -euo pipefail
           git fetch --tags
           SKIP_TAGS=("v1.0.6" "v0.1.5")
+          # Legacy releases v1.0.6 and v0.1.5 were published without git tags; skip them in tag validation.
+          # Remove this exemption once tags are backfilled for those historic releases.
           skip_tag() {
             local tag=$1
             for skip in "${SKIP_TAGS[@]}"; do
