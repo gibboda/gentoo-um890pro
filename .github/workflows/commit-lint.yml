@@ -85,7 +85,7 @@ jobs:
             fi
             
             # Validate against Conventional Commits format
-            if echo "$SUBJECT" | grep -Eq "$CONVENTIONAL_PATTERN"; then
+            if echo "$SUBJECT" | grep -Eqi "$CONVENTIONAL_PATTERN"; then
               echo "Status: ✓ VALID"
               
               # Extract and display type
