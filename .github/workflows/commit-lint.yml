@@ -67,7 +67,7 @@ jobs:
             echo "Message: $SUBJECT"
             
             # Skip merge commits
-            if echo "$SUBJECT" | grep -Eq '^Merge (branch|pull request|remote-tracking branch)'; then
+            if echo "$SUBJECT" | grep -Eq '^Merge (branch|pull request|remote-tracking branch|[0-9a-f]{40})'; then
               echo "Status: ✓ SKIPPED (merge commit)"
               continue
             fi
