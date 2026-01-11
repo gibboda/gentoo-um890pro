@@ -602,6 +602,8 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-wo
     git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
   fi
   # Only attempt a commit if there are staged changes
+  # Note: `git diff --cached --quiet` returns 0 (success) when there are NO changes,
+  # so we negate it with ! to check if there ARE changes
   if ! git -C "$ROOT_DIR" diff --cached --quiet; then
     if ! git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG"; then
       echo "ERROR: Failed to create git commit for version bump to $NEW_VERSION." >&2
