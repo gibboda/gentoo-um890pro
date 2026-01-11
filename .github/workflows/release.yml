@@ -99,7 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           NEW_VERSION="${{ steps.vars.outputs.version }}"
-          if git tag -l "v${NEW_VERSION}" | grep -q "v${NEW_VERSION}"; then
+          if git show-ref --tags --quiet -- "refs/tags/v${NEW_VERSION}"; then
             echo "Tag exists; skipping"
             exit 0
           fi
