@@ -215,10 +215,25 @@ calculate_auto_version() {
     subject=$(git -C "$ROOT_DIR" show -s --format=%s "$commit_sha")
     body=$(git -C "$ROOT_DIR" show -s --format=%b "$commit_sha")
     
+    # Skip legacy commit da8679f (pre-enforcement)
+    local short_sha
+    short_sha=$(git -C "$ROOT_DIR" log -1 --format=%h "$commit_sha")
+    if [[ "$short_sha" == "da8679f" ]]; then
+      # Still parse for changelog, but don't validate
+      local parse_result
+      local type
+      local has_breaking
+      parse_result=$(parse_commit "$subject" "$body")
+      type=$(echo "$parse_result" | cut -d'|' -f1)
+      has_breaking=$(echo "$parse_result" | cut -d'|' -f2)
+      
+      # Add to commits data
+      commits_data="${commits_data}${commit_sha}"$'\x1E'"${type}"$'\x1E'"${has_breaking}"$'\x1E'"${subject}"$'\n'
+      continue
+    fi
+    
     # Validate commit follows Conventional Commits format
     if ! validate_conventional_commit "$subject"; then
-      local short_sha
-      short_sha=$(git -C "$ROOT_DIR" log -1 --format=%h "$commit_sha")
       invalid_commits="${invalid_commits}  ${short_sha} ${subject}"$'\n'
     fi
     
