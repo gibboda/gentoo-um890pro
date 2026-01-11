@@ -605,6 +605,13 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-wo
   # Note: `git diff --cached --quiet` returns 0 (success) when there are NO changes,
   # so we negate it with ! to check if there ARE changes
   if ! git -C "$ROOT_DIR" diff --cached --quiet; then
+    # Check if tag already exists BEFORE committing to avoid partial state
+    if git -C "$ROOT_DIR" show-ref --tags --quiet -- "refs/tags/v$NEW_VERSION"; then
+      echo "ERROR: Git tag v$NEW_VERSION already exists. Refusing to overwrite." >&2
+      echo "Please use a different version number or delete the existing tag first." >&2
+      exit 1
+    fi
+    # Now commit the changes
     if ! git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG"; then
       echo "ERROR: Failed to create git commit for version bump to $NEW_VERSION." >&2
       echo "Please review the git status and try again." >&2
@@ -614,13 +621,12 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-wo
     if git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG"; then
       echo "Committed and tagged v$NEW_VERSION"
     else
-      # If tag creation failed, check if the tag now exists to distinguish
-      # "already exists" from other failures (avoids race with concurrent runs).
-      if git -C "$ROOT_DIR" show-ref --tags --quiet -- "refs/tags/v$NEW_VERSION"; then
-        echo "ERROR: Git tag v$NEW_VERSION already exists. Refusing to overwrite." >&2
-      else
-        echo "ERROR: Failed to create git tag v$NEW_VERSION." >&2
-      fi
+      # If tag creation failed after commit, provide guidance on recovery
+      echo "ERROR: Failed to create git tag v$NEW_VERSION after committing changes." >&2
+      echo "The version bump has been committed but not tagged." >&2
+      echo "To recover, either:" >&2
+      echo "  1. Fix the issue and run: git tag -a \"v$NEW_VERSION\" -m \"$MSG\"" >&2
+      echo "  2. Or reset the commit: git reset --soft HEAD~1" >&2
       exit 1
     fi
   else
