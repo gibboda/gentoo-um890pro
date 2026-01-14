@@ -2078,9 +2078,29 @@ finalize_users_passwords() {
 
   read -r -p "Create a non-root user now? (y/n): " yn
   if [[ "${yn}" == "y" || "${yn}" == "Y" ]]; then
-    read -r -p "Username: " NEWUSER
-    chroot_run "useradd -m -G wheel,audio,video -s /bin/bash ${NEWUSER}"
-    chroot_run "passwd ${NEWUSER}"
+    local NEWUSER=""
+    local user_escaped=""
+    while true; do
+      read -r -p "Username: " NEWUSER
+      if [[ -z "${NEWUSER}" ]]; then
+        echo "Username cannot be empty." >&2
+        continue
+      fi
+      if [[ ! "${NEWUSER}" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+        echo "Invalid username. Use lowercase letters, numbers, '_' or '-', starting with a letter or '_'." >&2
+        continue
+      fi
+      local user_lookup_rc
+      user_lookup_rc=$(chroot_capture "getent passwd ${NEWUSER} >/dev/null; echo $?")
+      if [[ "${user_lookup_rc}" == "0" ]]; then
+        echo "User '${NEWUSER}' already exists. Choose another username." >&2
+        continue
+      fi
+      printf -v user_escaped '%q' "${NEWUSER}"
+      break
+    done
+    chroot_run "useradd -m -G wheel,audio,video -s /bin/bash ${user_escaped}"
+    chroot_run "passwd ${user_escaped}"
     # Allow wheel sudo
     chroot_run "sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers"
   fi
