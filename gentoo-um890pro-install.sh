@@ -2079,7 +2079,6 @@ finalize_users_passwords() {
   read -r -p "Create a non-root user now? (y/n): " yn
   if [[ "${yn}" == "y" || "${yn}" == "Y" ]]; then
     local NEWUSER=""
-    local user_escaped=""
     while true; do
       read -r -p "Username: " NEWUSER
       if [[ -z "${NEWUSER}" ]]; then
@@ -2090,9 +2089,8 @@ finalize_users_passwords() {
         echo "Invalid username. Use 1-32 characters: lowercase letters, numbers, '_' or '-', starting with a letter or '_'." >&2
         continue
       fi
-      printf -v user_escaped '%q' "${NEWUSER}"
       local user_lookup_rc
-      user_lookup_rc=$(chroot_capture "getent passwd ${user_escaped} >/dev/null; echo $?")
+      user_lookup_rc=$(chroot_capture "getent passwd \"${NEWUSER}\" >/dev/null; echo \$?")
       if [[ "${user_lookup_rc}" == "0" ]]; then
         echo "User '${NEWUSER}' already exists. Choose another username." >&2
         continue
