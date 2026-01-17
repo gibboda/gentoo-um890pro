@@ -199,7 +199,7 @@ git rebase -i HEAD~3
 git push --force-with-lease
 ```
 
-If CI validation fails, ensure both your commit messages and PR title follow Conventional Commits format. Fix non-compliant commits by rewording them as shown above, and update the PR title if needed.
+If CI validation fails, ensure that both your commit messages and PR title follow the Conventional Commits format. Fix non-compliant commits by rewording them as shown above. Update the PR title separately if it also fails validation.
 
 ## Testing
 
