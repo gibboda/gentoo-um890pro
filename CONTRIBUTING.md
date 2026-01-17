@@ -199,7 +199,7 @@ git rebase -i HEAD~3
 git push --force-with-lease
 ```
 
-If you need to fix non-compliant commits, reword them and update the PR title so both the commit history and PR metadata are Conventional Commits compliant.
+If CI validation fails, ensure both your commit messages and PR title follow Conventional Commits format. Fix non-compliant commits by rewording them as shown above, and update the PR title if needed.
 
 ## Testing
 

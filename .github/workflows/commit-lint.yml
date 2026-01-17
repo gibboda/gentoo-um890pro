@@ -77,8 +77,8 @@ jobs:
 
           if [ "${PR_TITLE_VALID}" != "true" ]; then
             TITLE_INVALID=1
-            echo "❌ PR title does not follow Conventional Commits format."
-            echo "Please update the PR title to match the expected format."
+            echo "PR title did not pass the Conventional Commits check; this will be reported in the validation summary below."
+            echo "Ensure the title matches the expected format: type(scope): description with a valid type."
             echo ""
           fi
           
