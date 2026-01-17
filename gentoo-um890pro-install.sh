@@ -1235,7 +1235,7 @@ EOF
   if [[ -f "${MNT}/boot/EFI/refind/refind_x64.efi" ]]; then
     log_with_elapsed "rEFInd installed at /boot/EFI/refind (refind_x64.efi detected)"
   else
-    echo "WARNING: rEFInd EFI binary not found at /boot/EFI/refind/refind_x64.efi" >&2
+    log_with_elapsed "WARNING: rEFInd EFI binary not found at /boot/EFI/refind/refind_x64.efi"
   fi
 }
 
@@ -2603,8 +2603,14 @@ main() {
   read -r -p "Would you like to unmount ${MNT} and reboot now? (y/n): " reboot_now
   if [[ "${reboot_now}" == "y" || "${reboot_now}" == "Y" ]]; then
     log_with_elapsed "Unmounting ${MNT} and rebooting..."
-    umount -R "${MNT}"
+    if ! umount -R "${MNT}"; then
+      log_with_elapsed "ERROR: Failed to unmount ${MNT}. Aborting reboot."
+      echo "ERROR: Could not unmount ${MNT}. Please ensure no shells or processes are using this mount, unmount manually, then reboot." >&2
+      return 1
+    fi
     reboot
+  else
+    log_with_elapsed "Skipping reboot. Remember to unmount ${MNT} and reboot manually."
   fi
 }
 
