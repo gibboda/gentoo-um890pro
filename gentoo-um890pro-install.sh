@@ -2605,7 +2605,7 @@ main() {
     log_with_elapsed "Unmounting ${MNT} and rebooting..."
     if ! umount -R "${MNT}"; then
       log_with_elapsed "ERROR: Failed to unmount ${MNT}. Aborting reboot."
-      echo "ERROR: Could not unmount ${MNT}. Please ensure no shells or processes are using this mount, unmount manually, then reboot." >&2
+      log_with_elapsed "ERROR: Could not unmount ${MNT}. Please ensure no shells or processes are using this mount, unmount manually, then reboot."
       return 1
     fi
     reboot
