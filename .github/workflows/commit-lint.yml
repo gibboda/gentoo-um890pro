@@ -72,7 +72,15 @@ jobs:
           fi
           
           INVALID_COUNT=0
+          TITLE_INVALID=0
           TOTAL_COUNT=0
+
+          if [ "${PR_TITLE_VALID}" != "true" ]; then
+            TITLE_INVALID=1
+            echo "PR title did not pass the Conventional Commits check; this will be reported in the validation summary below."
+            echo "Ensure the title matches the expected format: type[(scope)]: description"
+            echo ""
+          fi
           
           echo "Checking commits:"
           echo "----------------"
@@ -166,22 +174,23 @@ jobs:
           echo "Invalid commits: $INVALID_COUNT"
           echo ""
           
-          if [ $INVALID_COUNT -gt 0 ]; then
-            if [ "${PR_TITLE_VALID}" = "true" ]; then
-              echo "⚠️ WARNING: $INVALID_COUNT commit(s) do not follow Conventional Commits format."
-              echo "PR title is valid, so CI is allowing this PR to proceed."
+          if [ $INVALID_COUNT -gt 0 ] || [ $TITLE_INVALID -gt 0 ]; then
+            if [ $TITLE_INVALID -gt 0 ]; then
+              echo "❌ FAILED: PR title does not follow Conventional Commits format."
               echo ""
-              echo "If you want the commit history to be Conventional Commits compliant, reword commits:"
-              echo "  git rebase -i HEAD~${TOTAL_COUNT}"
-              echo "  # Change 'pick' to 'reword' for invalid commits"
-              echo "  # Update the commit messages"
-              echo "  git push --force-with-lease"
+              echo "Fix the PR title to match the expected format, for example:"
+              echo "  feat(installer): add validation for kernel options"
+              echo "  docs: update installation requirements"
               echo ""
-              exit 0
             fi
-            echo "❌ FAILED: $INVALID_COUNT commit(s) do not follow Conventional Commits format"
+
+            if [ $INVALID_COUNT -gt 0 ]; then
+              echo "❌ FAILED: $INVALID_COUNT commit(s) do not follow Conventional Commits format"
+              echo ""
+              echo "Please update your commit messages to match Conventional Commits."
+            fi
+
             echo ""
-            echo "Please update your commit messages or use a Conventional Commits PR title."
             echo "See CONTRIBUTING.md for detailed guidelines."
             echo ""
             echo "To fix commits, use:"

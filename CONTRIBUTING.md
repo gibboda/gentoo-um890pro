@@ -163,7 +163,7 @@ The CI system validates:
 - **Version consistency**: VERSION file, CHANGELOG.md, and installer script must match
 - **Shell scripts**: All shell scripts must pass ShellCheck validation
 
-PRs with non-compliant commit messages will be blocked until fixed.
+PRs with non-compliant commit messages or PR titles will be blocked until fixed.
 
 ## Development Workflow
 
@@ -199,7 +199,7 @@ git rebase -i HEAD~3
 git push --force-with-lease
 ```
 
-If you prefer to avoid rewriting history, ensure your PR title follows Conventional Commits format so CI can rely on the title instead of every commit message.
+If CI validation fails, ensure that both your commit messages and PR title follow the Conventional Commits format. Fix non-compliant commits by rewording them as shown above. Update the PR title separately if it also fails validation.
 
 ## Testing
 
