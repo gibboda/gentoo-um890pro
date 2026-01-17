@@ -1219,7 +1219,7 @@ EOF
 timeout 20
 use_nvram false
 dont_scan_files shim.efi,shim-fedora.efi,shimx64.efi,PreLoader.efi,TextMode.efi,ebounce.efi,GraphicsConsole.efi,MokManager.efi,HashTool.efi,HashTool-signed.efi,bootmgr.efi,fb{arch}.efi
-scanfor manual,external
+scanfor internal,external,manual
 scan_all_linux_kernels true
 
 # Enable touchscreen and mouse support
@@ -1231,6 +1231,12 @@ banner boot/EFI/refind/icons/banner.png
 selection_big boot/EFI/refind/icons/selection_big.png
 selection_small boot/EFI/refind/icons/selection_small.png
 EOF
+
+  if [[ -f "${MNT}/boot/EFI/refind/refind_x64.efi" ]]; then
+    log_with_elapsed "rEFInd installed at /boot/EFI/refind (refind_x64.efi detected)"
+  else
+    echo "WARNING: rEFInd EFI binary not found at /boot/EFI/refind/refind_x64.efi" >&2
+  fi
 }
 
 enable_network_and_services() {
@@ -2593,6 +2599,13 @@ main() {
     echo "    sudo manage-kernels list"
   fi
   echo "============================================================"
+  echo
+  read -r -p "Would you like to unmount ${MNT} and reboot now? (y/n): " reboot_now
+  if [[ "${reboot_now}" == "y" || "${reboot_now}" == "Y" ]]; then
+    log_with_elapsed "Unmounting ${MNT} and rebooting..."
+    umount -R "${MNT}"
+    reboot
+  fi
 }
 
 # Globals set during partitioning
