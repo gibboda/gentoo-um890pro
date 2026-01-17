@@ -199,6 +199,8 @@ git rebase -i HEAD~3
 git push --force-with-lease
 ```
 
+If you prefer to avoid rewriting history, ensure your PR title follows Conventional Commits format so CI can rely on the title instead of every commit message.
+
 ## Testing
 
 Before submitting:
