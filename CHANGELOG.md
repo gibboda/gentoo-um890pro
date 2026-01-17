@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Eliminate redundant PR title validation messages#110
 
 ## [1.0.16] - 2026-01-17
 - Allow PR title fallback for commit linting
