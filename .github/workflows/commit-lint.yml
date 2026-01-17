@@ -23,7 +23,27 @@ jobs:
         run: |
           git fetch origin ${{ github.base_ref }}
 
+      - name: Validate PR title
+        id: pr_title
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -euo pipefail
+
+          CONVENTIONAL_PATTERN='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$'
+          PR_TITLE=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH")
+          echo "PR title: $PR_TITLE"
+
+          if echo "$PR_TITLE" | grep -Eqi "$CONVENTIONAL_PATTERN"; then
+            echo "title_valid=true" >> "$GITHUB_OUTPUT"
+            echo "PR title follows Conventional Commits format."
+          else
+            echo "title_valid=false" >> "$GITHUB_OUTPUT"
+            echo "PR title does not follow Conventional Commits format."
+          fi
+
       - name: Validate commit messages
+        env:
+          PR_TITLE_VALID: ${{ steps.pr_title.outputs.title_valid || 'false' }}
         run: |
           set -euo pipefail
           
@@ -147,9 +167,21 @@ jobs:
           echo ""
           
           if [ $INVALID_COUNT -gt 0 ]; then
+            if [ "${PR_TITLE_VALID}" = "true" ]; then
+              echo "⚠️ WARNING: $INVALID_COUNT commit(s) do not follow Conventional Commits format."
+              echo "PR title is valid, so CI is allowing this PR to proceed."
+              echo ""
+              echo "If you want the commit history to be Conventional Commits compliant, reword commits:"
+              echo "  git rebase -i HEAD~${TOTAL_COUNT}"
+              echo "  # Change 'pick' to 'reword' for invalid commits"
+              echo "  # Update the commit messages"
+              echo "  git push --force-with-lease"
+              echo ""
+              exit 0
+            fi
             echo "❌ FAILED: $INVALID_COUNT commit(s) do not follow Conventional Commits format"
             echo ""
-            echo "Please update your commit messages to follow the Conventional Commits format."
+            echo "Please update your commit messages or use a Conventional Commits PR title."
             echo "See CONTRIBUTING.md for detailed guidelines."
             echo ""
             echo "To fix commits, use:"

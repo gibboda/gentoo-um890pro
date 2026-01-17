@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.0.16] - 2026-01-17
+- Allow PR title fallback for commit linting
+
 - fix: add legacy commits to exclusion list for Conventional Commits validation
 
 ### Fixed
