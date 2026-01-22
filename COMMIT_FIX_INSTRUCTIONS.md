@@ -2,11 +2,11 @@
 
 ## Issue
 
-The commit `735870a` with message "Initial plan" does not follow Conventional Commits format.
+The original commit with abbreviated SHA `735870a` and message "Initial plan" does not follow Conventional Commits format.
 
 ## Current State
 
-- Commit SHA: `735870a`  
+- Original commit SHA (before history rewrite): `735870a`  
 - Current message: `Initial plan`
 - Required format: `type(scope): description`
 
