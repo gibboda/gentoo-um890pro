@@ -26,10 +26,22 @@ docs: initial plan for fixing conventional commits format
 A maintainer with push access should:
 
 ```bash
-# Amend the commit locally
-git commit --amend --allow-empty -m "docs: initial plan for fixing conventional commits format"
+# Ensure you are on the correct branch
+git checkout copilot/fix-conventional-commits
 
-# Force push with safety check
+# Start an interactive rebase from the parent of the commit to fix
+git rebase -i 735870a^
+
+# In the editor that opens:
+# - Locate the line for commit 735870a
+# - Change the action from "pick" to "reword"
+# - Save and close the editor
+
+# When prompted, update the commit message to:
+# docs: initial plan for fixing conventional commits format
+# then save and close the editor to continue the rebase
+
+# Force push the rewritten history with safety check
 git push --force-with-lease origin copilot/fix-conventional-commits
 ```
 
