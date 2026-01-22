@@ -76,7 +76,7 @@ Conventional Commits format:
 ```
 
 Valid types:
-- `feat`: New feature (MINOR version bump)
+- `feat`: New feature (version bump per CONTRIBUTING.md Version Bump Rules; typically MINOR, MAJOR if marked as breaking change)
 - `fix`: Bug fix (PATCH version bump)
 - `update`: Update or improvement (PATCH version bump)
 - `docs`: Documentation only (no version bump)
