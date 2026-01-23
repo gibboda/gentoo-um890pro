@@ -128,7 +128,7 @@ validate_conventional_commit() {
   local commit_msg="$1"
   
   # Skip merge commits
-  if echo "$commit_msg" | grep -Eq '^Merge (branch|pull request|remote-tracking branch)'; then
+  if echo "$commit_msg" | grep -Eq '^Merge (branch|pull request|remote-tracking branch|[0-9a-f]{40})'; then
     return 0
   fi
   

@@ -18,7 +18,7 @@ test_commit_message() {
     local commit_msg="$1"
     
     # Skip merge commits
-    if echo "$commit_msg" | grep -Eq '^Merge (branch|pull request|remote-tracking branch)'; then
+    if echo "$commit_msg" | grep -Eq '^Merge (branch|pull request|remote-tracking branch|[0-9a-f]{40})'; then
       return 0
     fi
     
@@ -107,6 +107,7 @@ echo "Testing SKIPPED commit messages:"
 echo "--------------------------------"
 test_commit_message "Merge branch 'main' into develop" "VALID"
 test_commit_message "Merge pull request #123 from user/branch" "VALID"
+test_commit_message "Merge 0123456789abcdef0123456789abcdef01234567" "VALID"
 test_commit_message "Bump version: 1.2.3 - Release description" "VALID"
 test_commit_message "Initial plan" "VALID"
 test_commit_message "Auto-generated plan: dependency updates" "VALID"
