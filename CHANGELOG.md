@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - Eliminate redundant PR title validation messages (#110)
 - Note changelog updates are required for user-visible changes
+- Align Conventional Commits validation skips for merge/plan subjects and expand test coverage
 
 ## [1.0.16] - 2026-01-17
 - Allow PR title fallback for commit linting

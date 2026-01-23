@@ -137,7 +137,7 @@ The commit-lint workflow runs automatically on all PRs and validates:
 - Commit message format
 - Type validity
 - Breaking change detection
-- PR titles for Conventional Commits compatibility (used as a fallback to avoid history rewrites)
+- PR titles for Conventional Commits compatibility (validated separately and must follow the format)
 
 ## Migration Notes
 
@@ -147,7 +147,7 @@ Commits before this implementation may not follow Conventional Commits format. T
 
 ### Rewriting History (When Needed)
 
-If you need to fix commit messages in a PR (or want a fully Conventional Commits history instead of relying on the PR title fallback):
+If you need to fix commit messages in a PR (or want a fully Conventional Commits history):
 ```bash
 # Interactive rebase to reword commits
 git rebase -i <base-commit>
