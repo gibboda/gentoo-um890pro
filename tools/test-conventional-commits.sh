@@ -111,6 +111,8 @@ test_commit_message "Merge 0123456789abcdef0123456789abcdef01234567" "VALID"
 test_commit_message "Bump version: 1.2.3 - Release description" "VALID"
 test_commit_message "Initial plan" "VALID"
 test_commit_message "Auto-generated plan: dependency updates" "VALID"
+test_commit_message "Initial plan - dependency scan" "VALID"
+test_commit_message "Auto-generated plan - dependency updates" "VALID"
 
 echo ""
 echo "========================================="
