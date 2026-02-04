@@ -75,7 +75,7 @@ This is intended to keep the system “feeling like Gentoo” while still provid
 - Working network.
 - Run as `root`.
 - The following commands must be available (the script checks/uses these):
-  - `sgdisk` (gptfdisk), `wipefs`
+  - `sgdisk` (gptfdisk)
   - `mkfs.vfat` (dosfstools), `mkfs.btrfs` (btrfs-progs)
   - `tar`, `wget`
   - `lsblk`, `blkid`, `awk`, `sed`
@@ -132,7 +132,7 @@ lsblk -o NAME,SIZE,MODEL
 ls -l /dev/disk/by-id/ | grep CT4000P3PSSD8
 ```
 
-**HMB optimization**: The installer configures udev rules to increase the HMB size from the default 128MB to 256MB for better performance with DRAM-less SSDs. See [OPTIMIZATION_GUIDE.md](docs/OPTIMIZATION_GUIDE.md) for details.
+**HMB optimization**: The installer configures udev rules for generic NVMe queue tuning. It does **not** change HMB size (HMB tuning requires vendor-specific or `nvme-cli` admin commands). See [OPTIMIZATION_GUIDE.md](docs/OPTIMIZATION_GUIDE.md) for details.
 
 ### Tuning zram (OpenRC)
 
@@ -168,6 +168,7 @@ The installer places helper commands in `/usr/local/bin`:
 - `setup-comfyui` — clones and configures ComfyUI with ROCm/UMA settings, installs dependencies, and creates `launch-comfyui-uma.sh`.
 - `manage-snapshots {create|list|rollback|cleanup}` — manual snapshot utility; a daily timer/cron is enabled when `ENABLE_SNAPSHOTS=yes`.
 - `ml-boot-selector` — ML heuristics that recommend the safest boot target; `update-refind-default` logs the recommendation for rEFInd.
+- `update-refind-default` — requires `jq` to parse the ML selector JSON output.
 - `switch-to-source-kernel` — guided switch from `gentoo-kernel-bin` to `gentoo-kernel` while preserving existing kernels.
 - `manage-kernels {list|preserve|clean|info}` — inspect, preserve, or clean kernel versions.
 
