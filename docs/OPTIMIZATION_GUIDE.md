@@ -448,7 +448,7 @@ export BLENDER_USER_CONFIG=~/.config/blender
 
 ### ComfyUI Launch Configuration
 
-Optimized launch script at `/data/ai-models/ComfyUI/ComfyUI/launch-uma-optimized.sh`:
+Optimized launch script at `/data/ai-models/ComfyUI/launch-uma-optimized.sh`:
 
 ```bash
 #!/bin/bash
@@ -721,6 +721,6 @@ sysbench memory --memory-total-size=10G run
 blender --background --python benchmark.py
 
 # Stable Diffusion benchmark
-cd /data/ai-models/ComfyUI/ComfyUI
+cd /data/ai-models/ComfyUI
 python benchmark.py
 ```

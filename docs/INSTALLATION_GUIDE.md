@@ -287,7 +287,7 @@ cd /data/ai-models/ComfyUI
 ./launch-comfyui-uma.sh
 ```
 
-**Note**: ComfyUI's repo root is `/data/ai-models/ComfyUI`; some other docs or installer messages may reference `/data/ai-models/ComfyUI/ComfyUI`, but the launch script lives in the repo root.
+**Note**: ComfyUI's repo root (and the location of the launch script) is `/data/ai-models/ComfyUI`.
 
 Open browser to: http://localhost:8188
 
