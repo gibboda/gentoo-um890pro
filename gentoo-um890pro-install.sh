@@ -1667,7 +1667,7 @@ echo "  cd ${MODELS_DIR}/checkpoints"
 echo "  wget https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors"
 echo ""
 echo "To start ComfyUI:"
-echo "  cd ${COMFYUI_DIR}/ComfyUI"
+echo "  cd ${COMFYUI_DIR}"
 echo "  ./launch-comfyui-uma.sh"
 EOF
 

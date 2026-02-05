@@ -132,7 +132,7 @@ lsblk -o NAME,SIZE,MODEL
 ls -l /dev/disk/by-id/ | grep CT4000P3PSSD8
 ```
 
-**HMB optimization**: The installer configures udev rules for generic NVMe queue tuning. It does **not** change HMB size (HMB tuning requires vendor-specific or `nvme-cli` admin commands). See [OPTIMIZATION_GUIDE.md](docs/OPTIMIZATION_GUIDE.md) for details.
+**NVMe queue tuning (HMB-aware)**: The installer configures udev rules for generic NVMe queue tuning on these DRAM-less, HMB-capable drives. It does **not** change HMB size (for example, it does not write to `device/hmb_size`; HMB sizing requires vendor-specific or `nvme-cli` admin commands). The optional/manual HMB sizing steps and more aggressive tuning examples are documented in [OPTIMIZATION_GUIDE.md](docs/OPTIMIZATION_GUIDE.md) and are **not** applied automatically by the installer.
 
 ### Tuning zram (OpenRC)
 
@@ -168,7 +168,7 @@ The installer places helper commands in `/usr/local/bin`:
 - `setup-comfyui` — clones and configures ComfyUI with ROCm/UMA settings, installs dependencies, and creates `launch-comfyui-uma.sh`.
 - `manage-snapshots {create|list|rollback|cleanup}` — manual snapshot utility; a daily timer/cron is enabled when `ENABLE_SNAPSHOTS=yes`.
 - `ml-boot-selector` — ML heuristics that recommend the safest boot target; `update-refind-default` logs the recommendation for rEFInd.
-- `update-refind-default` — requires `jq` to parse the ML selector JSON output.
+- `update-refind-default` — requires `jq` (Gentoo package `app-misc/jq`) to parse the ML selector JSON output; the installer does not install this automatically, so you may need to `emerge app-misc/jq` for this helper to work.
 - `switch-to-source-kernel` — guided switch from `gentoo-kernel-bin` to `gentoo-kernel` while preserving existing kernels.
 - `manage-kernels {list|preserve|clean|info}` — inspect, preserve, or clean kernel versions.
 
