@@ -185,7 +185,7 @@ Before running the installer, verify:
      - "Gentoo Linux" with `vmlinuz-<VERSION>-gentoo-dist` (Kernel A - fallback)
      - "Gentoo (Snapshot Recovery)" for Btrfs snapshot boot
    - Available entries (single-kernel mode):
-     - "Gentoo Linux (Current)"
+     - "Gentoo (Btrfs subvol=@)"
    - Default: Most recent kernel auto-selected
 
 2. **Login**:
@@ -283,9 +283,11 @@ blender --background --python ~/.config/blender/cycles-igpu-config.py
 ### Test ComfyUI
 
 ```bash
-cd /data/ai-models/ComfyUI/ComfyUI
+cd /data/ai-models/ComfyUI
 ./launch-comfyui-uma.sh
 ```
+
+**Note**: ComfyUI's repo root (and the location of the launch script) is `/data/ai-models/ComfyUI`.
 
 Open browser to: http://localhost:8188
 
