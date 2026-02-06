@@ -4,24 +4,15 @@ This branch requires a force push because commit messages were rewritten to foll
 
 ## What Changed
 
-The "Initial plan" commit message was rewritten from a non-compliant format to:
-```
-docs: initial plan for conventional commits migration
-```
-
-## Current State
-
-- ✓ All commits follow Conventional Commits format
-- ✓ CI validation passes  
-- ✓ Test suite passes (26/26 tests)
-- ✓ bump-version.sh auto mode works correctly
+- `0dc778f`: `Initial plan` → `docs: initial plan for updating commit messages`
+- `e94c0ea`: `Fix (changelog): Prevent false changelog requirement for metadata-only edits (#118)` → `fix(changelog): prevent false changelog requirement for metadata-only edits (#118)`
 
 ## To Complete
 
 A maintainer with push access needs to force push this branch:
 
 ```bash
-git push --force-with-lease origin copilot/convert-to-conventional-commits
+git push --force-with-lease origin copilot/update-commit-messages
 ```
 
 ## Verification
@@ -29,7 +20,6 @@ git push --force-with-lease origin copilot/convert-to-conventional-commits
 After force push, verify:
 1. All commits show proper conventional format in GitHub
 2. CI commit-lint workflow passes on the PR
-3. bump-version.sh auto mode completes without errors
 
 ## Safety
 

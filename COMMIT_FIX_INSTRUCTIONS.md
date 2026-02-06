@@ -1,91 +1,57 @@
-# Instructions to Fix Non-Conventional Commit
+# Instructions to Fix Non-Conventional Commits
 
 ## Issue
 
-The original commit with abbreviated SHA `735870a` and message "Initial plan" does not follow Conventional Commits format.
+Recent commits on `copilot/update-commit-messages` do not follow Conventional Commits format and need to be rewritten.
 
-## Current State
+## Commits to Fix
 
-- Original commit SHA (before history rewrite): `735870a`  
-- Current message: `Initial plan`
-- Required format: `type(scope): description`
+| Short SHA | Current message | Required message |
+|-----------|-----------------|------------------|
+| `0dc778f` | `Initial plan` | `docs: initial plan for updating commit messages` |
+| `e94c0ea` | `Fix (changelog): Prevent false changelog requirement for metadata-only edits (#118)` | `fix(changelog): prevent false changelog requirement for metadata-only edits (#118)` |
 
-## Solution
-
-The commit message needs to be amended to follow Conventional Commits format.
-
-### Recommended Fix
-
-Amend the commit with this message:
-```
-docs: initial plan for fixing conventional commits format
-```
-
-### Steps to Fix
+## Steps to Fix
 
 A maintainer with push access should:
 
 ```bash
 # Ensure you are on the correct branch
-git checkout copilot/fix-conventional-commits
+git checkout copilot/update-commit-messages
 
-# Start an interactive rebase from the parent of the commit to fix
-git rebase -i 735870a^
+# Start an interactive rebase covering the last four commits
+git rebase -i HEAD~4
 
 # In the editor that opens:
-# - Locate the line for commit 735870a
-# - Change the action from "pick" to "reword"
+# - Change "pick" to "reword" for the commits listed above
 # - Save and close the editor
 
-# When prompted, update the commit message to:
-# docs: initial plan for fixing conventional commits format
-# then save and close the editor to continue the rebase
+# When prompted, update the commit messages to the "Required message" values
 
-# Force push the rewritten history with safety check
-git push --force-with-lease origin copilot/fix-conventional-commits
+# Force push the rewritten history with safety checks
+git push --force-with-lease origin copilot/update-commit-messages
 ```
 
 ## Verification
 
 After the fix, verify:
 
-1. **Commit message format**:
+1. **Commit messages**:
    ```bash
-   git log -1 --format="%s"
-   # Should output: docs: initial plan for fixing conventional commits format
+   git log -2 --format='%h %s'
    ```
+   Should show the required messages above.
 
 2. **Format validation**:
    ```bash
-   echo "docs: initial plan for fixing conventional commits format" | \
-     grep -Eq '^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$'
-   # Should pass (exit code 0)
+   echo "docs: initial plan for updating commit messages" | \
+     grep -Eq '^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$'
+   echo "fix(changelog): prevent false changelog requirement for metadata-only edits (#118)" | \
+     grep -Eq '^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$'
    ```
 
-3. **CI validation**: The commit-lint workflow should pass on the PR
+3. **CI validation**: The commit-lint workflow should pass on the PR.
 
 ## Why This Fix Is Needed
 
-The repository enforces Conventional Commits format for all new commits. While the commit-lint.yml workflow has a skip pattern for "Initial plan" commits (for automation), best practice is to ensure all commits actually follow the format rather than relying on exceptions.
-
-## Format Reference
-
-Conventional Commits format:
-```
-<type>[optional scope]: <description>
-```
-
-Valid types:
-- `feat`: New feature (version bump per CONTRIBUTING.md Version Bump Rules; typically MINOR, MAJOR if marked as breaking change)
-- `fix`: Bug fix (PATCH version bump)
-- `update`: Update or improvement (PATCH version bump)
-- `docs`: Documentation only (no version bump)
-- `style`: Code style changes
-- `refactor`: Code refactoring (MAJOR version bump)
-- `perf`: Performance improvement (MAJOR version bump)
-- `test`: Test changes
-- `build`: Build system changes
-- `ci`: CI configuration changes
-- `chore`: Other changes
-
-See CONTRIBUTING.md for complete guidelines.
+The repository enforces Conventional Commits format for all new commits. Rewriting these messages keeps history compliant and avoids reliance on skip patterns.
