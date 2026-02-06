@@ -87,5 +87,6 @@ Valid types:
 - `build`: Build system changes
 - `ci`: CI configuration changes
 - `chore`: Other changes
+- `revert`: Revert a previous commit (PATCH version bump)
 
 See CONTRIBUTING.md for complete guidelines.

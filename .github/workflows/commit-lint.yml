@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          CONVENTIONAL_PATTERN='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$'
+          CONVENTIONAL_PATTERN='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$'
           PR_TITLE=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH")
           echo "PR title: $PR_TITLE"
 
@@ -59,7 +59,7 @@ jobs:
           
           echo "Validating commits against Conventional Commits format..."
           echo "Pattern: type(scope): description"
-          echo "Valid types: feat, fix, update, docs, style, refactor, perf, test, build, ci, chore"
+          echo "Valid types: feat, fix, update, docs, style, refactor, perf, test, build, ci, chore, revert"
           echo ""
           
           # Get list of commits in this PR
@@ -156,6 +156,7 @@ jobs:
               echo "  build    - Build system changes"
               echo "  ci       - CI configuration changes"
               echo "  chore    - Other changes"
+              echo "  revert   - Revert a previous commit"
               echo ""
               echo "Examples:"
               echo "  feat(rocm): add ROCm 7.1 support"
