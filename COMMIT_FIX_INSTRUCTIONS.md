@@ -19,11 +19,12 @@ A maintainer with push access should:
 # Ensure you are on the correct branch
 git checkout copilot/update-commit-messages
 
-# Start an interactive rebase covering the last four commits
+# Start an interactive rebase covering the last four commits (to review all recent messages)
 git rebase -i HEAD~4
 
 # In the editor that opens:
 # - Change "pick" to "reword" for the commits listed above
+# - Leave any other commits as "pick"
 # - Save and close the editor
 
 # When prompted, update the commit messages to the "Required message" values
@@ -38,7 +39,7 @@ After the fix, verify:
 
 1. **Commit messages**:
    ```bash
-   git log -2 --format='%h %s'
+   git log -4 --format='%h %s'
    ```
    Should show the required messages above.
 
