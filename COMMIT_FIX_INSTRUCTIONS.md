@@ -46,10 +46,10 @@ After the fix, verify:
 2. **Format validation**:
    ```bash
    echo "docs: initial plan for updating commit messages" | \
-     grep -Eq '^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$' \
+     grep -Eq '^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$' \
      && echo "PASS" || echo "FAIL"
    echo "fix(changelog): prevent false changelog requirement for metadata-only edits (#118)" | \
-     grep -Eq '^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$' \
+     grep -Eq '^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$' \
      && echo "PASS" || echo "FAIL"
    ```
 
