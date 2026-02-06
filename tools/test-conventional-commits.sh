@@ -34,7 +34,7 @@ test_commit_message() {
     fi
 
     # Conventional Commits pattern
-    local conventional_pattern='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$'
+    local conventional_pattern='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$'
     
     if echo "$commit_msg" | grep -Eqi "$conventional_pattern"; then
       return 0
@@ -75,6 +75,7 @@ test_commit_message "test: add tests" "VALID"
 test_commit_message "build: update build system" "VALID"
 test_commit_message "ci: update CI config" "VALID"
 test_commit_message "chore: update dependencies" "VALID"
+test_commit_message "revert: rollback previous change" "VALID"
 test_commit_message "feat!: breaking change" "VALID"
 test_commit_message "feat(scope)!: breaking change with scope" "VALID"
 test_commit_message "update: update something" "VALID"

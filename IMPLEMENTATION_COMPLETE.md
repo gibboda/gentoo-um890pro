@@ -15,7 +15,7 @@ This PR successfully implements comprehensive Conventional Commits enforcement f
 ### 2. CI Enforcement (1 workflow)
 - **.github/workflows/commit-lint.yml**: Validates all commits in PRs
   - Checks format: `type(scope): description`
-  - Validates types: feat, fix, update, docs, style, refactor, perf, test, build, ci, chore
+  - Validates types: feat, fix, update, docs, style, refactor, perf, test, build, ci, chore, revert
   - Provides detailed error messages with examples
   - Skips merge commits, version bumps, and legacy commit da8679f
   - Blocks PRs with non-compliant commits
@@ -29,7 +29,7 @@ This PR successfully implements comprehensive Conventional Commits enforcement f
   - Automatic version determination from commit types
 
 ### 4. Testing Infrastructure (1 test suite)
-- **tools/test-conventional-commits.sh**: 32 comprehensive test cases
+- **tools/test-conventional-commits.sh**: 36 comprehensive test cases (17 valid, 5 invalid, 6 edge, 8 skipped)
   - Tests valid formats (basic, scoped, breaking changes)
   - Tests invalid formats (non-conventional messages)
   - Tests skip patterns (merge commits, version bumps)
@@ -40,7 +40,7 @@ This PR successfully implements comprehensive Conventional Commits enforcement f
 
 ### Test Suite: ✅ PASS
 ```
-32/32 test cases pass
+36/36 test cases pass
 All validation logic works correctly
 Edge cases covered: empty descriptions, >100 char descriptions, uppercase types
 ```

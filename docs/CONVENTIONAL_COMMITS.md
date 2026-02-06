@@ -35,7 +35,7 @@ type(scope): description
 ```
 
 **Valid Types:**
-- feat, fix, update, docs, style, refactor, perf, test, build, ci, chore
+- feat, fix, update, docs, style, refactor, perf, test, build, ci, chore, revert
 
 **Features:**
 - Line-by-line validation of each commit
@@ -67,7 +67,7 @@ type(scope): description
 - Tests invalid formats: non-conventional messages
 - Tests skip patterns: merge commits, version bump commits
 - Tests edge cases: empty descriptions, long descriptions (>100 chars), uppercase types
-- All 32 test cases pass successfully
+- 36 test cases (17 valid, 5 invalid, 6 edge, 8 skipped) all pass successfully
 
 ## Version Bump Rules
 

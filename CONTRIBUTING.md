@@ -33,6 +33,7 @@ The type must be one of the following:
 - **build**: Changes to build system or dependencies
 - **ci**: Changes to CI configuration files and scripts
 - **chore**: Other changes that don't modify src or test files
+- **revert**: Revert a previous commit
 
 ### Scope (Optional)
 

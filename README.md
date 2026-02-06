@@ -42,6 +42,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
 - `fix(scope): description` - Bug fix
 - `docs: description` - Documentation changes
 - `refactor(scope): description` - Code refactoring
+- `revert: description` - Revert a previous commit
 
 All commits must follow this format or CI checks will fail.
 
