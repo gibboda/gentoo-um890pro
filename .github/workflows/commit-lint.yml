@@ -52,8 +52,8 @@ jobs:
           
           # Conventional Commits pattern
           # Format: type[(scope)][!]: description
-          # Types: feat|fix|update|docs|style|refactor|perf|test|build|ci|chore
-          CONVENTIONAL_PATTERN='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore)(\([a-z0-9_-]+\))?!?: .{1,100}$'
+          # Types: feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert
+          CONVENTIONAL_PATTERN='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$'
           # Automation planning commits from bots use these subject prefixes
           SKIP_SUBJECT_PATTERN='^(Initial plan|Auto-generated plan)(:|$| -)'
           

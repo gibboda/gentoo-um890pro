@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file.
 - Note changelog updates are required for user-visible changes
 - Align Conventional Commits validation skips for merge/plan subjects and expand test coverage
 
+## [1.0.17] - 2026-02-06
+
+- ci: allow `revert` commits in Conventional Commits validation
+
 ## [1.0.16] - 2026-01-17
 - Allow PR title fallback for commit linting
 
