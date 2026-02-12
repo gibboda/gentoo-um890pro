@@ -29,7 +29,7 @@ This PR successfully implements comprehensive Conventional Commits enforcement f
   - Automatic version determination from commit types
 
 ### 4. Testing Infrastructure (1 test suite)
-- **tools/test-conventional-commits.sh**: 36 comprehensive test cases (17 valid, 5 invalid, 6 edge, 8 skipped)
+- **tools/test-conventional-commits.sh**: 42 comprehensive test cases (20 valid, 8 invalid, 6 edge, 8 skipped)
   - Tests valid formats (basic, scoped, breaking changes)
   - Tests invalid formats (non-conventional messages)
   - Tests skip patterns (merge commits, version bumps)
