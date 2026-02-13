@@ -161,10 +161,13 @@ All pull requests must:
 The CI system validates:
 
 - **Commit messages**: All commits must follow Conventional Commits format
+- **PR titles**: Must follow Conventional Commits format; bot/automation PRs have stricter validation
 - **Version consistency**: VERSION file, CHANGELOG.md, and installer script must match
 - **Shell scripts**: All shell scripts must pass ShellCheck validation
 
 PRs with non-compliant commit messages or PR titles will be blocked until fixed.
+
+**Note for automation**: PR titles from Copilot, Codex, or other bots must be specific and descriptive. Generic terms like "Codex-generated", "Copilot updates", or vague descriptions like "fix issue" will be rejected by CI.
 
 ## Development Workflow
 
