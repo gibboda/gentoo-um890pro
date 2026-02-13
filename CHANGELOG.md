@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Fix commit-lint PR title validation to use ERE-compatible word boundaries and stricter bot detection
 - Eliminate redundant PR title validation messages (#110)
 - Note changelog updates are required for user-visible changes
 - Align Conventional Commits validation skips for merge/plan subjects and expand test coverage
