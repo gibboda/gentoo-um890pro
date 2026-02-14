@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.0.18] - 2026-02-14
+
+### Fixes
+- fix: Codex-generated pull request (#126)
 - Fix commit-lint PR title validation to use ERE-compatible word boundaries and stricter bot detection
 - Eliminate redundant PR title validation messages (#110)
 - Note changelog updates are required for user-visible changes

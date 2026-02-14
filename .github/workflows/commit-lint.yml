@@ -6,7 +6,7 @@ permissions:
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
 
 jobs:
   commit-lint:
@@ -48,8 +48,9 @@ jobs:
 
           # Check if this is a Copilot/Codex PR
           # Use stricter pattern to avoid false positives on usernames containing "bot"
+          PR_AUTHOR_TYPE=$(jq -r .pull_request.user.type < "$GITHUB_EVENT_PATH")
           IS_BOT_PR=false
-          if echo "$PR_AUTHOR" | grep -Eqi '(^|[-_])(bot|copilot|codex)($|[-_])|\[bot\]$'; then
+          if [ "$PR_AUTHOR_TYPE" = "Bot" ] || echo "$PR_AUTHOR" | grep -Eqi '(^|[-_])(bot|copilot|codex)($|[-_])|\[bot\]$'; then
             IS_BOT_PR=true
             echo "Detected bot/automation PR author"
           fi
