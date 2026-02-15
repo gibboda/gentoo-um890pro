@@ -36,7 +36,7 @@ test_commit_message() {
     # Conventional Commits pattern
     local conventional_pattern='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$'
     
-    if echo "$commit_msg" | grep -Eqi "$conventional_pattern"; then
+    if echo "$commit_msg" | grep -Eq "$conventional_pattern"; then
       return 0
     else
       return 1
@@ -98,10 +98,9 @@ test_commit_message "feat:" "INVALID"
 test_commit_message "fix(scope):" "INVALID"
 # Description longer than 100 characters (description part is 101 chars)
 test_commit_message "feat: this is a very long commit message that exceeds the maximum allowed length of one hundred characters exactly!" "INVALID"
-# Uppercase types (case-insensitive matching should accept these)
-test_commit_message "FEAT: add feature with uppercase type" "VALID"
-test_commit_message "Fix(scope): fix with mixed case type" "VALID"
-test_commit_message "FIX: all uppercase type" "VALID"
+test_commit_message "FEAT: add feature with uppercase type" "INVALID"
+test_commit_message "Fix(scope): fix with mixed case type" "INVALID"
+test_commit_message "FIX: all uppercase type" "INVALID"
 
 echo ""
 echo "Testing SKIPPED commit messages:"

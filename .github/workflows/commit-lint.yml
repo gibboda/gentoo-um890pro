@@ -184,11 +184,11 @@ jobs:
             fi
             
             # Validate against Conventional Commits format
-            if echo "$SUBJECT" | grep -Eqi "$CONVENTIONAL_PATTERN"; then
+            if echo "$SUBJECT" | grep -Eq "$CONVENTIONAL_PATTERN"; then
               echo "Status: ✓ VALID"
               
-              # Extract and display type (allow mixed case, normalize to lowercase)
-              TYPE=$(echo "$SUBJECT" | sed -E 's/^([A-Za-z]+)(\([^)]+\))?!?: .*/\1/' | tr '[:upper:]' '[:lower:]')
+              # Extract and display type
+              TYPE=$(echo "$SUBJECT" | sed -E 's/^([a-z]+)(\([^)]+\))?!?: .*/\1/')
               echo "Type: $TYPE"
               
               # Check for breaking change marker
