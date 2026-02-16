@@ -10,7 +10,7 @@ No implementation changes are proposed in this document; this is a planning arti
 
 1. **Option 1**: OpenRC + dual-kernel (binary fallback + tuned source kernel) + bootloader
 2. **Option 2**: Option 1 + KDE Plasma 6 with Wayland
-3. **Option 3**: Option 2 + AI Stock + DigestAI + GAIA
+3. **Option 3**: Option 2 + AI stack (ROCm + ComfyUI + Blender)
 
 ---
 
@@ -81,8 +81,8 @@ The current function-level structure maps to these domains:
 4. **No transaction-like phase boundaries**  
    Destructive steps and high-level feature steps are not checkpointed as explicit phases with resume semantics.
 
-5. **AI scope mismatch with new requested products**  
-   Current script includes ROCm/ComfyUI/Blender, but no first-class “AI Stock”, “DigestAI”, or “GAIA” components/contracts.
+5. **AI scope packaging gap**  
+   Current script includes ROCm/ComfyUI/Blender, but these are not yet modeled as a cohesive first-class AI stack bundle with explicit contracts.
 
 ---
 
@@ -144,9 +144,9 @@ Only higher layers (desktop/AI) vary by profile.
 
 Treat AI Option 3 as a bundle with explicit contracts:
 
-- `ai-stock` module
-- `digestai` module
-- `gaia` module
+- `ai_rocm` module
+- `ai_comfyui` module
+- `ai_blender` module
 
 Each must declare:
 
@@ -184,9 +184,9 @@ Each must declare:
 
 **Includes:** Option 2 +
 
-- AI Stock
-- DigestAI
-- GAIA
+- ROCm
+- ComfyUI
+- Blender
 - shared AI runtime prerequisites and dataset/model directory contracts on ZFS data disk
 
 ---
@@ -209,9 +209,9 @@ installer/
     kernel_dual.sh
     boot_refind.sh
     desktop_kde_wayland.sh
-    ai_stock.sh
-    ai_digestai.sh
-    ai_gaia.sh
+    ai_rocm.sh
+    ai_comfyui.sh
+    ai_blender.sh
     finalize.sh
   lib/
     chroot.sh
@@ -236,7 +236,7 @@ installer/
 1. **Phase 0: Extract and wrap existing functions** into module files without behavior change.
 2. **Phase 1: Introduce profile selector** with only three supported outputs.
 3. **Phase 2: Add dependency resolver + checkpoints**.
-4. **Phase 3: Add AI Stock/DigestAI/GAIA modules** with pinned sources and service checks.
+4. **Phase 3: Add AI stack modules (ROCm/ComfyUI/Blender)** with pinned sources and service checks.
 5. **Phase 4: Remove legacy free-form toggle matrix** (or hide behind expert mode).
 
 ---
@@ -247,7 +247,7 @@ installer/
 - Each choice resolves to deterministic module set + order.
 - Option 1 installs and boots with both kernels visible/selectable.
 - Option 2 lands in functional KDE Plasma Wayland session.
-- Option 3 provisions AI Stock + DigestAI + GAIA with validated service/data paths.
+- Option 3 provisions the AI stack (ROCm + ComfyUI + Blender) with validated service/data paths.
 - Failed installs can resume from last completed phase without re-wiping disks unless requested.
 
 ---
