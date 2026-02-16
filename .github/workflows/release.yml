@@ -76,7 +76,7 @@ jobs:
           NEW_VERSION="${{ steps.vars.outputs.version }}"
           MSG=$(jq -r '.inputs.message // "Automated release"' < "$GITHUB_EVENT_PATH" 2>/dev/null || echo "Automated release")
           if git show-ref --tags --quiet -- "refs/tags/v${NEW_VERSION}"; then
-            echo "Tag v${NEW_VERSION} already exists; skipping bump-version.sh"
+            echo "::notice::Tag v${NEW_VERSION} already exists; skipping bump-version.sh"
             exit 0
           fi
           chmod +x ./scripts/bump-version.sh
