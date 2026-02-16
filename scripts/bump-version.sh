@@ -148,7 +148,7 @@ validate_conventional_commit() {
   # Types: feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert
   local conventional_pattern='^(feat|fix|update|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_-]+\))?!?: .{1,100}$'
   
-  if echo "$commit_msg" | grep -Eqi "$conventional_pattern"; then
+  if echo "$commit_msg" | grep -Eq "$conventional_pattern"; then
     return 0
   else
     return 1
