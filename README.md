@@ -21,6 +21,7 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 ## Documentation
 
 - **[Installation Guide](docs/INSTALLATION_GUIDE.md)** - Step-by-step installation instructions
+- **[Installer Rewrite Audit](docs/INSTALLER_REWRITE_AUDIT.md)** - Review-only audit, process map, and modular rewrite blueprint for 3 install options
 - **[Kernel Management](docs/KERNEL_MANAGEMENT.md)** - Kernel backup, optimization, and fallback strategies
 - **[Hardware Setup](docs/HARDWARE_SETUP.md)** - BIOS configuration, hardware verification
 - **[System Specifications](docs/SYSTEM_SPECS.md)** - Complete hardware specifications
