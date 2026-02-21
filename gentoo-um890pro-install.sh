@@ -130,6 +130,16 @@ LOCALE="en_US.UTF-8 UTF-8"
 
 # -----------------------------------------------------------------------------
 
+# Phase 0 modular wrappers (review/audit rewrite bootstrap).
+if [[ -f "${SCRIPT_DIR}/installer/modules/phase0_pipeline.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/installer/modules/phase0_pipeline.sh"
+fi
+if [[ -f "${SCRIPT_DIR}/installer/core/phase0_runner.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/installer/core/phase0_runner.sh"
+fi
+
 
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
 
@@ -2536,42 +2546,46 @@ EOF
 }
 
 main() {
-  require_root
-  require_uefi
+  if declare -F run_phase0_pipeline >/dev/null 2>&1; then
+    run_phase0_pipeline
+  else
+    require_root
+    require_uefi
 
-  init_logging
-  enable_debug_trace
+    init_logging
+    enable_debug_trace
 
-  log_with_elapsed "gentoo-um890pro-installer version: ${VERSION}"
-  log_with_elapsed "Installation started"
+    log_with_elapsed "gentoo-um890pro-installer version: ${VERSION}"
+    log_with_elapsed "Installation started"
 
-  for c in lsblk blkid awk sed; do
-    need_cmd "$c" || { echo "ERROR: missing required command: $c"; exit 1; }
-  done
+    for c in lsblk blkid awk sed; do
+      need_cmd "$c" || { echo "ERROR: missing required command: $c"; exit 1; }
+    done
 
-  confirm_disks
-  stop_mounts
+    confirm_disks
+    stop_mounts
 
-  partition_disks
-  format_os
-  mount_btrfs_layout
-  fetch_stage3_and_prep
+    partition_disks
+    format_os
+    mount_btrfs_layout
+    fetch_stage3_and_prep
 
-  install_base_system
-  install_kernel
-  configure_fstab_bootloader
-  enable_network_and_services
-  install_kde_plasma
-  install_blender
-  install_rocm
-  install_comfyui_and_sdxl
-  install_zfs_and_create_pool
-  setup_snapshot_management
-  setup_ml_boot_selector
-  configure_nvme_optimizations
-  create_kernel_switch_helper
-  create_kernel_management_helper
-  finalize_users_passwords
+    install_base_system
+    install_kernel
+    configure_fstab_bootloader
+    enable_network_and_services
+    install_kde_plasma
+    install_blender
+    install_rocm
+    install_comfyui_and_sdxl
+    install_zfs_and_create_pool
+    setup_snapshot_management
+    setup_ml_boot_selector
+    configure_nvme_optimizations
+    create_kernel_switch_helper
+    create_kernel_management_helper
+    finalize_users_passwords
+  fi
 
   log_with_elapsed "Installation completed successfully"
   echo
