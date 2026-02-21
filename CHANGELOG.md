@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 - Updated installer scripts for improved reliability.
+- Improve `sync_portage_tree()` to capture the real exit code from failed `emerge --sync` attempts and report it; centralise retry limit with `max_attempts` variable for consistent log messages and error output.
 
 ## [1.0.18] - 2026-02-14
 
