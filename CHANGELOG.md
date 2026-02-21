@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Updated installer scripts for improved reliability.
 
 ## [1.0.18] - 2026-02-14
 
