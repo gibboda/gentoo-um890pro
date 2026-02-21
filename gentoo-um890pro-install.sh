@@ -652,12 +652,46 @@ chroot_run_maybe() {
   return $rc
 }
 
+sync_portage_tree() {
+  # Try to refresh Portage metadata and sync the tree with retries.
+  # Some mirrors intermittently fail with:
+  # "Action: sync for repo: gentoo, returned code = 1"
+  log_with_elapsed "Syncing Gentoo repository..."
+
+  # Refresh snapshot metadata opportunistically before full rsync/git sync.
+  chroot_run "emerge-webrsync || true"
+
+  local attempt rc last_rc max_attempts
+  rc=1
+  last_rc=1
+  max_attempts=3
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+    if [[ ${attempt} -gt 1 ]]; then
+      log_with_elapsed "Retrying emerge --sync (attempt ${attempt}/${max_attempts})..."
+      sleep 5
+    fi
+
+    if chroot_run_maybe "emerge --sync"; then
+      rc=0
+      last_rc=0
+      break
+    else
+      last_rc=$?
+    fi
+  done
+
+  if [[ ${rc} -ne 0 ]]; then
+    echo "ERROR: Failed to sync Portage tree after ${max_attempts} attempts (last exit code: ${last_rc})." >&2
+    echo "Hint: Check network connectivity and Gentoo mirror availability." >&2
+    exit "${last_rc}"
+  fi
+}
+
 install_base_system() {
   log_with_elapsed "Installing base system inside chroot..."
 
   # Sync repo
-  chroot_run "emerge-webrsync || true"
-  chroot_run "emerge --sync"
+  sync_portage_tree
 
   # Select profile
   # Prefer no-multilib profiles when PURE_64BIT=yes.
