@@ -23,6 +23,11 @@ checkpoint_clear_from() {
   local started="no"
   local phase=""
 
+  if [[ "${RESOLVED_PHASES[*]+set}" != "set" ]] || [[ "${#RESOLVED_PHASES[@]}" -eq 0 ]]; then
+    echo "ERROR: RESOLVED_PHASES is unset or empty; call resolve_phase_plan first" >&2
+    return 1
+  fi
+
   for phase in "${RESOLVED_PHASES[@]}"; do
     if [[ "${phase}" == "${start_phase}" ]]; then
       started="yes"
