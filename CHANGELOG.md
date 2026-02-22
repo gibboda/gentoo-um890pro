@@ -3,7 +3,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes yet.
+- Development in progress.
+
+## [1.2.0] - 2026-02-22
+- Implement Phase 2 runner architecture with checkpoint persistence via new `installer/core/state.sh` (`state_dir_init`, `checkpoint_done`, `checkpoint_mark`, `checkpoint_clear_from`).
+- Add deterministic phase-plan resolver in `installer/core/resolver.sh` that builds module execution order from resolved profile toggles and prints the plan before execution.
+- Add checkpoint-aware phase executor in `installer/core/runner.sh` with resume behavior and optional `--force-from <phase>` rerun support.
+- Update startup flow so profile resolution and phase plan resolution run before the modular path, and wire new core modules into script bootstrap.
+- Bump project version to `1.2.0` in both `VERSION` and installer script constant.
 
 ## [1.1.0] - 2026-02-22
 - Add Phase 1 profile resolver: three canonical install profiles (core-openrc-dualkernel, desktop-openrc-dualkernel-kde, full-openrc-dualkernel-kde-ai) with short aliases (core/desktop/full-ai), hard-fail on unsupported values, and startup plan printout
