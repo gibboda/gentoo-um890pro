@@ -255,3 +255,13 @@ installer/
 ## Recommended Next Step
 
 Implement the rewrite behind a new entrypoint (`installer/bin/um890-installer`) while keeping `gentoo-um890pro-install.sh` as a compatibility wrapper during transition. This enables staged validation and rollback to known-good behavior.
+
+### Proposed next step to complete Phase 1
+
+Add a single profile resolver function (or module) that accepts only three canonical profile values (as defined in the "Explicit profile contract" section) and maps them to the existing feature toggles before any install phases run. Optional short aliases may be supported but must resolve to these canonical names:
+
+- `core-openrc-dualkernel` (alias: `core`) → `INSTALL_KDE_PLASMA=no`, `INSTALL_ROCM=no`, `INSTALL_COMFYUI=no`, `INSTALL_BLENDER=no`, `INSTALL_DUAL_KERNEL=yes`
+- `desktop-openrc-dualkernel-kde` (alias: `desktop`) → `core-openrc-dualkernel` + `INSTALL_KDE_PLASMA=yes`
+- `full-openrc-dualkernel-kde-ai` (alias: `full-ai`) → `desktop-openrc-dualkernel-kde` + `INSTALL_ROCM=yes`, `INSTALL_COMFYUI=yes`, `INSTALL_BLENDER=yes`
+
+Then hard-fail on any unsupported profile value and print the resolved profile plan at startup. This is the smallest safe change because it preserves current install functions and only constrains the free-form toggle matrix into the three audited outputs.
