@@ -2592,7 +2592,7 @@ resolve_profile() {
   # Hard-fails on any unsupported value.
   local p="${INSTALL_PROFILE:-}"
 
-  # Normalise aliases to canonical names.
+  # Normalize aliases to canonical names.
   case "${p}" in
     core)     p="core-openrc-dualkernel" ;;
     desktop)  p="desktop-openrc-dualkernel-kde" ;;
@@ -2653,6 +2653,7 @@ main() {
     init_logging
     enable_debug_trace
 
+    # Resolve profile toggles before any install phases run (overrides config-section defaults).
     resolve_profile
 
     log_with_elapsed "gentoo-um890pro-installer version: ${VERSION}"
