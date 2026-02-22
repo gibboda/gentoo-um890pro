@@ -265,3 +265,14 @@ Add a single profile resolver function (or module) that accepts only three canon
 - `full-openrc-dualkernel-kde-ai` (alias: `full-ai`) → `desktop-openrc-dualkernel-kde` + `INSTALL_ROCM=yes`, `INSTALL_COMFYUI=yes`, `INSTALL_BLENDER=yes`
 
 Then hard-fail on any unsupported profile value and print the resolved profile plan at startup. This is the smallest safe change because it preserves current install functions and only constrains the free-form toggle matrix into the three audited outputs.
+
+### Proposed next step to complete Phase 2
+
+Implement a minimal `runner + state + resolver` slice that adds checkpoint persistence and deterministic phase planning without rewriting module internals:
+
+- Add `installer/core/state.sh` to persist per-phase completion markers.
+- Add `installer/core/resolver.sh` to map a resolved install profile to an ordered module/phase plan.
+- Ensure profile resolution is executed before both modular and fallback execution paths.
+- Execute modules through a checkpoint-aware runner (`skip if done`, optional `--force-from <phase>` for reruns).
+
+This is the smallest safe Phase 2 increment because it introduces resume/dependency semantics while preserving current Phase 0 wrappers.
