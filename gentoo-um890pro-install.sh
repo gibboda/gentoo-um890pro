@@ -2681,12 +2681,10 @@ main() {
 
   # Resolve profile toggles before any install phases run (overrides config-section defaults).
   resolve_profile
-  if declare -F resolve_phase_plan >/dev/null 2>&1; then
+  if declare -F resolve_phase_plan >/dev/null 2>&1 && \
+     declare -F run_phase_pipeline >/dev/null 2>&1; then
     resolve_phase_plan
     print_resolved_phase_plan
-  fi
-
-  if declare -F run_phase_pipeline >/dev/null 2>&1; then
     run_phase_pipeline
   elif declare -F run_phase0_pipeline >/dev/null 2>&1; then
     run_phase0_pipeline

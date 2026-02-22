@@ -7,6 +7,11 @@ run_phase_pipeline() {
   local phase=""
   local func=""
 
+  if [[ "${RESOLVED_PHASES[*]+set}" != "set" ]] || [[ "${#RESOLVED_PHASES[@]}" -eq 0 ]]; then
+    echo "ERROR: RESOLVED_PHASES is unset or empty; call resolve_phase_plan first" >&2
+    return 1
+  fi
+
   state_dir_init
 
   if [[ -n "${FORCE_FROM_PHASE}" ]]; then
@@ -15,7 +20,7 @@ run_phase_pipeline() {
   fi
 
   for phase in "${RESOLVED_PHASES[@]}"; do
-    if checkpoint_done "${phase}"; then
+    if [[ "${phase}" != "preflight" ]] && checkpoint_done "${phase}"; then
       echo "[SKIP] ${phase} (checkpoint exists)"
       continue
     fi
