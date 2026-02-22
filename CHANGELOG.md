@@ -3,7 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- Development in progress.
+- Harden `checkpoint_clear_from` in `installer/core/state.sh` to guard against unset/empty `RESOLVED_PHASES` before iteration, preventing `set -u` crashes when called before `resolve_phase_plan`.
+- Add `RESOLVED_PHASES` guard at the top of `run_phase_pipeline` in `installer/core/runner.sh` so calling it before `resolve_phase_plan` fails fast with a clear error message.
+- Make the `preflight` phase non-skippable in `run_phase_pipeline` so safety checks (`require_root`, `require_uefi`, logging setup) always run on every invocation, including resumes.
+- Combine `resolve_phase_plan` and `run_phase_pipeline` availability checks in `gentoo-um890pro-install.sh` into a single `&&`-guarded block to prevent a partial-source `set -u` crash on `RESOLVED_PHASES[@]`.
 
 ## [1.2.0] - 2026-02-22
 - Implement Phase 2 runner architecture with checkpoint persistence via new `installer/core/state.sh` (`state_dir_init`, `checkpoint_done`, `checkpoint_mark`, `checkpoint_clear_from`).
