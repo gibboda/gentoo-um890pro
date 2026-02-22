@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Remove unused `PHASE_IDS` array from `installer/core/resolver.sh` to fix ShellCheck SC2034 warning that was failing CI.
 - Harden `checkpoint_clear_from` in `installer/core/state.sh` to guard against unset/empty `RESOLVED_PHASES` before iteration, preventing `set -u` crashes when called before `resolve_phase_plan`.
 - Add `RESOLVED_PHASES` guard at the top of `run_phase_pipeline` in `installer/core/runner.sh` so calling it before `resolve_phase_plan` fails fast with a clear error message.
 - Make the `preflight` phase non-skippable in `run_phase_pipeline` so safety checks (`require_root`, `require_uefi`, logging setup) always run on every invocation, including resumes.
