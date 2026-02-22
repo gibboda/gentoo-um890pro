@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.2.0] - 2026-02-22
+- Automated release
+
 - Development in progress.
 
 ## [1.2.0] - 2026-02-22
