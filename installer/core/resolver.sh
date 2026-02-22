@@ -1,28 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 
-# Ordered map of phase id -> module function
-PHASE_IDS=(
-  preflight
-  disks-prepare
-  disks-partition-and-mount
-  base-system
-  kernel
-  boot
-  services
-  desktop
-  ai-blender
-  ai-rocm
-  ai-comfyui
-  data-pool
-  snapshots
-  ml-boot-selector
-  nvme-optimizations
-  kernel-switch-helper
-  kernel-management-helper
-  finalize-users
-)
-
 phase_func_for() {
   local phase="${1:?phase is required}"
   case "${phase}" in
