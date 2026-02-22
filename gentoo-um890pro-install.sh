@@ -1701,14 +1701,19 @@ export ROCM_PATH=/usr
 cd "$(dirname "$0")"
 source venv/bin/activate
 
+# Configure ComfyUI network binding with safe defaults.
+# By default, bind only to localhost to avoid unintended remote exposure.
+COMFYUI_LISTEN_HOST="${COMFYUI_LISTEN_HOST:-127.0.0.1}"
+COMFYUI_PORT="${COMFYUI_PORT:-8188}"
+
 # Run with memory optimization flags
 python main.py \
     --lowvram \
     --preview-method auto \
     --use-split-cross-attention \
     --disable-xformers \
-    --listen 0.0.0.0 \
-    --port 8188
+    --listen "${COMFYUI_LISTEN_HOST}" \
+    --port "${COMFYUI_PORT}"
 LAUNCH
 
 chmod +x launch-comfyui-uma.sh
