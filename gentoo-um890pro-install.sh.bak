@@ -50,7 +50,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="1.1.0"
+VERSION="1.0.18"
 
 # Track script start time for elapsed time reporting
 SCRIPT_START_TIME="${SECONDS}"
@@ -105,15 +105,7 @@ ZPOOL="tank"
 # CPU flags: Ryzen 8000/Zen4-ish; use znver4 as a safe default for this class
 COMMON_FLAGS="-O2 -pipe -march=znver4"
 
-# Installation profile (Phase 1 profile selector).
-# Accepted values (canonical names and short aliases):
-#   core-openrc-dualkernel         (alias: core)     – base OS + dual-kernel only
-#   desktop-openrc-dualkernel-kde  (alias: desktop)  – core + KDE Plasma
-#   full-openrc-dualkernel-kde-ai  (alias: full-ai)  – desktop + ROCm + ComfyUI + Blender
-# The resolver overrides the individual feature toggles below.
-INSTALL_PROFILE="${INSTALL_PROFILE:-full-openrc-dualkernel-kde-ai}"
-
-# Desktop and AI workloads (resolved by resolve_profile; edit INSTALL_PROFILE above instead)
+# Desktop and AI workloads
 INSTALL_KDE_PLASMA="yes"  # yes/no
 INSTALL_BLENDER="yes"     # yes/no - Install Blender 3D creation suite
 INSTALL_COMFYUI="yes"     # yes/no - Install ComfyUI for AI image generation (includes SDXL support)
@@ -2592,62 +2584,6 @@ EOF
   echo "Kernel management helper created at /usr/local/bin/manage-kernels"
 }
 
-resolve_profile() {
-  # Resolve INSTALL_PROFILE (canonical name or alias) to feature toggles.
-  # Hard-fails on any unsupported value.
-  local p="${INSTALL_PROFILE:-}"
-
-  # Normalize aliases to canonical names.
-  case "${p}" in
-    core)     p="core-openrc-dualkernel" ;;
-    desktop)  p="desktop-openrc-dualkernel-kde" ;;
-    full-ai)  p="full-openrc-dualkernel-kde-ai" ;;
-  esac
-
-  case "${p}" in
-    core-openrc-dualkernel)
-      INSTALL_KDE_PLASMA="no"
-      INSTALL_ROCM="no"
-      INSTALL_COMFYUI="no"
-      INSTALL_BLENDER="no"
-      INSTALL_DUAL_KERNEL="yes"
-      ;;
-    desktop-openrc-dualkernel-kde)
-      INSTALL_KDE_PLASMA="yes"
-      INSTALL_ROCM="no"
-      INSTALL_COMFYUI="no"
-      INSTALL_BLENDER="no"
-      INSTALL_DUAL_KERNEL="yes"
-      ;;
-    full-openrc-dualkernel-kde-ai)
-      INSTALL_KDE_PLASMA="yes"
-      INSTALL_ROCM="yes"
-      INSTALL_COMFYUI="yes"
-      INSTALL_BLENDER="yes"
-      INSTALL_DUAL_KERNEL="yes"
-      ;;
-    *)
-      echo "ERROR: unsupported INSTALL_PROFILE value: '${p}'" >&2
-      echo "  Supported profiles: core-openrc-dualkernel (core)," >&2
-      echo "                      desktop-openrc-dualkernel-kde (desktop)," >&2
-      echo "                      full-openrc-dualkernel-kde-ai (full-ai)" >&2
-      exit 1
-      ;;
-  esac
-
-  # Persist the resolved canonical name for downstream reference.
-  INSTALL_PROFILE="${p}"
-
-  echo "============================================================"
-  echo "Install profile : ${INSTALL_PROFILE}"
-  echo "  INSTALL_DUAL_KERNEL : ${INSTALL_DUAL_KERNEL}"
-  echo "  INSTALL_KDE_PLASMA  : ${INSTALL_KDE_PLASMA}"
-  echo "  INSTALL_ROCM        : ${INSTALL_ROCM}"
-  echo "  INSTALL_COMFYUI     : ${INSTALL_COMFYUI}"
-  echo "  INSTALL_BLENDER     : ${INSTALL_BLENDER}"
-  echo "============================================================"
-}
-
 main() {
   if declare -F run_phase0_pipeline >/dev/null 2>&1; then
     run_phase0_pipeline
@@ -2657,9 +2593,6 @@ main() {
 
     init_logging
     enable_debug_trace
-
-    # Resolve profile toggles before any install phases run (overrides config-section defaults).
-    resolve_profile
 
     log_with_elapsed "gentoo-um890pro-installer version: ${VERSION}"
     log_with_elapsed "Installation started"
