@@ -3,7 +3,18 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes yet.
+- Remove unused `PHASE_IDS` array from `installer/core/resolver.sh` to fix ShellCheck SC2034 warning that was failing CI.
+- Harden `checkpoint_clear_from` in `installer/core/state.sh` to guard against unset/empty `RESOLVED_PHASES` before iteration, preventing `set -u` crashes when called before `resolve_phase_plan`.
+- Add `RESOLVED_PHASES` guard at the top of `run_phase_pipeline` in `installer/core/runner.sh` so calling it before `resolve_phase_plan` fails fast with a clear error message.
+- Make the `preflight` phase non-skippable in `run_phase_pipeline` so safety checks (`require_root`, `require_uefi`, logging setup) always run on every invocation, including resumes.
+- Combine `resolve_phase_plan` and `run_phase_pipeline` availability checks in `gentoo-um890pro-install.sh` into a single `&&`-guarded block to prevent a partial-source `set -u` crash on `RESOLVED_PHASES[@]`.
+
+## [1.2.0] - 2026-02-22
+- Implement Phase 2 runner architecture with checkpoint persistence via new `installer/core/state.sh` (`state_dir_init`, `checkpoint_done`, `checkpoint_mark`, `checkpoint_clear_from`).
+- Add deterministic phase-plan resolver in `installer/core/resolver.sh` that builds module execution order from resolved profile toggles and prints the plan before execution.
+- Add checkpoint-aware phase executor in `installer/core/runner.sh` with resume behavior and optional `--force-from <phase>` rerun support.
+- Update startup flow so profile resolution and phase plan resolution run before the modular path, and wire new core modules into script bootstrap.
+- Bump project version to `1.2.0` in both `VERSION` and installer script constant.
 
 ## [1.1.0] - 2026-02-22
 - Add Phase 1 profile resolver: three canonical install profiles (core-openrc-dualkernel, desktop-openrc-dualkernel-kde, full-openrc-dualkernel-kde-ai) with short aliases (core/desktop/full-ai), hard-fail on unsupported values, and startup plan printout

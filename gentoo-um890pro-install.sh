@@ -50,7 +50,7 @@ trap on_err ERR
 ###############################################################################
 
 # ---- CONFIG (edit if needed) ------------------------------------------------
-VERSION="1.1.0"
+VERSION="1.2.0"
 
 # Track script start time for elapsed time reporting
 SCRIPT_START_TIME="${SECONDS}"
@@ -146,6 +146,18 @@ fi
 if [[ -f "${SCRIPT_DIR}/installer/core/phase0_runner.sh" ]]; then
   # shellcheck disable=SC1091
   source "${SCRIPT_DIR}/installer/core/phase0_runner.sh"
+fi
+if [[ -f "${SCRIPT_DIR}/installer/core/state.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/installer/core/state.sh"
+fi
+if [[ -f "${SCRIPT_DIR}/installer/core/resolver.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/installer/core/resolver.sh"
+fi
+if [[ -f "${SCRIPT_DIR}/installer/core/runner.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/installer/core/runner.sh"
 fi
 
 
@@ -2649,7 +2661,32 @@ resolve_profile() {
 }
 
 main() {
-  if declare -F run_phase0_pipeline >/dev/null 2>&1; then
+  local args=("$@")
+  while [[ ${#args[@]} -gt 0 ]]; do
+    case "${args[0]}" in
+      --force-from)
+        if [[ ${#args[@]} -lt 2 ]]; then
+          echo "ERROR: --force-from requires a phase id argument" >&2
+          exit 1
+        fi
+        FORCE_FROM_PHASE="${args[1]}"
+        args=("${args[@]:2}")
+        ;;
+      *)
+        echo "ERROR: unknown argument: ${args[0]}" >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  # Resolve profile toggles before any install phases run (overrides config-section defaults).
+  resolve_profile
+  if declare -F resolve_phase_plan >/dev/null 2>&1 && \
+     declare -F run_phase_pipeline >/dev/null 2>&1; then
+    resolve_phase_plan
+    print_resolved_phase_plan
+    run_phase_pipeline
+  elif declare -F run_phase0_pipeline >/dev/null 2>&1; then
     run_phase0_pipeline
   else
     require_root
@@ -2657,9 +2694,6 @@ main() {
 
     init_logging
     enable_debug_trace
-
-    # Resolve profile toggles before any install phases run (overrides config-section defaults).
-    resolve_profile
 
     log_with_elapsed "gentoo-um890pro-installer version: ${VERSION}"
     log_with_elapsed "Installation started"
