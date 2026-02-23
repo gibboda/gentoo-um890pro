@@ -1067,8 +1067,12 @@ EOF
     # This is the key to avoiding /lib/modules and /boot collisions
     echo "  Setting LOCALVERSION=-um890-tuned for unique kernel identification..."
     
-    # Get the latest gentoo-sources version and verify it was found
-    KERNEL_B_BASE_VERSION=$(chroot_capture "eselect kernel list 2>/dev/null | grep 'gentoo-sources' | grep -oP 'gentoo-sources-\K[0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?' | head -n1 || echo ''")
+    # Get the latest gentoo-sources version and verify it was found.
+    # gentoo-sources installs directories like /usr/src/linux-<ver>-gentoo
+    # (without a "gentoo-sources-<ver>" label in eselect output).
+    KERNEL_B_BASE_VERSION=$(chroot_capture "ls -1 /usr/src/linux-* 2>/dev/null \
+      | sed -nE 's|.*/linux-([0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?)-gentoo$|\1|p' \
+      | sort -V | tail -n1 || echo ''")
     
     if [[ -z "${KERNEL_B_BASE_VERSION}" ]]; then
       echo "ERROR: Failed to detect gentoo-sources version. Ensure gentoo-sources is installed."
@@ -1078,8 +1082,8 @@ EOF
     echo "  Base version: ${KERNEL_B_BASE_VERSION}"
     
     # Select gentoo-sources for configuration
-    if ! chroot_run "eselect kernel set gentoo-sources-${KERNEL_B_BASE_VERSION}"; then
-      echo "ERROR: Failed to select gentoo-sources-${KERNEL_B_BASE_VERSION}. Check eselect kernel list."
+    if ! chroot_run "eselect kernel set linux-${KERNEL_B_BASE_VERSION}-gentoo"; then
+      echo "ERROR: Failed to select linux-${KERNEL_B_BASE_VERSION}-gentoo. Check eselect kernel list."
       exit 1
     fi
     
