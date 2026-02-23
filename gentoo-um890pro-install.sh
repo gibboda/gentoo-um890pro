@@ -1090,7 +1090,7 @@ EOF
     # Get the latest gentoo-sources version and verify it was found.
     # gentoo-sources installs directories like /usr/src/linux-<ver>-gentoo
     # (without a "gentoo-sources-<ver>" label in eselect output).
-    KERNEL_B_BASE_VERSION=$(chroot_capture "ls -1 /usr/src/linux-* 2>/dev/null \
+    KERNEL_B_BASE_VERSION=$(chroot_capture "ls -1d /usr/src/linux-* 2>/dev/null \
       | sed -nE 's|.*/linux-([0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?)-gentoo$|\1|p' \
       | sort -V | tail -n1 || echo ''")
     

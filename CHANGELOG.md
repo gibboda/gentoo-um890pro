@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Fix `KERNEL_B_BASE_VERSION` detection failure: change `ls -1` to `ls -1d` so that `/usr/src/linux-*` glob lists directory entries themselves instead of their contents, allowing the sed pattern to match `linux-<version>-gentoo` correctly.
 - Fix gentoo-sources kernel detection to scan `/usr/src/linux-*` directories and select kernels using `linux-<version>-gentoo` format in `eselect kernel set`, replacing the broken `eselect`-output parsing that expected a `gentoo-sources-<version>` label that Gentoo never emits.
 - Remove unused `PHASE_IDS` array from `installer/core/resolver.sh` to fix ShellCheck SC2034 warning that was failing CI.
 - Harden `checkpoint_clear_from` in `installer/core/state.sh` to guard against unset/empty `RESOLVED_PHASES` before iteration, preventing `set -u` crashes when called before `resolve_phase_plan`.
