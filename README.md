@@ -32,7 +32,7 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages. This enables automated version bumping and changelog generation.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines on:
 - Commit message format and types
 - Version bumping workflow
 - Pull request requirements
@@ -213,7 +213,7 @@ The installer uses `sys-fs/zfs-kmod`, which builds kernel modules. If `USE_BINAR
 ## Versioning
 
 - Current version: [VERSION](VERSION)
-- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Changelog: [CHANGELOG.md](docs/CHANGELOG.md)
 - Bumping versions: [scripts/bump-version.sh](scripts/bump-version.sh)
 
 The bump-version.sh script supports multiple modes:

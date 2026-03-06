@@ -132,7 +132,7 @@ After this PR is merged:
 - [Conventional Commits Specification](https://www.conventionalcommits.org/)
 - [Semantic Versioning](https://semver.org/)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
-- [docs/CONVENTIONAL_COMMITS.md](docs/CONVENTIONAL_COMMITS.md)
+- [CONVENTIONAL_COMMITS.md](CONVENTIONAL_COMMITS.md)
 
 ---
 

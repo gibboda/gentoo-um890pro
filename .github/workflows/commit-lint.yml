@@ -274,7 +274,7 @@ jobs:
             fi
 
             echo ""
-            echo "See CONTRIBUTING.md for detailed guidelines."
+            echo "See docs/CONTRIBUTING.md for detailed guidelines."
             echo ""
             echo "To fix commits, use:"
             echo "  git rebase -i HEAD~${TOTAL_COUNT}"

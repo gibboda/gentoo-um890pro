@@ -47,7 +47,7 @@ create_test_repo() {
   
   # Create initial files
   echo "1.0.0" > VERSION
-  mkdir -p src
+  mkdir -p src docs
   cat > src/gentoo-um890pro-install.sh << 'EOF'
 #!/usr/bin/env bash
 VERSION="1.0.0"
@@ -55,7 +55,7 @@ echo "Installer version $VERSION"
 EOF
   chmod +x src/gentoo-um890pro-install.sh
   
-  cat > CHANGELOG.md << 'EOF'
+  cat > docs/CHANGELOG.md << 'EOF'
 # Changelog
 
 ## [Unreleased]
@@ -99,8 +99,8 @@ verify_changelog() {
   
   cd "$test_dir"
   
-  if ! grep -q "## \[${expected_version}\]" CHANGELOG.md; then
-    log_fail "CHANGELOG.md missing version ${expected_version}"
+  if ! grep -q "## \[${expected_version}\]" docs/CHANGELOG.md; then
+    log_fail "docs/CHANGELOG.md missing version ${expected_version}"
     return 1
   fi
   

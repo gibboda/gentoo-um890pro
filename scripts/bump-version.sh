@@ -26,7 +26,7 @@ set -euo pipefail
 #     fix(installer): resolve directory creation order
 #     docs: update README with new instructions
 #
-# See CONTRIBUTING.md for detailed guidelines.
+# See docs/CONTRIBUTING.md for detailed guidelines.
 
 ALLOW_DIRTY=false
 
@@ -286,7 +286,7 @@ calculate_auto_version() {
     echo "Please rewrite your commit messages using:" >&2
     echo "  git rebase -i <base-commit>" >&2
     echo "" >&2
-    echo "See CONTRIBUTING.md for detailed guidelines." >&2
+    echo "See docs/CONTRIBUTING.md for detailed guidelines." >&2
     exit 1
   fi
   
@@ -339,7 +339,7 @@ calculate_auto_version() {
 update_changelog_auto() {
   local new_version="$1"
   local commits_data="$2"
-  local changelog_file="$ROOT_DIR/CHANGELOG.md"
+  local changelog_file="$ROOT_DIR/docs/CHANGELOG.md"
   
   local date_str
   date_str=$(date -u +"%Y-%m-%d")
@@ -488,7 +488,7 @@ if [[ ${#} -ge 1 && "$1" == "auto" ]]; then
   echo "  Fix/update count: $FIX_COUNT"
   echo "  Changed files:"
   echo "    - VERSION"
-  echo "    - CHANGELOG.md"
+  echo "    - docs/CHANGELOG.md"
   if [[ -f "$INSTALLER_FILE" ]]; then
     echo "    - src/gentoo-um890pro-install.sh"
   fi
@@ -550,7 +550,7 @@ fi
 
 # Manual mode: update files with explicit version/message
 VERSION_FILE="$ROOT_DIR/VERSION"
-CHANGELOG_FILE="$ROOT_DIR/CHANGELOG.md"
+CHANGELOG_FILE="$ROOT_DIR/docs/CHANGELOG.md"
 INSTALLER_FILE="$ROOT_DIR/src/gentoo-um890pro-install.sh"
 
 echo "$NEW_VERSION" > "$VERSION_FILE"

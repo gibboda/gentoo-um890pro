@@ -75,20 +75,20 @@ jobs:
           
           VERSION="${{ steps.check_version.outputs.version }}"
           
-          if [ ! -f CHANGELOG.md ]; then
-            echo "ERROR: CHANGELOG.md not found" >&2
+          if [ ! -f docs/CHANGELOG.md ]; then
+            echo "ERROR: docs/CHANGELOG.md not found" >&2
             exit 1
           fi
           
-          if ! grep -qF "## [${VERSION}]" CHANGELOG.md; then
-            echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION}" >&2
+          if ! grep -qF "## [${VERSION}]" docs/CHANGELOG.md; then
+            echo "ERROR: docs/CHANGELOG.md does not contain a header for version ${VERSION}" >&2
             echo "" >&2
             echo "This suggests bump-version.sh was not properly applied." >&2
             echo "Please run: ./scripts/bump-version.sh <version> \"<changelog entry>\"" >&2
             exit 1
           fi
           
-          echo "✓ CHANGELOG.md contains version ${VERSION}"
+          echo "✓ docs/CHANGELOG.md contains version ${VERSION}"
 
       - name: All checks passed
         run: |
