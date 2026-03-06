@@ -4,7 +4,7 @@ This repository contains an automated Gentoo bootstrap installer targeted at a M
 
 Important: running the installer will irreversibly wipe the selected disks.
 
-Script: [gentoo-um890pro-install.sh](gentoo-um890pro-install.sh)
+Script: [src/gentoo-um890pro-install.sh](src/gentoo-um890pro-install.sh)
 
 ## Target Hardware Specifications
 
@@ -85,13 +85,13 @@ This is intended to keep the system “feeling like Gentoo” while still provid
 ## Usage
 
 1. Boot a Gentoo live environment in UEFI mode and become `root`.
-2. Put [gentoo-um890pro-install.sh](gentoo-um890pro-install.sh) on the live system.
+2. Put [src/gentoo-um890pro-install.sh](src/gentoo-um890pro-install.sh) on the live system.
 3. Edit variables at the top of the script to match your disks and preferences.
 4. Run:
 
 ```bash
-chmod +x gentoo-um890pro-install.sh
-./gentoo-um890pro-install.sh
+chmod +x src/gentoo-um890pro-install.sh
+./src/gentoo-um890pro-install.sh
 ```
 
 ## Important configuration variables (top of script)
@@ -242,7 +242,7 @@ The bump-version.sh script supports multiple modes:
 ./scripts/bump-version.sh 0.1.2 "Short summary of changes"
 ```
 
-All modes update VERSION, gentoo-um890pro-install.sh, and CHANGELOG.md consistently.
+All modes update VERSION, src/gentoo-um890pro-install.sh, and CHANGELOG.md consistently.
 All version bumps must create an annotated Git tag (`vX.Y.Z`). `bump-version.sh` enforces tag creation and will fail if the tag already exists or cannot be created.
 
 Note: `VERSION` is enforced as `X.Y.Z` semver by CI.

@@ -73,6 +73,8 @@ DEBUG="no"          # yes/no
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "${SCRIPT_DIR}/VERSION" ]]; then
   VERSION="$(tr -d '\r\n' < "${SCRIPT_DIR}/VERSION")"
+elif [[ -f "${SCRIPT_DIR}/../VERSION" ]]; then
+  VERSION="$(tr -d '\r\n' < "${SCRIPT_DIR}/../VERSION")"
 fi
 HOSTNAME="um890-gentoo"
 
@@ -2673,7 +2675,7 @@ main() {
           echo "ERROR: --force-from requires a phase id argument" >&2
           exit 1
         fi
-        FORCE_FROM_PHASE="${args[1]}"
+        export FORCE_FROM_PHASE="${args[1]}"
         args=("${args[@]:2}")
         ;;
       *)
