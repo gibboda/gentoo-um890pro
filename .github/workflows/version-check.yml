@@ -59,7 +59,7 @@ jobs:
 
           requires_changelog=false
           # Update this pattern when adding new CI/metadata-only file locations.
-          CI_ONLY_PATTERN='^(\\.github/.*|README\\.md|\\.gitignore|docs/.*|tests/.*|IMPLEMENTATION_SUMMARY\\.md|IMPLEMENTATION_COMPLETE\\.md|COMMIT_FIX_INSTRUCTIONS\\.md|FORCE_PUSH_REQUIRED\\.md|LEGACY_COMMIT_NOTE\\.md)$'
+          CI_ONLY_PATTERN='^(\\.github/.*|README\\.md|\\.gitignore|docs/.*|tests/.*)$'
           label_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)$'
           title_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)(\([^)]+\))?(!)?:'
 
@@ -99,8 +99,8 @@ jobs:
             echo "ERROR: VERSION must be in X.Y.Z semantic version format" >&2
             exit 1
           fi
-          if [ ! -f CHANGELOG.md ]; then
-            echo "ERROR: CHANGELOG.md missing" >&2
+          if [ ! -f docs/CHANGELOG.md ]; then
+            echo "ERROR: docs/CHANGELOG.md missing" >&2
             exit 1
           fi
 
@@ -120,8 +120,8 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && steps.changelog_requirement.outputs.requires_changelog == 'true' && steps.version_changed.outputs.changed != 'true' }}
         run: |
           set -euo pipefail
-          if ! grep -Eq '^##[[:space:]]+\[?Unreleased\]?' CHANGELOG.md; then
-            echo "ERROR: CHANGELOG.md must include a '## [Unreleased]' section for user-visible changes." >&2
+          if ! grep -Eq '^##[[:space:]]+\[?Unreleased\]?' docs/CHANGELOG.md; then
+            echo "ERROR: docs/CHANGELOG.md must include a '## [Unreleased]' section for user-visible changes." >&2
             exit 1
           fi
 
@@ -131,7 +131,7 @@ jobs:
             /^##[[:space:]]+/ { if (in_unreleased && !has_bullet) exit 1; in_unreleased=0 }
             in_unreleased && /^[*-][[:space:]]+/ { has_bullet=1 }
             END { if (!has_bullet) exit 1 }
-          ' CHANGELOG.md; then
+          ' docs/CHANGELOG.md; then
             echo "ERROR: Add at least one bullet under ## [Unreleased] describing the user-visible change(s)." >&2
             exit 1
           fi
@@ -161,7 +161,7 @@ jobs:
             if ! git show-ref --tags --quiet -- "refs/tags/v${version}"; then
               missing_versions+=("v${version}")
             fi
-          done < <(grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
+          done < <(grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' docs/CHANGELOG.md | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
           if [ "${#missing_versions[@]}" -ne 0 ]; then
             echo "ERROR: Missing git tags for CHANGELOG versions:" >&2
             printf '%s\n' "${missing_versions[@]}" >&2
@@ -178,17 +178,17 @@ jobs:
           echo "Found VERSION=${VERSION_VAL}"
 
           # Ensure CHANGELOG was modified in the patch
-          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^CHANGELOG.md$' ; then
+          if ! echo "${{ steps.determine.outputs.changed_files }}" | grep -q '^docs/CHANGELOG.md$' ; then
             # Fallback: inspect git diff
-            if ! git diff --name-only | grep -q '^CHANGELOG.md$'; then
-              echo "ERROR: VERSION changed but CHANGELOG.md was not modified" >&2
+            if ! git diff --name-only | grep -q '^docs/CHANGELOG.md$'; then
+              echo "ERROR: VERSION changed but docs/CHANGELOG.md was not modified" >&2
               exit 1
             fi
           fi
 
           # Ensure CHANGELOG contains header for this version
-          if ! grep -q "^## \[${VERSION_VAL}\]" CHANGELOG.md; then
-            echo "ERROR: CHANGELOG.md does not contain a header for version ${VERSION_VAL}" >&2
+          if ! grep -q "^## \[${VERSION_VAL}\]" docs/CHANGELOG.md; then
+            echo "ERROR: docs/CHANGELOG.md does not contain a header for version ${VERSION_VAL}" >&2
             exit 1
           fi
 
