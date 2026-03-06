@@ -1,0 +1,105 @@
+# =============================================================================
+# .gitignore for gentoo-um890pro
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# OS-generated files
+# -----------------------------------------------------------------------------
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# -----------------------------------------------------------------------------
+# Editor and IDE files
+# -----------------------------------------------------------------------------
+
+# Vim / Neovim
+*.swp
+*.swo
+*.swn
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+Session.vim
+.netrwhist
+
+# Emacs
+\#*\#
+.\#*
+*.elc
+
+# JetBrains (IntelliJ, PyCharm, etc.)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code — only user/local overrides; project settings (.vscode/settings.json) are committed
+.vscode/*.log
+.vscode/launch.json
+.vscode/*.code-snippets
+.history/
+*.vsix
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+
+# -----------------------------------------------------------------------------
+# Shell script artifacts
+# -----------------------------------------------------------------------------
+
+# Log files (the installer writes to /tmp, but guard against local runs)
+*.log
+
+# Temporary and backup files
+*.bak
+*.backup
+*.orig
+*.tmp
+*.temp
+
+# -----------------------------------------------------------------------------
+# Common project/build artifacts
+# -----------------------------------------------------------------------------
+
+# Archives
+*.tar
+*.tar.gz
+*.tgz
+*.tar.bz2
+*.tar.xz
+*.zip
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# Compiled / generated binaries (none expected, but good practice)
+*.o
+*.a
+*.so
+*.out
+
+# Node / Python / Go dependency directories (none expected, but good practice)
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+vendor/
