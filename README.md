@@ -90,8 +90,8 @@ This is intended to keep the system “feeling like Gentoo” while still provid
 4. Run:
 
 ```bash
-chmod +x gentoo-um890pro-install.sh
-./gentoo-um890pro-install.sh
+chmod +x src/gentoo-um890pro-install.sh
+./src/gentoo-um890pro-install.sh
 ```
 
 ## Important configuration variables (top of script)

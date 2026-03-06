@@ -51,7 +51,7 @@ jobs:
           INSTALLER_VERSION=$(grep '^VERSION=' src/gentoo-um890pro-install.sh | head -1 | cut -d= -f2 | tr -d '" \t\r\n' || true)
           
           if [ -z "$INSTALLER_VERSION" ]; then
-            echo "ERROR: Could not find VERSION declaration in gentoo-um890pro-install.sh" >&2
+            echo "ERROR: Could not find VERSION declaration in src/gentoo-um890pro-install.sh" >&2
             exit 1
           fi
           
