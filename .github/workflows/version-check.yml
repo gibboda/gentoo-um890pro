@@ -59,7 +59,7 @@ jobs:
 
           requires_changelog=false
           # Update this pattern when adding new CI/metadata-only file locations.
-          CI_ONLY_PATTERN='^(\\.github/.*|README\\.md|\\.gitignore|docs/.*|IMPLEMENTATION_SUMMARY\\.md|IMPLEMENTATION_COMPLETE\\.md|COMMIT_FIX_INSTRUCTIONS\\.md|FORCE_PUSH_REQUIRED\\.md|LEGACY_COMMIT_NOTE\\.md)$'
+          CI_ONLY_PATTERN='^(\\.github/.*|README\\.md|\\.gitignore|docs/.*|tests/.*|IMPLEMENTATION_SUMMARY\\.md|IMPLEMENTATION_COMPLETE\\.md|COMMIT_FIX_INSTRUCTIONS\\.md|FORCE_PUSH_REQUIRED\\.md|LEGACY_COMMIT_NOTE\\.md)$'
           label_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)$'
           title_pattern='^(feat|fix|perf|refactor|breaking|breaking-change)(\([^)]+\))?(!)?:'
 

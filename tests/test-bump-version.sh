@@ -47,12 +47,13 @@ create_test_repo() {
   
   # Create initial files
   echo "1.0.0" > VERSION
-  cat > gentoo-um890pro-install.sh << 'EOF'
+  mkdir -p src
+  cat > src/gentoo-um890pro-install.sh << 'EOF'
 #!/usr/bin/env bash
 VERSION="1.0.0"
 echo "Installer version $VERSION"
 EOF
-  chmod +x gentoo-um890pro-install.sh
+  chmod +x src/gentoo-um890pro-install.sh
   
   cat > CHANGELOG.md << 'EOF'
 # Changelog
@@ -76,7 +77,7 @@ verify_version() {
   local version_file
   local installer_version
   version_file=$(tr -d '\r\n' < VERSION)
-  installer_version=$(grep '^VERSION=' gentoo-um890pro-install.sh | head -1 | sed 's/VERSION="\([^"]*\)"/\1/')
+  installer_version=$(grep '^VERSION=' src/gentoo-um890pro-install.sh | head -1 | sed 's/VERSION="\([^"]*\)"/\1/')
   
   if [[ "$version_file" != "$expected_version" ]]; then
     log_fail "VERSION file has $version_file, expected $expected_version"

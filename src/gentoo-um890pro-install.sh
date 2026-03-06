@@ -73,6 +73,8 @@ DEBUG="no"          # yes/no
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "${SCRIPT_DIR}/VERSION" ]]; then
   VERSION="$(tr -d '\r\n' < "${SCRIPT_DIR}/VERSION")"
+elif [[ -f "${SCRIPT_DIR}/../VERSION" ]]; then
+  VERSION="$(tr -d '\r\n' < "${SCRIPT_DIR}/../VERSION")"
 fi
 HOSTNAME="um890-gentoo"
 

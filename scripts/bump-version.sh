@@ -474,7 +474,7 @@ if [[ ${#} -ge 1 && "$1" == "auto" ]]; then
   echo "$NEW_VERSION" > "$ROOT_DIR/VERSION"
   
   # Update installer file
-  INSTALLER_FILE="$ROOT_DIR/gentoo-um890pro-install.sh"
+  INSTALLER_FILE="$ROOT_DIR/src/gentoo-um890pro-install.sh"
   if [[ -f "$INSTALLER_FILE" ]]; then
     sed_inplace "$INSTALLER_FILE" "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/"
   fi
@@ -490,7 +490,7 @@ if [[ ${#} -ge 1 && "$1" == "auto" ]]; then
   echo "    - VERSION"
   echo "    - CHANGELOG.md"
   if [[ -f "$INSTALLER_FILE" ]]; then
-    echo "    - gentoo-um890pro-install.sh"
+    echo "    - src/gentoo-um890pro-install.sh"
   fi
   
   exit 0
@@ -551,7 +551,7 @@ fi
 # Manual mode: update files with explicit version/message
 VERSION_FILE="$ROOT_DIR/VERSION"
 CHANGELOG_FILE="$ROOT_DIR/CHANGELOG.md"
-INSTALLER_FILE="$ROOT_DIR/gentoo-um890pro-install.sh"
+INSTALLER_FILE="$ROOT_DIR/src/gentoo-um890pro-install.sh"
 
 echo "$NEW_VERSION" > "$VERSION_FILE"
 

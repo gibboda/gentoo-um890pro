@@ -210,7 +210,7 @@ If CI validation fails, ensure that both your commit messages and PR title follo
 Before submitting:
 
 1. Test the installer script in a VM or test environment
-2. Run ShellCheck: `shellcheck gentoo-um890pro-install.sh scripts/*.sh`
+2. Run ShellCheck: `shellcheck src/gentoo-um890pro-install.sh scripts/*.sh`
 3. Verify version bumping works: `./scripts/bump-version.sh auto --allow-dirty`
 4. Check generated CHANGELOG.md format
 
