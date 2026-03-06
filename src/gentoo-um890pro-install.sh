@@ -2675,7 +2675,7 @@ main() {
           echo "ERROR: --force-from requires a phase id argument" >&2
           exit 1
         fi
-        FORCE_FROM_PHASE="${args[1]}"
+        export FORCE_FROM_PHASE="${args[1]}"
         args=("${args[@]:2}")
         ;;
       *)
