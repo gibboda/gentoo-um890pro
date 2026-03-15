@@ -112,11 +112,24 @@ run_test() {
   local test_name="$1"
   local test_dir="$2"
   local expected_version="$3"
+  local allow_dirty_arg="${4:-false}"
   
-  # Run auto mode on a clean repository (no --allow-dirty needed for tests since
-  # all changes are committed before running the script)
+  # Run auto mode. Most tests commit all changes first, so no --allow-dirty is
+  # needed. When allow_dirty_arg is "true" the script is invoked with
+  # --allow-dirty so it succeeds even when the working tree is dirty.
   local bump_output
-  if ! bump_output=$(bash scripts/bump-version.sh auto 2>&1); then
+  if [[ "$allow_dirty_arg" == "true" ]]; then
+    if ! bump_output=$(bash scripts/bump-version.sh auto --allow-dirty 2>&1); then
+      log_fail "$test_name: bump-version.sh exited with non-zero status"
+      echo "$bump_output"
+      if [[ "$PRESERVE_TEST_DIRS" == "1" ]]; then
+        echo "Test directory preserved at: $test_dir"
+      else
+        rm -rf "$test_dir"
+      fi
+      return 1
+    fi
+  elif ! bump_output=$(bash scripts/bump-version.sh auto 2>&1); then
     log_fail "$test_name: bump-version.sh exited with non-zero status"
     echo "$bump_output"
     if [[ "$PRESERVE_TEST_DIRS" == "1" ]]; then
@@ -357,6 +370,32 @@ test_j() {
   run_test "Test J" "$test_dir" "1.1.0"
 }
 
+# Test K: --allow-dirty accepted after positional command
+test_k() {
+  log_test "Test K: auto --allow-dirty works with dirty repository"
+
+  local test_dir
+  test_dir=$(mktemp -d)
+  create_test_repo "$test_dir"
+
+  cd "$test_dir"
+  echo "fix 1" >> file1.txt
+  git add file1.txt
+  git commit -q -m "fix: fixed issue #1"
+
+  # Leave the repository dirty (modify a tracked file without committing) to
+  # verify that --allow-dirty is actually required; git diff-index only
+  # detects changes to tracked files, so an untracked file would not trigger
+  # the dirty check.
+  echo "uncommitted change" >> file1.txt
+
+  # Copy bump script
+  mkdir -p scripts
+  cp "$BUMP_SCRIPT" scripts/
+
+  run_test "Test K" "$test_dir" "1.0.1" true
+}
+
 # Run all tests
 echo "=========================================="
 echo "Testing bump-version.sh auto mode"
@@ -373,6 +412,7 @@ test_g
 test_h
 test_i
 test_j
+test_k
 
 echo ""
 echo "=========================================="
