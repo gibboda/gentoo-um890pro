@@ -114,8 +114,9 @@ run_test() {
   local expected_version="$3"
   local allow_dirty_arg="${4:-false}"
   
-  # Run auto mode on a clean repository (no --allow-dirty needed for tests since
-  # all changes are committed before running the script)
+  # Run auto mode. Most tests commit all changes first, so no --allow-dirty is
+  # needed. When allow_dirty_arg is "true" the script is invoked with
+  # --allow-dirty so it succeeds even when the working tree is dirty.
   local bump_output
   if [[ "$allow_dirty_arg" == "true" ]]; then
     if ! bump_output=$(bash scripts/bump-version.sh auto --allow-dirty 2>&1); then
@@ -382,8 +383,11 @@ test_k() {
   git add file1.txt
   git commit -q -m "fix: fixed issue #1"
 
-  # Leave the repository dirty to verify --allow-dirty handling
-  echo "uncommitted change" >> dirty.txt
+  # Leave the repository dirty (modify a tracked file without committing) to
+  # verify that --allow-dirty is actually required; git diff-index only
+  # detects changes to tracked files, so an untracked file would not trigger
+  # the dirty check.
+  echo "uncommitted change" >> file1.txt
 
   # Copy bump script
   mkdir -p scripts
