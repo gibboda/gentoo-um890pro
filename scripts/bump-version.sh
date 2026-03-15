@@ -39,18 +39,28 @@ MINOR_FIX_MAX=6        # Maximum fixes for minor bump
 # These commits were created before Conventional Commits enforcement was added
 LEGACY_COMMITS="da8679f 1f5277a d8e7fda 5b49ddd ba55906 234d2c7 aa16958 bc761f5 bc09040 7f76d49 f8f60dd a559b3a 83144de 3986a11 ae8e4bc 3194a59 bd98962 6662f1d b671099 bdf347e 977e47d"
 
-# Parse flags
+# Parse flags (allow --allow-dirty before or after positional args)
+POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --allow-dirty)
       ALLOW_DIRTY=true
       shift
       ;;
+    --)
+      shift
+      while [[ $# -gt 0 ]]; do
+        POSITIONAL_ARGS+=("$1")
+        shift
+      done
+      ;;
     *)
-      break
+      POSITIONAL_ARGS+=("$1")
+      shift
       ;;
   esac
 done
+set -- "${POSITIONAL_ARGS[@]}"
 
 # Check if git is available
 if ! command -v git >/dev/null 2>&1; then
