@@ -21,9 +21,22 @@ assert_eq() {
 }
 
 source_installer() {
-  # Source the installer without executing main().
+  # Save any existing ERR trap so we can restore it after sourcing the installer.
+  local previous_err_trap
+  previous_err_trap="$(trap -p ERR || true)"
+
+  # Source the installer without executing main(), matching by pattern rather
+  # than unconditionally deleting the last line.
   # shellcheck disable=SC1090
-  source <(sed '$d' "${INSTALLER}")
+  source <(sed '/^[[:space:]]*main "\$@"/d' "${INSTALLER}")
+
+  # The installer installs its own ERR trap; restore the original trap (if any)
+  # so that the test harness retains control over failure handling.
+  if [[ -n "${previous_err_trap}" ]]; then
+    eval "${previous_err_trap}"
+  else
+    trap - ERR
+  fi
 }
 
 run_profile_case() {
@@ -57,9 +70,9 @@ assert_invalid_profile_error() {
 
   set +e
   output="$(
-    bash -lc '
+    bash -c '
       set -euo pipefail
-      source <(sed '"'"'$d'"'"' "'"${INSTALLER}"'")
+      source <(sed '"'"'/^[[:space:]]*main "\$@"/d'"'"' "'"${INSTALLER}"'")
       INSTALL_PROFILE="not-a-real-profile"
       resolve_profile
     ' 2>&1
