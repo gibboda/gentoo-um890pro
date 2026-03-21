@@ -70,7 +70,7 @@ assert_invalid_profile_error() {
 
   set +e
   output="$(
-    bash -c '
+    BASH_ENV=/dev/null bash --noprofile --norc -c '
       set -euo pipefail
       source <(sed '"'"'/^[[:space:]]*main "\$@"/d'"'"' "'"${INSTALLER}"'")
       INSTALL_PROFILE="not-a-real-profile"
