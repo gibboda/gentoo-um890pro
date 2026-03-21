@@ -61,6 +61,7 @@ run_profile_case() {
 
 assert_default_profile() {
   local default_profile
+  # shellcheck disable=SC2016  # ${INSTALL_PROFILE:-...} is a literal sed pattern, not a shell expansion
   default_profile="$(sed -n 's/^INSTALL_PROFILE="\${INSTALL_PROFILE:-\(.*\)}"$/\1/p' "${INSTALLER}")"
   assert_eq "core-openrc-dualkernel" "${default_profile}" "default INSTALL_PROFILE should be core-openrc-dualkernel"
 }
