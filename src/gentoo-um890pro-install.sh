@@ -113,7 +113,7 @@ COMMON_FLAGS="-O2 -pipe -march=znver4"
 #   desktop-openrc-dualkernel-kde  (alias: desktop)  – core + KDE Plasma
 #   full-openrc-dualkernel-kde-ai  (alias: full-ai)  – desktop + ROCm + ComfyUI + Blender
 # The resolver overrides the individual feature toggles below.
-INSTALL_PROFILE="${INSTALL_PROFILE:-full-openrc-dualkernel-kde-ai}"
+INSTALL_PROFILE="${INSTALL_PROFILE:-core-openrc-dualkernel}"
 
 # Desktop and AI workloads (resolved by resolve_profile; edit INSTALL_PROFILE above instead)
 INSTALL_KDE_PLASMA="yes"  # yes/no
