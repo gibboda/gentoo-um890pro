@@ -495,6 +495,65 @@ cd /usr/src/linux
 make modules_install
 ```
 
+### "Kernel install failed, please fix the problems and run emerge --config"
+
+**Problem**: `gentoo-kernel-bin` finished building, but the post-install deployment step failed with a message like:
+
+```bash
+Kernel install failed, please fix the problems and run emerge --config
+```
+
+**What this usually means**: the kernel image was built, but Gentoo's `kernel-install`/`dracut` deployment step could not copy the kernel and initramfs into `/boot`.
+
+**Most common causes**:
+1. `/boot` is not mounted to the EFI System Partition
+2. `sys-kernel/installkernel` or `sys-kernel/dracut` is missing or misconfigured
+3. The ESP is full or mounted read-only
+4. A previous failed deployment left partial files behind
+
+**Recovery steps**:
+```bash
+# 1. Confirm /boot is a real mountpoint
+mount | grep ' /boot '
+findmnt /boot
+
+# 2. Verify the required tools are installed
+emerge -pv sys-kernel/installkernel sys-kernel/dracut
+
+# 3. Check free space and writeability on the ESP
+df -h /boot
+touch /boot/.kernel-write-test && rm -f /boot/.kernel-write-test
+
+# 4. Review the last deployment logs
+# On systemd-based systems:
+journalctl -b | grep -E 'kernel-install|dracut'
+# On OpenRC or other non-systemd systems (or if journalctl is unavailable),
+# skip the journalctl step and instead review emerge/dracut logs:
+tail -n 200 /var/log/emerge.log
+
+# 5. Retry the deployment step after fixing the issue
+# Use the slot of the failing kernel to avoid re-deploying Kernel A.
+# Find the installed slots with: emerge -pv sys-kernel/gentoo-kernel-bin
+# Then target the specific slot, e.g.:
+emerge --config sys-kernel/gentoo-kernel-bin:<SLOT>
+# Or with an exact version atom (no space between package name and version):
+# emerge --config =sys-kernel/gentoo-kernel-bin-<PV>
+```
+
+**If `/boot` is not mounted**, mount it first and retry:
+```bash
+mount /boot
+emerge --config sys-kernel/gentoo-kernel-bin:<SLOT>
+```
+
+**If the initramfs is missing after a partial deploy**, regenerate it manually for the installed kernel:
+```bash
+KVER="$(uname -r)"
+dracut --force --hostonly --kver "${KVER}" "/boot/initramfs-${KVER}.img"
+```
+
+**Installer note**: this repository now installs `sys-kernel/installkernel` and `sys-kernel/dracut` explicitly before the kernel package so the dist-kernel post-install step has its required tooling available.
+
 ### "Both kernels have same name"
 
 **Problem**: Kernel A and B have identical filenames

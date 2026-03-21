@@ -1004,6 +1004,15 @@ EOF
   log_with_elapsed "Installing system utilities, filesystem and boot tools..."
   chroot_run "emerge sys-apps/pciutils sys-apps/usbutils app-admin/sudo net-misc/dhcpcd sys-fs/btrfs-progs sys-boot/efibootmgr sys-boot/refind"
 
+  log_with_elapsed "Installing kernel deployment prerequisites..."
+  # Install these explicitly before gentoo-kernel-bin/gentoo-kernel so dist-kernel
+  # postinst has the expected kernel-install + initramfs tooling available.
+  if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
+    chroot_run "emerge sys-kernel/installkernel sys-kernel/dracut sys-apps/systemd-utils"
+  else
+    chroot_run "emerge sys-kernel/installkernel sys-kernel/dracut"
+  fi
+
   if [[ "${INIT_SYSTEM}" == "systemd" ]]; then
     echo "Installing systemd..."
     chroot_run "emerge sys-apps/systemd"
