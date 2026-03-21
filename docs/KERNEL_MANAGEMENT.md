@@ -525,17 +525,25 @@ df -h /boot
 touch /boot/.kernel-write-test && rm -f /boot/.kernel-write-test
 
 # 4. Review the last deployment logs
+# On systemd-based systems:
 journalctl -b | grep -E 'kernel-install|dracut'
+# On OpenRC or other non-systemd systems (or if journalctl is unavailable),
+# skip the journalctl step and instead review emerge/dracut logs:
 tail -n 200 /var/log/emerge.log
 
 # 5. Retry the deployment step after fixing the issue
-emerge --config '=sys-kernel/gentoo-kernel-bin:<VERSION>'
+# Use the slot of the failing kernel to avoid re-deploying Kernel A.
+# Find the installed slots with: emerge -pv sys-kernel/gentoo-kernel-bin
+# Then target the specific slot, e.g.:
+emerge --config sys-kernel/gentoo-kernel-bin:<SLOT>
+# Or with an exact version atom (no space between package name and version):
+# emerge --config =sys-kernel/gentoo-kernel-bin-<PV>
 ```
 
 **If `/boot` is not mounted**, mount it first and retry:
 ```bash
 mount /boot
-emerge --config '=sys-kernel/gentoo-kernel-bin:<VERSION>'
+emerge --config sys-kernel/gentoo-kernel-bin:<SLOT>
 ```
 
 **If the initramfs is missing after a partial deploy**, regenerate it manually for the installed kernel:
