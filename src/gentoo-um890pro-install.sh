@@ -1022,8 +1022,28 @@ EOF
   fi
 }
 
+configure_dracut_cmdline() {
+  # Dist-kernel postinst may run dracut inside the chroot. In that case dracut
+  # refuses to fall back to /proc/cmdline unless /etc/cmdline (or equivalent)
+  # is explicitly provided, so pre-seed a stable kernel command line.
+  local root_uuid
+
+  root_uuid="$(blkid -s UUID -o value "${OS_ROOT}")"
+  if [[ -z "${root_uuid}" ]]; then
+    echo "ERROR: Failed to determine ROOT UUID for dracut cmdline generation." >&2
+    exit 1
+  fi
+
+  cat > "${MNT}/etc/cmdline" <<EOF
+root=UUID=${root_uuid} rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active
+EOF
+
+  echo "Configured /etc/cmdline for dracut inside chroot: root=UUID=${root_uuid} rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active"
+}
+
 install_kernel() {
   log_with_elapsed "Installing kernel..."
+  configure_dracut_cmdline()
 
   # Safe dual-kernel installation strategy:
   # - Kernel A (stable fallback): gentoo-kernel-bin - installed first, never modified
