@@ -131,6 +131,10 @@ PURE_64BIT="yes"  # yes/no
 # Both kernels will have unique uname -r, separate /lib/modules, and versioned /boot artifacts.
 INSTALL_DUAL_KERNEL="no"  # yes/no - Set to "yes" for safe dual-kernel installation
 
+# Base kernel command-line arguments (excluding root=UUID=<uuid> which is added at runtime).
+# Reused for both /etc/cmdline (dracut inside chroot) and boot/refind_linux.conf.
+KERNEL_CMDLINE_ARGS="rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active"
+
 # Enable snapshot management for Btrfs
 ENABLE_SNAPSHOTS="yes"  # yes/no - Set up automated snapshot management
 
@@ -1035,10 +1039,10 @@ configure_dracut_cmdline() {
   fi
 
   cat > "${MNT}/etc/cmdline" <<EOF
-root=UUID=${root_uuid} rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active
+root=UUID=${root_uuid} ${KERNEL_CMDLINE_ARGS}
 EOF
 
-  echo "Configured /etc/cmdline for dracut inside chroot: root=UUID=${root_uuid} rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active"
+  echo "Configured /etc/cmdline for dracut inside chroot: root=UUID=${root_uuid} ${KERNEL_CMDLINE_ARGS}"
 }
 
 install_kernel() {
@@ -1308,7 +1312,7 @@ EOF
   # rEFInd looks for refind_linux.conf next to the kernel image in /boot.
   # dist-kernel installs /boot/vmlinuz-* and /boot/initramfs-*.
   cat > "${MNT}/boot/refind_linux.conf" <<EOF
-\"Gentoo (Btrfs subvol=@)\"  \"root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active\"
+\"Gentoo (Btrfs subvol=@)\"  \"root=UUID=${ROOT_UUID} ${KERNEL_CMDLINE_ARGS}\"
 \"Gentoo (Snapshot Recovery)\"  \"root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@snapshots/@-snapshot-latest rw amd_pstate=active\"
 EOF
 
