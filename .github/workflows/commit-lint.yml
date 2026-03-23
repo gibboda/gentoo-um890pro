@@ -182,7 +182,13 @@ jobs:
               echo "Status: ✓ SKIPPED (automation planning commit)"
               continue
             fi
-            
+
+            # Skip GitHub-generated commits from code review suggestions
+            if echo "$SUBJECT" | grep -Eq '^Apply suggestions from code review$'; then
+              echo "Status: ✓ SKIPPED (GitHub code review suggestion)"
+              continue
+            fi
+
             # Validate against Conventional Commits format
             if echo "$SUBJECT" | grep -Eq "$CONVENTIONAL_PATTERN"; then
               echo "Status: ✓ VALID"
