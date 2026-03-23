@@ -508,8 +508,9 @@ Kernel install failed, please fix the problems and run emerge --config
 **Most common causes**:
 1. `/boot` is not mounted to the EFI System Partition
 2. `sys-kernel/installkernel` or `sys-kernel/dracut` is missing or misconfigured
-3. The ESP is full or mounted read-only
-4. A previous failed deployment left partial files behind
+3. Dracut is running inside a chroot without an explicit kernel command line in `/etc/cmdline`, `/etc/cmdline.d/`, or `kernel_cmdline=`
+4. The ESP is full or mounted read-only
+5. A previous failed deployment left partial files behind
 
 **Recovery steps**:
 ```bash
@@ -524,14 +525,22 @@ emerge -pv sys-kernel/installkernel sys-kernel/dracut
 df -h /boot
 touch /boot/.kernel-write-test && rm -f /boot/.kernel-write-test
 
-# 4. Review the last deployment logs
+# 4. If you are in a chroot, give dracut an explicit kernel command line
+ROOT_UUID="$(blkid -s UUID -o value <root-device>)"
+printf 'root=UUID=%s rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active\n' "${ROOT_UUID}" > /etc/cmdline
+
+# Optional alternative if you deliberately want to bypass the safety check
+# (only do this if you understand the boot arguments dracut would consume)
+# touch /etc/kernel/preinst.d/05-check-chroot.install
+
+# 5. Review the last deployment logs
 # On systemd-based systems:
 journalctl -b | grep -E 'kernel-install|dracut'
 # On OpenRC or other non-systemd systems (or if journalctl is unavailable),
 # skip the journalctl step and instead review emerge/dracut logs:
 tail -n 200 /var/log/emerge.log
 
-# 5. Retry the deployment step after fixing the issue
+# 6. Retry the deployment step after fixing the issue
 # Use the slot of the failing kernel to avoid re-deploying Kernel A.
 # Find the installed slots with: emerge -pv sys-kernel/gentoo-kernel-bin
 # Then target the specific slot, e.g.:

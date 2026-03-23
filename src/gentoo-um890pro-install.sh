@@ -131,6 +131,10 @@ PURE_64BIT="yes"  # yes/no
 # Both kernels will have unique uname -r, separate /lib/modules, and versioned /boot artifacts.
 INSTALL_DUAL_KERNEL="no"  # yes/no - Set to "yes" for safe dual-kernel installation
 
+# Base kernel command-line arguments (excluding root=UUID=<uuid> which is added at runtime).
+# Reused for both /etc/cmdline (dracut inside chroot) and boot/refind_linux.conf.
+KERNEL_CMDLINE_ARGS="rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active"
+
 # Enable snapshot management for Btrfs
 ENABLE_SNAPSHOTS="yes"  # yes/no - Set up automated snapshot management
 
@@ -1022,8 +1026,28 @@ EOF
   fi
 }
 
+configure_dracut_cmdline() {
+  # Dist-kernel postinst may run dracut inside the chroot. In that case dracut
+  # refuses to fall back to /proc/cmdline unless /etc/cmdline (or equivalent)
+  # is explicitly provided, so pre-seed a stable kernel command line.
+  local root_uuid
+
+  root_uuid="$(blkid -s UUID -o value "${OS_ROOT}")"
+  if [[ -z "${root_uuid}" ]]; then
+    echo "ERROR: Failed to determine ROOT UUID for dracut cmdline generation." >&2
+    exit 1
+  fi
+
+  cat > "${MNT}/etc/cmdline" <<EOF
+root=UUID=${root_uuid} ${KERNEL_CMDLINE_ARGS}
+EOF
+
+  echo "Configured /etc/cmdline for dracut inside chroot: root=UUID=${root_uuid} ${KERNEL_CMDLINE_ARGS}"
+}
+
 install_kernel() {
   log_with_elapsed "Installing kernel..."
+  configure_dracut_cmdline
 
   # Safe dual-kernel installation strategy:
   # - Kernel A (stable fallback): gentoo-kernel-bin - installed first, never modified
@@ -1288,8 +1312,8 @@ EOF
   # rEFInd looks for refind_linux.conf next to the kernel image in /boot.
   # dist-kernel installs /boot/vmlinuz-* and /boot/initramfs-*.
   cat > "${MNT}/boot/refind_linux.conf" <<EOF
-\"Gentoo (Btrfs subvol=@)\"  \"root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@ rw amd_pstate=active\"
-\"Gentoo (Snapshot Recovery)\"  \"root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@snapshots/@-snapshot-latest rw amd_pstate=active\"
+"Gentoo (Btrfs subvol=@)"  "root=UUID=${ROOT_UUID} ${KERNEL_CMDLINE_ARGS}"
+"Gentoo (Snapshot Recovery)"  "root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@snapshots/@-snapshot-latest rw amd_pstate=active"
 EOF
 
   # Configure rEFInd for snapshot support
