@@ -1047,7 +1047,7 @@ EOF
 
 install_kernel() {
   log_with_elapsed "Installing kernel..."
-  configure_dracut_cmdline()
+  configure_dracut_cmdline
 
   # Safe dual-kernel installation strategy:
   # - Kernel A (stable fallback): gentoo-kernel-bin - installed first, never modified
