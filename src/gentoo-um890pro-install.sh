@@ -1312,8 +1312,8 @@ EOF
   # rEFInd looks for refind_linux.conf next to the kernel image in /boot.
   # dist-kernel installs /boot/vmlinuz-* and /boot/initramfs-*.
   cat > "${MNT}/boot/refind_linux.conf" <<EOF
-\"Gentoo (Btrfs subvol=@)\"  \"root=UUID=${ROOT_UUID} ${KERNEL_CMDLINE_ARGS}\"
-\"Gentoo (Snapshot Recovery)\"  \"root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@snapshots/@-snapshot-latest rw amd_pstate=active\"
+"Gentoo (Btrfs subvol=@)"  "root=UUID=${ROOT_UUID} ${KERNEL_CMDLINE_ARGS}"
+"Gentoo (Snapshot Recovery)"  "root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@snapshots/@-snapshot-latest rw amd_pstate=active"
 EOF
 
   # Configure rEFInd for snapshot support
