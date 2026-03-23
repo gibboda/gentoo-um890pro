@@ -6,7 +6,7 @@
 
 **No, not all commits adhere to the Conventional Commits standard.** However, the repository has made significant progress:
 
-- **Overall compliance rate: 48%** (91 compliant out of 191 total commits, excluding skipped commits)
+- **Overall compliance rate: 48%** (91 compliant out of 191 total commits)
 - **Before enforcement (pre-Jan 10, 2026): 41%** compliance (57/139 commits)
 - **After enforcement (Jan 10, 2026+): 70%** compliance (34/48 commits)
 
@@ -69,7 +69,7 @@ The following 14 commits were merged **AFTER** the enforcement mechanism was imp
 2. **Space before scope**: `Fix (changelog):` instead of `fix(changelog):`
 3. **Missing type**: Starting directly with description
 4. **Invalid type prefix**: `[WIP]`, `Codex/`, etc.
-5. **Generic verbs as types**: `Update`, `Improve`, `Remove`, `Validate`, `Add` are not valid types
+5. **Generic verbs as types**: `Improve`, `Remove`, `Validate`, `Add` are not valid types in this repo
 
 ---
 
