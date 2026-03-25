@@ -212,7 +212,7 @@ test_c() {
   for i in {1..7}; do
     echo "fix $i" >> "file${i}.txt"
     git add "file${i}.txt"
-    git commit -q -m "fix: fixed issue #${i}"
+    git commit -q -m "fix: resolve issue #${i}"
   done
   
   # Copy bump script
@@ -396,6 +396,28 @@ test_k() {
   run_test "Test K" "$test_dir" "1.0.1" true
 }
 
+# Test L: BREAKING CHANGE footer in commit body -> v2.0.0
+test_l() {
+  log_test "Test L: BREAKING CHANGE footer in commit body -> v2.0.0"
+
+  local test_dir
+  test_dir=$(mktemp -d)
+  create_test_repo "$test_dir"
+
+  cd "$test_dir"
+  echo "breaking change" >> file1.txt
+  git add file1.txt
+  git commit -q -m "fix(api): change response format
+
+BREAKING CHANGE: API now returns JSON instead of XML"
+
+  # Copy bump script
+  mkdir -p scripts
+  cp "$BUMP_SCRIPT" scripts/
+
+  run_test "Test L" "$test_dir" "2.0.0"
+}
+
 # Run all tests
 echo "=========================================="
 echo "Testing bump-version.sh auto mode"
@@ -413,6 +435,7 @@ test_h
 test_i
 test_j
 test_k
+test_l
 
 echo ""
 echo "=========================================="

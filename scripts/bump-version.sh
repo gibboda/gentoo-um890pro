@@ -279,7 +279,18 @@ calculate_auto_version() {
       has_major_trigger=true
     fi
   done < <(git -C "$ROOT_DIR" rev-list "$commit_range" 2>/dev/null || true)
-  
+
+  # Check if there are no commits to process
+  if [[ -z "$commits_data" ]]; then
+    echo "WARNING: No commits found in range '$commit_range'" >&2
+    echo "This typically means:" >&2
+    echo "  - You are at the same commit as the last tag" >&2
+    echo "  - There are no new commits since the last version bump" >&2
+    echo "" >&2
+    echo "No version bump needed." >&2
+    exit 0
+  fi
+
   # Check for invalid commits
   if [[ -n "$invalid_commits" ]]; then
     echo "ERROR: The following commits do not follow Conventional Commits format:" >&2
