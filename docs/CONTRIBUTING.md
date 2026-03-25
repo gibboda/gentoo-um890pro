@@ -111,14 +111,14 @@ The project uses `scripts/bump-version.sh` to automatically determine version bu
 
 ### Version Bump Rules
 
-- **MAJOR bump** (X.0.0): 
-  - `feat`, `refactor`, or `perf` commits
+- **MAJOR bump** (X.0.0):
+  - Any single `feat`, `refactor`, or `perf` commit
   - Commits with breaking changes (`!` or `BREAKING CHANGE:`)
   - 7 or more `fix`/`update` commits
-  
+
 - **MINOR bump** (0.X.0):
   - 2-6 `fix`/`update` commits
-  
+
 - **PATCH bump** (0.0.X):
   - 0-1 `fix`/`update` commits
 

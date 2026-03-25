@@ -279,7 +279,21 @@ calculate_auto_version() {
       has_major_trigger=true
     fi
   done < <(git -C "$ROOT_DIR" rev-list "$commit_range" 2>/dev/null || true)
-  
+
+  # Check if there are no commits to process
+  if [[ -z "$commits_data" ]]; then
+    echo "WARNING: No commits found in range '$commit_range'" >&2
+    echo "This typically means:" >&2
+    echo "  - You are at the same commit as the last tag" >&2
+    echo "  - There are no new commits since the last version bump" >&2
+    echo "" >&2
+    echo "No version bump needed." >&2
+    # Signal to the caller (e.g. via command substitution) that no bump is required.
+    # Callers should check for NO_BUMP=1 in the captured output and avoid updating VERSION/CHANGELOG.
+    echo "NO_BUMP=1"
+    return 0
+  fi
+
   # Check for invalid commits
   if [[ -n "$invalid_commits" ]]; then
     echo "ERROR: The following commits do not follow Conventional Commits format:" >&2
@@ -467,7 +481,12 @@ if [[ ${#} -ge 1 && "$1" == "auto" ]]; then
   
   # Calculate new version - capture output
   AUTO_OUTPUT=$(calculate_auto_version "$BASE_TAG" "$OLD_VERSION")
-  
+
+  # Check if no bump is needed (e.g. no commits in range)
+  if echo "$AUTO_OUTPUT" | grep -q "^NO_BUMP=1$"; then
+    exit 0
+  fi
+
   # Parse output
   NEW_VERSION=$(echo "$AUTO_OUTPUT" | grep "^NEW_VERSION=" | cut -d= -f2-)
   BUMP_TYPE=$(echo "$AUTO_OUTPUT" | grep "^BUMP_TYPE=" | cut -d= -f2-)
