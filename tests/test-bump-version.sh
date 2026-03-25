@@ -212,7 +212,7 @@ test_c() {
   for i in {1..7}; do
     echo "fix $i" >> "file${i}.txt"
     git add "file${i}.txt"
-    git commit -q -m "fix: fixed issue #${i}"
+    git commit -q -m "fix: resolve issue #${i}"
   done
   
   # Copy bump script
