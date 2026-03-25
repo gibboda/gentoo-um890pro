@@ -407,9 +407,10 @@ test_l() {
   cd "$test_dir"
   echo "breaking change" >> file1.txt
   git add file1.txt
-  git commit -q -m "fix(api): change response format
-
-BREAKING CHANGE: API now returns JSON instead of XML"
+  git commit -q \
+    -m "fix(api): change response format" \
+    -m "" \
+    -m "BREAKING CHANGE: API now returns JSON instead of XML"
 
   # Copy bump script
   mkdir -p scripts
