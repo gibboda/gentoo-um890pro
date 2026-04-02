@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Fix Kernel B build failure at `certs` target by clearing certificate config paths (`CONFIG_SYSTEM_TRUSTED_KEYS`, `CONFIG_SYSTEM_REVOCATION_KEYS`, `CONFIG_MODULE_SIG_KEY`) inherited from the binary kernel config before compilation.
 
 ## [1.3.0] - 2026-03-26
 - Set the default `INSTALL_PROFILE` to `core-openrc-dualkernel` and add regression coverage for canonical names, aliases, and invalid-profile error messaging.
