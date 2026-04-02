@@ -1544,6 +1544,9 @@ install_zfs_and_create_pool() {
     chroot_run "rc-update add zfs-import boot && rc-update add zfs-mount default"
   fi
 
+  # Load ZFS kernel module explicitly (auto-loading may not work inside chroot)
+  chroot_run "modprobe zfs"
+
   # Create pool and datasets (inside chroot, but uses /dev from bind mount)
   # We set mountpoints under ${ZFS_MNT_BASE}
   # Note: Batched into single chroot call for performance (reduces overhead).
