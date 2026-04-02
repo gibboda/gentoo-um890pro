@@ -1171,9 +1171,15 @@ if [[ -x scripts/config ]]; then
     scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
     scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
 else
-    sed -i 's|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=""|' .config
-    sed -i 's|^CONFIG_SYSTEM_REVOCATION_KEYS=.*|CONFIG_SYSTEM_REVOCATION_KEYS=""|' .config
-    sed -i 's|^CONFIG_MODULE_SIG_KEY=.*|CONFIG_MODULE_SIG_KEY=""|' .config
+    # Fallback: ensure these options are present and cleared even if missing or commented out
+    sed -i '/^CONFIG_SYSTEM_TRUSTED_KEYS=/d;/^# CONFIG_SYSTEM_TRUSTED_KEYS is not set/d' .config
+    sed -i '/^CONFIG_SYSTEM_REVOCATION_KEYS=/d;/^# CONFIG_SYSTEM_REVOCATION_KEYS is not set/d' .config
+    sed -i '/^CONFIG_MODULE_SIG_KEY=/d;/^# CONFIG_MODULE_SIG_KEY is not set/d' .config
+    {
+        echo 'CONFIG_SYSTEM_TRUSTED_KEYS=""'
+        echo 'CONFIG_SYSTEM_REVOCATION_KEYS=""'
+        echo 'CONFIG_MODULE_SIG_KEY=""'
+    } >> .config
 fi
 
 # Set LOCALVERSION to make this kernel unique using scripts/config
