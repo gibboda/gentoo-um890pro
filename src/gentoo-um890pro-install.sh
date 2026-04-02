@@ -1545,7 +1545,7 @@ install_zfs_and_create_pool() {
   fi
 
   # Load ZFS kernel module explicitly (auto-loading may not work inside chroot)
-  chroot_run "modprobe zfs"
+  chroot_run "/sbin/modprobe zfs || { echo 'ERROR: failed to load ZFS kernel module via /sbin/modprobe.' >&2; echo '       Verify that /lib/modules/\$(uname -r) exists inside the chroot and that it is correctly bind-mounted.' >&2; exit 1; }"
 
   # Create pool and datasets (inside chroot, but uses /dev from bind mount)
   # We set mountpoints under ${ZFS_MNT_BASE}
