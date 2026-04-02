@@ -1163,6 +1163,19 @@ else
     echo "Using default config as base (no existing config found)"
 fi
 
+# Clear certificate file paths from the base config
+# Binary kernel configs reference signing keys (e.g. certs/signing_key.pem) that
+# don't exist in the gentoo-sources tree, causing "make: certs Error 2" build failures
+if [[ -x scripts/config ]]; then
+    scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
+    scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
+    scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
+else
+    sed -i 's|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=""|' .config
+    sed -i 's|^CONFIG_SYSTEM_REVOCATION_KEYS=.*|CONFIG_SYSTEM_REVOCATION_KEYS=""|' .config
+    sed -i 's|^CONFIG_MODULE_SIG_KEY=.*|CONFIG_MODULE_SIG_KEY=""|' .config
+fi
+
 # Set LOCALVERSION to make this kernel unique using scripts/config
 # This ensures uname -r differs from Kernel A and handles existing values properly
 if [[ -x scripts/config ]]; then
