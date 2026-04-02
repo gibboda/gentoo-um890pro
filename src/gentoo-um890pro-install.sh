@@ -1163,22 +1163,30 @@ else
     echo "Using default config as base (no existing config found)"
 fi
 
-# Clear certificate file paths from the base config
-# Binary kernel configs reference signing keys (e.g. certs/signing_key.pem) that
-# don't exist in the gentoo-sources tree, causing "make: certs Error 2" build failures
+# Clear certificate/signing config inherited from the binary kernel config.
+# 1. CONFIG_SYSTEM_TRUSTED_KEYS / CONFIG_SYSTEM_REVOCATION_KEYS reference
+#    key files (e.g. certs/signing_key.pem) that don't exist in gentoo-sources,
+#    causing "make: certs Error 2" build failures.
+# 2. CONFIG_MODULE_SIG_ALL makes modules_install run sign-file on every module.
+#    With an empty CONFIG_MODULE_SIG_KEY the key path resolves to "./" and
+#    sign-file fails: "SSL error:1E08010C:DECODER routines::unsupported".
+#    Disabling CONFIG_MODULE_SIG_ALL skips signing during modules_install.
 if [[ -x scripts/config ]]; then
     scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
     scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
     scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
+    scripts/config --disable CONFIG_MODULE_SIG_ALL
 else
     # Fallback: ensure these options are present and cleared even if missing or commented out
     sed -i '/^CONFIG_SYSTEM_TRUSTED_KEYS=/d;/^# CONFIG_SYSTEM_TRUSTED_KEYS is not set/d' .config
     sed -i '/^CONFIG_SYSTEM_REVOCATION_KEYS=/d;/^# CONFIG_SYSTEM_REVOCATION_KEYS is not set/d' .config
     sed -i '/^CONFIG_MODULE_SIG_KEY=/d;/^# CONFIG_MODULE_SIG_KEY is not set/d' .config
+    sed -i '/^CONFIG_MODULE_SIG_ALL=/d;/^# CONFIG_MODULE_SIG_ALL is not set/d' .config
     {
         echo 'CONFIG_SYSTEM_TRUSTED_KEYS=""'
         echo 'CONFIG_SYSTEM_REVOCATION_KEYS=""'
         echo 'CONFIG_MODULE_SIG_KEY=""'
+        echo '# CONFIG_MODULE_SIG_ALL is not set'
     } >> .config
 fi
 
