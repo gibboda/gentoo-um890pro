@@ -19,6 +19,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Install ShellCheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
       - name: Check tracked shell scripts
         shell: bash
         run: |
@@ -29,4 +35,4 @@ jobs:
             exit 0
           fi
 
-          shellcheck --severity=error "${shell_files[@]}"
+          shellcheck "${shell_files[@]}"
