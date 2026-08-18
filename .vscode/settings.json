@@ -3,5 +3,7 @@
   "snyk.advanced.autoScanOpenSourceSecurity": false,
   "snyk.features.codeSecurityEnabled": false,
   "snyk.features.codeSecurity": false,
-  "snyk.scanningMode": "manual"
+  "snyk.scanningMode": "manual",
+  "snyk.advanced.organization": "c226f5d0-204b-4f37-a1dc-38cd9e73f017",
+  "snyk.advanced.autoSelectOrganization": true
 }
