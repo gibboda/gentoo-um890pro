@@ -61,6 +61,17 @@ EOF
 ## [Unreleased]
 
 EOF
+
+  cat > SECURITY.md << 'EOF'
+# Security Policy
+
+## Supported versions
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 1.0.x   | :white_check_mark: |
+| < 1.0   | :x:                |
+EOF
   
   git add .
   git commit -q -m "chore: initial commit"
@@ -87,6 +98,21 @@ verify_version() {
   if [[ "$installer_version" != "$expected_version" ]]; then
     log_fail "Installer has $installer_version, expected $expected_version"
     return 1
+  fi
+
+  if [[ -f SECURITY.md ]]; then
+    local major minor
+    major="${expected_version%%.*}"
+    minor="${expected_version#*.}"
+    minor="${minor%%.*}"
+    if ! grep -Eq "^\\| ${major}\\.${minor}\\.x[[:space:]]+\\|" SECURITY.md; then
+      log_fail "SECURITY.md missing supported line ${major}.${minor}.x"
+      return 1
+    fi
+    if ! grep -Eq "^\\| < ${major}\\.${minor}[[:space:]]+\\|" SECURITY.md; then
+      log_fail "SECURITY.md missing unsupported line < ${major}.${minor}"
+      return 1
+    fi
   fi
   
   return 0

@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- Add `SECURITY.md` documenting that 1.3.x receives security updates and how to report vulnerabilities privately via GitHub advisories or email.
+- Expand `SECURITY.md` with vulnerability scope, report contents, response timelines, and safe harbor; prefer GitHub private advisories over unencrypted email; keep the supported-version table in sync from `bump-version.sh`.
 - Clarify in `AGENTS.md` that `bump-version.sh auto` only updates version files and does not commit or create tags; annotated `vX.Y.Z` tags are created only by `patch`/`minor`/`major` or an explicit version argument.
 - Fix Kernel B build failure at `certs` target by clearing certificate config paths (`CONFIG_SYSTEM_TRUSTED_KEYS`, `CONFIG_SYSTEM_REVOCATION_KEYS`, `CONFIG_MODULE_SIG_KEY`) inherited from the binary kernel config before compilation.
 - Fix Kernel B `modules_install` failure (`SSL error:1E08010C:DECODER routines::unsupported`) by disabling `CONFIG_MODULE_SIG_ALL` so that `sign-file` is not invoked with an empty key path during module installation.

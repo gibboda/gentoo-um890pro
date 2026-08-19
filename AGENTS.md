@@ -29,7 +29,8 @@ work is driven entirely by one-off shell commands.
   so it must stay under `scripts/`. Test it against a throwaway git repo (copy the script into
   a temp `scripts/` dir) rather than running it against this repo. Modes differ:
   - `auto` (and `auto --allow-dirty` on a dirty tree) rewrites `VERSION`,
-    `docs/CHANGELOG.md`, and the installer header, then **exits without committing or
+    `docs/CHANGELOG.md`, the installer header, and the supported-version table in
+    `SECURITY.md` (when that file exists), then **exits without committing or
     tagging**.
   - `patch`/`minor`/`major` and `./scripts/bump-version.sh <version> "message"` also
     commit those files and create an annotated `vX.Y.Z` tag.

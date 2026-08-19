@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Version Bump Script with Conventional Commits Enforcement
 #
-# This script manages version bumping and CHANGELOG updates.
+# This script manages version bumping, CHANGELOG updates, and the
+# supported-version table in SECURITY.md.
 # In auto mode, it REQUIRES all commits to follow Conventional Commits format.
 #
 # Usage:
@@ -123,6 +124,48 @@ get_current_version() {
   else
     echo "0.0.0"
   fi
+}
+
+# Rewrite the supported-version table in SECURITY.md for the new minor line.
+# No-ops if SECURITY.md is absent (e.g. throwaway test repos that omit it).
+update_security_supported_versions() {
+  local new_version="$1"
+  local security_file="$ROOT_DIR/SECURITY.md"
+  local major minor tmpfile
+
+  [[ -f "$security_file" ]] || return 0
+
+  if [[ ! "$new_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+    echo "WARNING: skipping SECURITY.md update; invalid version ${new_version}" >&2
+    return 0
+  fi
+
+  major="${BASH_REMATCH[1]}"
+  minor="${BASH_REMATCH[2]}"
+  tmpfile="$(mktemp "${TMPDIR:-/tmp}/security-md.XXXXXX")" || {
+    echo "ERROR: failed to create temporary file for SECURITY.md update" >&2
+    exit 1
+  }
+
+  awk -v major="$major" -v minor="$minor" '
+    BEGIN { in_section=0; in_table=0 }
+    /^##[[:space:]]+[Ss]upported [Vv]ersions/ { in_section=1 }
+    in_section && /^##[[:space:]]+/ && $0 !~ /^##[[:space:]]+[Ss]upported [Vv]ersions/ {
+      in_section=0
+      in_table=0
+    }
+    in_section && /^\|[[:space:]]*Version[[:space:]]*\|/ { in_table=1 }
+    in_table && /^\|[[:space:]]*[0-9]+\.[0-9]+\.x[[:space:]]*\|/ {
+      printf "| %s.%s.x   | :white_check_mark: |\n", major, minor
+      next
+    }
+    in_table && /^\|[[:space:]]*<[[:space:]]*[0-9]+(\.[0-9]+)?[[:space:]]*\|/ {
+      printf "| < %s.%s   | :x:                |\n", major, minor
+      next
+    }
+    { print }
+  ' "$security_file" > "$tmpfile"
+  mv "$tmpfile" "$security_file"
 }
 
 # Function to find the most recent vX.Y.Z tag
@@ -507,6 +550,8 @@ if [[ ${#} -ge 1 && "$1" == "auto" ]]; then
   if [[ -f "$INSTALLER_FILE" ]]; then
     sed_inplace "$INSTALLER_FILE" "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/"
   fi
+
+  update_security_supported_versions "$NEW_VERSION"
   
   # Print summary
   echo "Auto version bump completed:"
@@ -520,6 +565,9 @@ if [[ ${#} -ge 1 && "$1" == "auto" ]]; then
   echo "    - docs/CHANGELOG.md"
   if [[ -f "$INSTALLER_FILE" ]]; then
     echo "    - src/gentoo-um890pro-install.sh"
+  fi
+  if [[ -f "$ROOT_DIR/SECURITY.md" ]]; then
+    echo "    - SECURITY.md"
   fi
   
   exit 0
@@ -588,6 +636,8 @@ if [[ -f "$INSTALLER_FILE" ]]; then
   sed_inplace "$INSTALLER_FILE" "1,/^VERSION=/s/^VERSION=.*/VERSION=\"$NEW_VERSION\"/"
 fi
 
+update_security_supported_versions "$NEW_VERSION"
+
 date_str=$(date -u +"%Y-%m-%d")
 
 if [[ -f "$CHANGELOG_FILE" ]]; then
@@ -636,10 +686,12 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse --is-inside-wo
     echo "ERROR: Git tag v$NEW_VERSION already exists. Refusing to overwrite." >&2
     exit 1
   fi
+  git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
   if [[ -f "$INSTALLER_FILE" ]]; then
-    git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE" "$INSTALLER_FILE"
-  else
-    git -C "$ROOT_DIR" add "$VERSION_FILE" "$CHANGELOG_FILE"
+    git -C "$ROOT_DIR" add "$INSTALLER_FILE"
+  fi
+  if [[ -f "$ROOT_DIR/SECURITY.md" ]]; then
+    git -C "$ROOT_DIR" add "$ROOT_DIR/SECURITY.md"
   fi
   git -C "$ROOT_DIR" commit -m "Bump version: $NEW_VERSION - $MSG"
   git -C "$ROOT_DIR" tag -a "v$NEW_VERSION" -m "$MSG"
