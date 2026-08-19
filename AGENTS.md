@@ -27,9 +27,12 @@ work is driven entirely by one-off shell commands.
   ```
 - **Version tooling**: `scripts/bump-version.sh` derives the repo root from its own location,
   so it must stay under `scripts/`. Test it against a throwaway git repo (copy the script into
-  a temp `scripts/` dir) rather than running `auto` against this repo, since it writes
-  `VERSION`, `docs/CHANGELOG.md`, and the installer header and creates annotated `vX.Y.Z` tags.
-  Use `./scripts/bump-version.sh auto --allow-dirty` for a dirty tree.
+  a temp `scripts/` dir) rather than running it against this repo. Modes differ:
+  - `auto` (and `auto --allow-dirty` on a dirty tree) rewrites `VERSION`,
+    `docs/CHANGELOG.md`, and the installer header, then **exits without committing or
+    tagging**.
+  - `patch`/`minor`/`major` and `./scripts/bump-version.sh <version> "message"` also
+    commit those files and create an annotated `vX.Y.Z` tag.
 
 ### Running the installer (caution)
 
