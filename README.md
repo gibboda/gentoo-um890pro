@@ -4,6 +4,8 @@ This repository contains an automated Gentoo bootstrap installer targeted at a M
 
 Important: running the installer will irreversibly wipe the selected disks.
 
+Report security vulnerabilities privately via [SECURITY.md](SECURITY.md), not public issues.
+
 Script: [src/gentoo-um890pro-install.sh](src/gentoo-um890pro-install.sh)
 
 ## Target Hardware Specifications
@@ -27,6 +29,7 @@ See [docs/HARDWARE_SETUP.md](docs/HARDWARE_SETUP.md) for detailed hardware infor
 - **[System Specifications](docs/SYSTEM_SPECS.md)** - Complete hardware specifications
 - **[Optimization Guide](docs/OPTIMIZATION_GUIDE.md)** - Performance tuning and optimizations
 - **[Conventional Commits](docs/CONVENTIONAL_COMMITS.md)** - Commit linting and version bump rules
+- **[Security Policy](SECURITY.md)** - Supported versions and private vulnerability reporting
 
 ## Contributing
 
@@ -242,7 +245,7 @@ The bump-version.sh script supports multiple modes:
 ./scripts/bump-version.sh 0.1.2 "Short summary of changes"
 ```
 
-All modes update VERSION, src/gentoo-um890pro-install.sh, and CHANGELOG.md consistently.
+All modes update VERSION, src/gentoo-um890pro-install.sh, CHANGELOG.md, and the supported-version table in SECURITY.md consistently.
 All version bumps must create an annotated Git tag (`vX.Y.Z`). `bump-version.sh` enforces tag creation and will fail if the tag already exists or cannot be created.
 
 Note: `VERSION` is enforced as `X.Y.Z` semver by CI.

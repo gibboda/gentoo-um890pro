@@ -90,6 +90,35 @@ jobs:
           
           echo "✓ docs/CHANGELOG.md contains version ${VERSION}"
 
+      - name: Check SECURITY.md supported line matches VERSION
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.check_version.outputs.version }}"
+
+          if [ ! -f SECURITY.md ]; then
+            echo "ERROR: SECURITY.md not found" >&2
+            exit 1
+          fi
+
+          major="${VERSION%%.*}"
+          rest="${VERSION#*.}"
+          minor="${rest%%.*}"
+
+          if ! grep -Eq "^\\| ${major}\\.${minor}\\.x[[:space:]]+\\|[[:space:]]*:white_check_mark:[[:space:]]*\\|" SECURITY.md; then
+            echo "ERROR: SECURITY.md does not list ${major}.${minor}.x as supported (:white_check_mark:)" >&2
+            echo "Run bump-version.sh so the supported-version table matches VERSION." >&2
+            exit 1
+          fi
+
+          if ! grep -Eq "^\\| < ${major}\\.${minor}[[:space:]]+\\|[[:space:]]*:x:[[:space:]]*\\|" SECURITY.md; then
+            echo "ERROR: SECURITY.md does not list < ${major}.${minor} as unsupported (:x:)" >&2
+            echo "Run bump-version.sh so the supported-version table matches VERSION." >&2
+            exit 1
+          fi
+
+          echo "✓ SECURITY.md supported line matches VERSION ${VERSION} (${major}.${minor}.x)"
+
       - name: All checks passed
         run: |
           echo "✓ All version consistency checks passed"

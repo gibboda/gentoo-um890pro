@@ -88,6 +88,13 @@ docs(readme): update hardware requirements section
 Clarify DDR5-5600 memory requirements and add Crucial part number.
 ```
 
+#### Security fix (triggers patch bump when it is the only fix)
+```
+fix(security): redact root password from installer logs
+
+Avoid writing the entered root password to the install log.
+```
+
 #### Multiple Fixes (triggers minor bump when 2-6 fixes)
 ```
 fix(plasma): correct qtbase wayland dependencies
@@ -162,7 +169,7 @@ The CI system validates:
 
 - **Commit messages**: All commits must follow Conventional Commits format
 - **PR titles**: Must follow Conventional Commits format; bot/automation PRs have stricter validation
-- **Version consistency**: VERSION file, CHANGELOG.md, and installer script must match
+- **Version consistency**: VERSION file, CHANGELOG.md, installer script, and SECURITY.md supported line must match
 - **Shell scripts**: All shell scripts must pass ShellCheck validation
 
 PRs with non-compliant commit messages or PR titles will be blocked until fixed.
@@ -214,9 +221,14 @@ Before submitting:
 3. Verify version bumping works: `./scripts/bump-version.sh auto --allow-dirty`
 4. Check generated CHANGELOG.md format
 
+## Security
+
+Do not open a public GitHub issue for security vulnerabilities. See [SECURITY.md](../SECURITY.md) for scope, private reporting channels, and disclosure process.
+
 ## Questions or Issues?
 
 - Open an issue for bugs or feature requests
+- Report vulnerabilities privately as described in [SECURITY.md](../SECURITY.md)
 - Start a discussion for questions or ideas
 - Ensure all issue titles and PR titles also use descriptive formats
 
