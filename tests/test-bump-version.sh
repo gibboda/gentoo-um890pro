@@ -105,12 +105,12 @@ verify_version() {
     major="${expected_version%%.*}"
     minor="${expected_version#*.}"
     minor="${minor%%.*}"
-    if ! grep -Eq "^\\| ${major}\\.${minor}\\.x[[:space:]]+\\|" SECURITY.md; then
-      log_fail "SECURITY.md missing supported line ${major}.${minor}.x"
+    if ! grep -Eq "^\\| ${major}\\.${minor}\\.x[[:space:]]+\\|[[:space:]]*:white_check_mark:[[:space:]]*\\|" SECURITY.md; then
+      log_fail "SECURITY.md missing supported line ${major}.${minor}.x with :white_check_mark:"
       return 1
     fi
-    if ! grep -Eq "^\\| < ${major}\\.${minor}[[:space:]]+\\|" SECURITY.md; then
-      log_fail "SECURITY.md missing unsupported line < ${major}.${minor}"
+    if ! grep -Eq "^\\| < ${major}\\.${minor}[[:space:]]+\\|[[:space:]]*:x:[[:space:]]*\\|" SECURITY.md; then
+      log_fail "SECURITY.md missing unsupported line < ${major}.${minor} with :x:"
       return 1
     fi
   fi

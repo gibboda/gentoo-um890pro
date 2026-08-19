@@ -105,14 +105,14 @@ jobs:
           rest="${VERSION#*.}"
           minor="${rest%%.*}"
 
-          if ! grep -Eq "^\\| ${major}\\.${minor}\\.x[[:space:]]+\\|" SECURITY.md; then
-            echo "ERROR: SECURITY.md does not list ${major}.${minor}.x as supported" >&2
+          if ! grep -Eq "^\\| ${major}\\.${minor}\\.x[[:space:]]+\\|[[:space:]]*:white_check_mark:[[:space:]]*\\|" SECURITY.md; then
+            echo "ERROR: SECURITY.md does not list ${major}.${minor}.x as supported (:white_check_mark:)" >&2
             echo "Run bump-version.sh so the supported-version table matches VERSION." >&2
             exit 1
           fi
 
-          if ! grep -Eq "^\\| < ${major}\\.${minor}[[:space:]]+\\|" SECURITY.md; then
-            echo "ERROR: SECURITY.md does not list < ${major}.${minor} as unsupported" >&2
+          if ! grep -Eq "^\\| < ${major}\\.${minor}[[:space:]]+\\|[[:space:]]*:x:[[:space:]]*\\|" SECURITY.md; then
+            echo "ERROR: SECURITY.md does not list < ${major}.${minor} as unsupported (:x:)" >&2
             echo "Run bump-version.sh so the supported-version table matches VERSION." >&2
             exit 1
           fi
