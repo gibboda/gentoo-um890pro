@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Fix singular “pre-enforcement commit” wording in `docs/IMPLEMENTATION_COMPLETE.md` so it matches the plural pre-enforcement commits described in `docs/LEGACY_COMMIT_NOTE.md`.
 - Align README and related versioning docs with `bump-version.sh auto`: it rewrites version files only and does not commit or tag. Present `patch` / `minor` / `major` and explicit version as alternative release paths, not a follow-up to `auto`; after `auto`, commit and tag the rewritten files manually.
 - Extend `tests/test-bump-version.sh` so auto-mode runs assert `HEAD` and tags are unchanged and the expected version files stay modified in the working tree.
 - Preserve the installer `on_err` trap's original errexit state so fatal command failures still print context and exit, instead of being treated as non-fatal after the handler runs `set +e`. Add `tests/test-on-err-trap.sh` regression coverage.
