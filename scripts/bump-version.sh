@@ -8,14 +8,19 @@ set -euo pipefail
 # In auto mode, it REQUIRES all commits to follow Conventional Commits format.
 #
 # Usage:
-#   ./scripts/bump-version.sh <new-version> "Short changelog entry"
 #   ./scripts/bump-version.sh auto [--allow-dirty]
+#       Rewrite version files from Conventional Commits; do not commit or tag.
+#       After auto, commit and tag those files yourself. Do not run a tagging
+#       mode next: the tree is dirty, and --allow-dirty would bump again.
 #   ./scripts/bump-version.sh patch|minor|major
+#   ./scripts/bump-version.sh <new-version> "Short changelog entry"
+#       Rewrite version files, commit, and create an annotated vX.Y.Z tag.
+#       Alternative to auto, not a follow-up step.
 #
 # Examples:
-#   ./scripts/bump-version.sh 0.1.1 "Fix partition detection"
 #   ./scripts/bump-version.sh auto
 #   ./scripts/bump-version.sh patch
+#   ./scripts/bump-version.sh 0.1.1 "Fix partition detection"
 #
 # Conventional Commits Format (required for auto mode):
 #   type(scope): description

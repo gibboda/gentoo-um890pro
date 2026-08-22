@@ -124,7 +124,7 @@ After this PR is merged:
 
 1. ✅ Merge this PR
 2. ✅ All future PRs will be automatically validated
-3. ✅ Use `./scripts/bump-version.sh auto` for releases
+3. ✅ Use `./scripts/bump-version.sh auto` to rewrite version files (auto does not commit or tag)
 4. ✅ Contributors follow guidelines in CONTRIBUTING.md
 
 ## References

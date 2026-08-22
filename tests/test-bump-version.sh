@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # Test script for bump-version.sh auto mode
-# Creates temporary git repos and verifies auto mode behavior
+# Creates temporary git repos and verifies auto mode behavior:
+# file rewrites, unchanged HEAD, no new tags, and dirty expected files.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -133,51 +134,113 @@ verify_changelog() {
   return 0
 }
 
+# Verify auto mode's git contract: rewrite files, do not commit or tag.
+verify_auto_git_contract() {
+  local test_name="$1"
+  local head_before="$2"
+  local tags_before="$3"
+  local expected_version="$4"
+  local head_after tags_after
+  local -a unmodified=()
+  local file
+
+  head_after=$(git rev-parse HEAD)
+  if [[ "${head_after}" != "${head_before}" ]]; then
+    log_fail "${test_name}: auto mode changed HEAD; expected no commit"
+    echo "  HEAD before: ${head_before}"
+    echo "  HEAD after:  ${head_after}"
+    echo "  Commits added:"
+    git log --oneline "${head_before}..${head_after}" || true
+    return 1
+  fi
+
+  tags_after=$(git tag -l | sort)
+  if [[ "${tags_after}" != "${tags_before}" ]]; then
+    log_fail "${test_name}: auto mode changed git tags; expected no tag creation"
+    echo "  Tags before:"
+    echo "${tags_before:-  (none)}"
+    echo "  Tags after:"
+    echo "${tags_after:-  (none)}"
+    if git tag -l "v${expected_version}" | grep -qx "v${expected_version}"; then
+      echo "  Newly present version tag: v${expected_version}"
+    fi
+    return 1
+  fi
+
+  for file in VERSION docs/CHANGELOG.md src/gentoo-um890pro-install.sh; do
+    if [[ ! -e "${file}" ]]; then
+      unmodified+=("${file} (missing)")
+      continue
+    fi
+    if git diff --quiet HEAD -- "${file}"; then
+      unmodified+=("${file}")
+    fi
+  done
+  if [[ ${#unmodified[@]} -gt 0 ]]; then
+    log_fail "${test_name}: auto mode left expected files unmodified (matching HEAD): ${unmodified[*]}"
+    echo "  git status --porcelain:"
+    git status --porcelain
+    echo "  git diff --stat HEAD:"
+    git diff --stat HEAD || true
+    return 1
+  fi
+
+  return 0
+}
+
+cleanup_test_dir() {
+  local test_dir="$1"
+  if [[ "${PRESERVE_TEST_DIRS}" == "1" ]]; then
+    echo "Test directory preserved at: ${test_dir}"
+  else
+    rm -rf "${test_dir}"
+  fi
+}
+
 # Helper function to run test and cleanup
 run_test() {
   local test_name="$1"
   local test_dir="$2"
   local expected_version="$3"
   local allow_dirty_arg="${4:-false}"
+  local head_before tags_before bump_output
+
+  cd "${test_dir}"
+
+  head_before=$(git rev-parse HEAD)
+  tags_before=$(git tag -l | sort)
   
   # Run auto mode. Most tests commit all changes first, so no --allow-dirty is
   # needed. When allow_dirty_arg is "true" the script is invoked with
   # --allow-dirty so it succeeds even when the working tree is dirty.
-  local bump_output
-  if [[ "$allow_dirty_arg" == "true" ]]; then
+  if [[ "${allow_dirty_arg}" == "true" ]]; then
     if ! bump_output=$(bash scripts/bump-version.sh auto --allow-dirty 2>&1); then
-      log_fail "$test_name: bump-version.sh exited with non-zero status"
-      echo "$bump_output"
-      if [[ "$PRESERVE_TEST_DIRS" == "1" ]]; then
-        echo "Test directory preserved at: $test_dir"
-      else
-        rm -rf "$test_dir"
-      fi
+      log_fail "${test_name}: bump-version.sh exited with non-zero status"
+      echo "${bump_output}"
+      cleanup_test_dir "${test_dir}"
       return 1
     fi
   elif ! bump_output=$(bash scripts/bump-version.sh auto 2>&1); then
-    log_fail "$test_name: bump-version.sh exited with non-zero status"
-    echo "$bump_output"
-    if [[ "$PRESERVE_TEST_DIRS" == "1" ]]; then
-      echo "Test directory preserved at: $test_dir"
-    else
-      rm -rf "$test_dir"
-    fi
+    log_fail "${test_name}: bump-version.sh exited with non-zero status"
+    echo "${bump_output}"
+    cleanup_test_dir "${test_dir}"
+    return 1
+  fi
+
+  if ! verify_auto_git_contract "${test_name}" "${head_before}" "${tags_before}" "${expected_version}"; then
+    echo "Bump output: ${bump_output}"
+    cleanup_test_dir "${test_dir}"
     return 1
   fi
   
-  if verify_version "$expected_version" "$test_dir" && verify_changelog "$expected_version" "$test_dir"; then
-    log_pass "$test_name: correctly bumped to v${expected_version}"
-    rm -rf "$test_dir"
+  if verify_version "${expected_version}" "${test_dir}" && verify_changelog "${expected_version}" "${test_dir}"; then
+    log_pass "${test_name}: correctly bumped to v${expected_version} without commit or tag"
+    rm -rf "${test_dir}"
     return 0
   else
-    log_fail "$test_name: Failed"
-    echo "Bump output: $bump_output"
-    if [[ "$PRESERVE_TEST_DIRS" == "1" ]]; then
-      echo "Test directory preserved at: $test_dir"
-    else
-      rm -rf "$test_dir"
-    fi
+    log_fail "${test_name}: Failed"
+    echo "Bump output: ${bump_output}"
+    cleanup_test_dir "${test_dir}"
     return 1
   fi
 }

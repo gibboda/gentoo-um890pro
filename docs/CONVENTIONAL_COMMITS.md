@@ -113,13 +113,16 @@ Based on Conventional Commits format:
    - Determines appropriate version bump
    - Updates VERSION, CHANGELOG.md, and installer script
    - Generates grouped changelog entries
+   - Does not commit or create a git tag
 
 ### For Maintainers
 
 1. **Review PRs** - CI ensures all commits are compliant
 2. **Merge PRs** - Commits follow standard format
-3. **Bump version** - Run `./scripts/bump-version.sh auto`
-4. **Release** - Automated or manual via workflows
+3. **Release** using **one** of these alternative paths. Do not run a tagging mode after `auto`: `auto` leaves version files dirty, tagging modes refuse a dirty tree, and `--allow-dirty` would bump `VERSION` again or duplicate the changelog entry.
+   - **`auto`, then commit and tag manually.** Run `./scripts/bump-version.sh auto` to rewrite version files from Conventional Commits. Commit those files yourself and create an annotated `vX.Y.Z` tag.
+   - **Shortcut or explicit version (clean tree).** Run `./scripts/bump-version.sh patch|minor|major` or `./scripts/bump-version.sh <version> "message"`. Those modes rewrite, commit, and tag in one step.
+   - **Release workflow.** Create the tag/release via GitHub Actions as documented in the README.
 
 ## Testing
 

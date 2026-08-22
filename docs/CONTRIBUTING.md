@@ -139,12 +139,14 @@ fix(rocm): unmask rocm-comgr package
 The project uses `scripts/bump-version.sh` to automatically determine version bumps based on commit messages:
 
 ```bash
-# Analyze commits since last tag and bump version automatically
+# Analyze commits since last tag and rewrite version files
 ./scripts/bump-version.sh auto
 
 # Allow running on dirty working tree (for testing)
 ./scripts/bump-version.sh auto --allow-dirty
 ```
+
+`auto` determines the next version from Conventional Commits since the last tag, rewrites `VERSION`, `src/gentoo-um890pro-install.sh`, `docs/CHANGELOG.md`, and the supported-version table in `SECURITY.md` (when present), then exits **without committing or tagging**. After `auto`, commit and tag those files yourself. Do not run `patch` / `minor` / `major` or an explicit version on that dirty tree: tagging modes refuse uncommitted changes, and `--allow-dirty` would bump `VERSION` again or duplicate the changelog entry.
 
 ### Version Bump Rules
 
@@ -164,10 +166,10 @@ The project uses `scripts/bump-version.sh` to automatically determine version bu
 For explicit control:
 
 ```bash
-# Specific version with message
+# Specific version with message (commits and creates annotated tag vX.Y.Z)
 ./scripts/bump-version.sh 1.2.3 "Release description"
 
-# Quick bumps
+# Quick bumps (also commit and create an annotated tag)
 ./scripts/bump-version.sh patch
 ./scripts/bump-version.sh minor
 ./scripts/bump-version.sh major
@@ -178,7 +180,7 @@ For explicit control:
 1. **Fork** the repository and create your branch from `main`
 2. **Commit** your changes using Conventional Commits format
 3. **Test** your changes thoroughly
-4. **Run** `./scripts/bump-version.sh auto` if you're ready to bump the version
+4. **Run** `./scripts/bump-version.sh auto` if you're ready to rewrite version files (this does not commit or tag)
 5. **Submit** a pull request
 
 ### PR Requirements
