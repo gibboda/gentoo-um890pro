@@ -113,13 +113,14 @@ Based on Conventional Commits format:
    - Determines appropriate version bump
    - Updates VERSION, CHANGELOG.md, and installer script
    - Generates grouped changelog entries
+   - Does not commit or create a git tag
 
 ### For Maintainers
 
 1. **Review PRs** - CI ensures all commits are compliant
 2. **Merge PRs** - Commits follow standard format
-3. **Bump version** - Run `./scripts/bump-version.sh auto`
-4. **Release** - Automated or manual via workflows
+3. **Bump version files** - Run `./scripts/bump-version.sh auto` (rewrites files only; does not commit or tag)
+4. **Release** - Use `patch` / `minor` / `major` or an explicit version to commit and tag, or the release workflow
 
 ## Testing
 
