@@ -10,21 +10,21 @@ This PR successfully implements comprehensive Conventional Commits enforcement f
 - **CONTRIBUTING.md**: Comprehensive contributor guidelines with commit message format, version bump rules, examples, and PR process
 - **docs/CONVENTIONAL_COMMITS.md**: Implementation summary, testing procedures, and future enhancements
 - **README.md**: Added Contributing section with quick reference to Conventional Commits
-- **LEGACY_COMMIT_NOTE.md**: Explains handling of pre-enforcement commit
+- **LEGACY_COMMIT_NOTE.md**: Explains handling of pre-enforcement commits
 
 ### 2. CI Enforcement (1 workflow)
 - **.github/workflows/commit-lint.yml**: Validates all commits in PRs
   - Checks format: `type(scope): description`
   - Validates types: feat, fix, update, docs, style, refactor, perf, test, build, ci, chore, revert
   - Provides detailed error messages with examples
-  - Skips merge commits, version bumps, and legacy commit da8679f
+  - Skips merge commits, version bumps, and legacy commits (including da8679f)
   - Blocks PRs with non-compliant commits
 
 ### 3. Version Automation (enhanced script)
 - **scripts/bump-version.sh**: Enhanced with strict validation
   - Added `validate_conventional_commit()` function
   - Enforces format in auto mode
-  - Skips legacy commit da8679f
+  - Skips legacy commits (including da8679f)
   - Clear error messages with fix instructions
   - Automatic version determination from commit types
 
@@ -64,7 +64,7 @@ d356bd0 docs: initial plan for conventional commits migration
 da8679f Initial plan (SKIPPED - pre-enforcement)
 ```
 
-All commits follow Conventional Commits format (except da8679f which is explicitly skipped).
+All commits follow Conventional Commits format (except pre-enforcement commits such as da8679f, which are explicitly skipped).
 
 ## Version Bump Rules
 
