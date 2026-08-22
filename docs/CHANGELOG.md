@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Split coding-agent instructions into a shared `AGENTS.md` plus overlays: Cursor-only rules in `.cursor/rules/`, Copilot in `.github/instructions/copilot.instructions.md`, and Codex PR-title rules in `.github/instructions/codex.instructions.md`. Cursor remains the primary implementation agent, Grok Build remains the preferred secondary, and Copilot/Codex/Claude remain escalation-only.
 - Clarify the shared `AGENTS.md` escalation path: Grok Build remains the preferred secondary implementation agent when available, and an available specialist agent is the fallback when Grok Build is not present in the environment.
 - Add a cost-efficient multi-agent development policy to `AGENTS.md`: Cursor as the primary implementation agent, GitHub as the source of truth, secondary/specialist agents only when needed, and deterministic checks preferred over AI review. Keep the existing lint, test, version-tooling, installer, and commit instructions, and frame the file as shared guidance rather than Cursor-only.
 - Replace stale entries in `docs/CODEBASE_TASK_PROPOSALS.md` with four current tasks: Blender `oslray` typo, `sci-libs/openvdb` package.use bug, Installation Guide path/`INSTALL_PROFILE` mismatch, and conventional-commit tests that duplicate the production validator. Distinguish wget’s remote `src/` URL from the local basename, and require aligning `bump-version.sh` skip logic with commit-lint before expecting `Apply suggestions from code review` to pass.
