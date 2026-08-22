@@ -7,13 +7,23 @@ to the work you were asked to do.
 
 ## Multi-agent development policy
 
-Optimize for an independent-developer budget. Do not assume unlimited tokens,
-premium requests, AI credits, or paid-agent capacity.
+### Roles
 
-### Primary agent
+- Cursor Agent is the primary/default implementation agent.
+- Grok Build is the preferred secondary agent when Cursor cannot complete the
+  work and a second implementation path is still warranted.
+- GitHub Copilot, Codex, Claude, and other metered cloud agents are
+  specialist/escalation resources. They must not be invoked automatically for
+  routine work.
+- GitHub remains the source of truth and control plane for repositories,
+  Issues and Projects, branches and pull requests, GitHub Actions, rulesets
+  and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
+  and releases.
+- Every agent follows the same repository policies when used.
 
-**Cursor Agent is the primary/default implementation agent** when the developer
-has a choice of tools. Cursor should handle routine work itself:
+### Default work for the primary agent
+
+Keep routine work with Cursor whenever practical. Cursor handles:
 
 - repository analysis
 - planning
@@ -26,42 +36,38 @@ has a choice of tools. Cursor should handle routine work itself:
 - commit preparation
 - pull-request preparation
 
-When another agent is already assigned the task (for example Copilot or Codex
-on a GitHub issue), that agent should complete the work using this file and
-should not bounce routine work to additional paid agents.
+Do not auto-escalate those tasks to Grok Build, GitHub Copilot, Codex,
+Claude, or other metered cloud agents.
 
-### GitHub is the source of truth
+### Escalation and secondary use
 
-GitHub remains the control plane for:
+Escalate only when at least one of the following is true:
 
-- repositories
-- Issues and Projects
-- branches and pull requests
-- GitHub Actions
-- rulesets and branch protection
-- CodeQL
-- Dependabot
-- secret scanning
-- code scanning
-- releases
-
-Do not treat an agent's local checkout, chat history, or draft artifacts as
-authoritative over GitHub state.
-
-### Secondary / specialist agents
-
-GitHub Copilot, Claude, Codex, and other paid or cloud agents are
-**secondary/specialist** tools. Use them only when at least one of these is true:
-
-- Cursor (or the already-assigned agent) cannot reliably complete the task
+- Cursor cannot reliably complete the task after a practical attempt
 - an independent second opinion has substantial value
 - security or architecture changes warrant additional review
-- specialized reasoning is needed
-- the developer explicitly requested that agent
+- specialized reasoning is needed that Cursor cannot provide
+- the developer explicitly requests a named secondary or specialist agent
 
-Do **not** invoke multiple AI agents for the same routine task. Do not fan out
-the same implementation, refactor, test run, or documentation edit to extra
-agents "for coverage."
+Preferred order when escalation is justified:
+
+1. Stay with Cursor and reuse existing findings, logs, PR discussion, and
+   deterministic check output.
+2. Use Grok Build as the preferred secondary implementation agent.
+3. Use GitHub Copilot, Codex, Claude, or another metered cloud agent only as a
+   specialist/escalation resource for a narrowly scoped need.
+
+Do not invoke multiple paid or cloud agents for the same routine task. Before
+starting a new paid-agent analysis, reuse prior agent findings, issue/PR
+comments, CI results, and local validation output.
+Minimize duplicate paid-agent analysis across the same change.
+
+### Cost and capacity
+
+Optimize AI usage for an independent-developer budget. Prefer Cursor for
+default throughput. Do not assume unlimited tokens, premium requests, AI
+credits, or paid-agent capacity. Metered specialist agents are scarce
+resources, not parallel reviewers for every change.
 
 ### Deterministic validation over AI review
 
