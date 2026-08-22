@@ -63,7 +63,13 @@ download, and even after a local copy is obtained, editing those feature
 toggles has no effect.
 
 **Acceptance criteria:**
-- wget / nano / run commands use `src/gentoo-um890pro-install.sh`.
+- The wget URL uses the repository path
+  `src/gentoo-um890pro-install.sh` (for example
+  `.../main/src/gentoo-um890pro-install.sh`).
+- chmod / nano / run commands use wget’s local filename. After
+  `cd /tmp; wget <url>`, that is `gentoo-um890pro-install.sh` (basename
+  only). Do not require `src/` in the local path unless the guide also
+  creates that directory and uses `wget -O`.
 - Document `INSTALL_PROFILE` (`core` / `desktop` / `full-ai` and canonical
   names) as the way to select desktop and AI features.
 - Stop presenting the overwritten per-feature toggles as independently
@@ -77,14 +83,18 @@ toggles has no effect.
 
 **Why:** The test copies the validator inline. CI
 (`.github/workflows/commit-lint.yml`) also skips subjects such as
-`Apply suggestions from code review`, which the copied function and test cases
-do not cover. If the real validator or skip list changes, this suite can keep
-passing while production validation drifts.
+`Apply suggestions from code review`, which neither the copied test function
+nor `scripts/bump-version.sh` currently treats as valid. Sourcing the
+production function and expecting that subject to pass will fail until the
+skip lists match.
 
 **Acceptance criteria:**
-- Tests call the production `validate_conventional_commit()` (extract/source it
-  without executing bump-version side effects such as dirty-tree checks).
-- Add cases for skip patterns that CI already treats as valid, including
-  `Apply suggestions from code review`.
+- Teach `validate_conventional_commit()` in `scripts/bump-version.sh` the same
+  code-review-suggestion skip that commit-lint already has (or share one skip
+  list between both consumers).
+- Tests call that production function (extract/source it without executing
+  bump-version side effects such as dirty-tree checks).
+- Add a case that `Apply suggestions from code review` is VALID after the
+  skip is present in the production validator.
 - Fail with an actionable message if a case does not match the expected
   VALID/INVALID result.
