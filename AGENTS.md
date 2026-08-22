@@ -153,6 +153,7 @@ INSTALL_PROFILE=core resolve_profile
   ```bash
   bash tests/test-conventional-commits.sh
   bash tests/test-install-profile-resolution.sh
+  bash tests/test-on-err-trap.sh
   bash tests/test-bump-version.sh   # slower: creates temp git repos and runs many bump scenarios
   ```
 - **Version tooling**: `scripts/bump-version.sh` derives the repo root from its

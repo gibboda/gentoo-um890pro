@@ -5,14 +5,19 @@ set -Eeuo pipefail
 # Error context (works best with `set -E`/errtrace enabled above).
 on_err() {
   local rc=$?
+  local shopts=$-
 
   # Avoid recursive ERR traps while handling an error.
   trap - ERR
   set +e
 
-  # If errexit is currently disabled (e.g. inside a best-effort `set +e` block),
-  # do not treat failures as fatal.
-  [[ "$-" == *e* ]] || return 0
+  # If errexit was disabled before this handler (e.g. inside a best-effort
+  # `set +e` block), do not treat the failure as fatal. Restore the trap so a
+  # later `set -e` region still gets error context.
+  if [[ "${shopts}" != *e* ]]; then
+    trap on_err ERR
+    return 0
+  fi
 
   local src line cmd
   src="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
