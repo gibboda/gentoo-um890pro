@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Document conventional-commit scopes actually used in issues and pull requests (`changelog`, `commit-lint`, `commits`, `docs`, `phase2`, `scripts`, `security`, `tests`, `workflows`, `bump-version`) in `docs/CONTRIBUTING.md`, with matching guidance for Copilot/Codex titles.
 - Expand `SECURITY.md` with vulnerability scope, report contents, response timelines, and safe harbor; prefer GitHub private advisories over unencrypted email; keep the supported-version table in sync from `bump-version.sh`.
 - Clarify in `AGENTS.md` that `bump-version.sh auto` only updates version files and does not commit or create tags; annotated `vX.Y.Z` tags are created only by `patch`/`minor`/`major` or an explicit version argument.
 - Fix Kernel B build failure at `certs` target by clearing certificate config paths (`CONFIG_SYSTEM_TRUSTED_KEYS`, `CONFIG_SYSTEM_REVOCATION_KEYS`, `CONFIG_MODULE_SIG_KEY`) inherited from the binary kernel config before compilation.

@@ -37,14 +37,32 @@ The type must be one of the following:
 
 ### Scope (Optional)
 
-The scope can be anything specifying the place of the commit change, for example:
+The scope specifies the place of the change. It is optional, must match `[a-z0-9_-]+`, and may be any location that describes the commit. Prefer one of the scopes already used in issues and pull requests:
 
-- `kernel`
-- `btrfs`
-- `zfs`
-- `installer`
-- `rocm`
-- `ci`
+**Installer and hardware**
+
+- `installer` — bootstrap script and install pipeline
+- `kernel` — kernel install, cmdline, and dist-kernel
+- `btrfs` — Btrfs root and snapshots
+- `zfs` — ZFS pool and datasets
+- `rocm` — ROCm / AMD GPU compute
+- `plasma` — KDE Plasma desktop
+- `blender` — Blender / HIP rendering
+
+**Repository and tooling**
+
+- `ci` — GitHub Actions and CI generally
+- `commit-lint` — Conventional Commits validation workflow
+- `workflows` — other GitHub workflow files
+- `scripts` — helper scripts under `scripts/`
+- `bump-version` — version bump script and its tests
+- `tests` — test suite
+- `docs` — documentation
+- `changelog` — `docs/CHANGELOG.md`
+- `readme` — `README.md`
+- `security` — `SECURITY.md` and vulnerability policy
+- `phase2` — Phase 2 installer rewrite
+- `commits` — commit-history or git tooling
 
 ### Breaking Changes
 

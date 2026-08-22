@@ -37,6 +37,10 @@ type(scope): description
 **Valid Types:**
 - feat, fix, update, docs, style, refactor, perf, test, build, ci, chore, revert
 
+**Common scopes** (optional; see [CONTRIBUTING.md](CONTRIBUTING.md) for the full list):
+- Installer/hardware: `installer`, `kernel`, `btrfs`, `zfs`, `rocm`, `plasma`, `blender`
+- Repo/tooling: `ci`, `commit-lint`, `workflows`, `scripts`, `bump-version`, `tests`, `docs`, `changelog`, `readme`, `security`, `phase2`, `commits`
+
 **Features:**
 - Line-by-line validation of each commit
 - Helpful error messages with examples
