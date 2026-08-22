@@ -250,9 +250,9 @@ The bump-version.sh script supports multiple modes:
 
 All modes update VERSION, src/gentoo-um890pro-install.sh, CHANGELOG.md, and the supported-version table in SECURITY.md consistently.
 
-`auto` (and `auto --allow-dirty`) rewrites those files and exits without committing or creating a tag.
+`auto` (and `auto --allow-dirty`) rewrites those files and exits without committing or creating a tag. After `auto`, commit and tag those rewritten files yourself.
 
-`patch` / `minor` / `major` and an explicit version argument also commit the rewritten files and create an annotated Git tag (`vX.Y.Z`). Those modes fail if the tag already exists or cannot be created.
+`patch` / `minor` / `major` and an explicit version argument also commit the rewritten files and create an annotated Git tag (`vX.Y.Z`). Those modes fail if the tag already exists or cannot be created. They are an alternative to `auto`, not a follow-up step: do not run them on the dirty tree `auto` leaves behind.
 
 Note: `VERSION` is enforced as `X.Y.Z` semver by CI.
 

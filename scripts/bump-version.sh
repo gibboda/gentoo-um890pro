@@ -10,9 +10,12 @@ set -euo pipefail
 # Usage:
 #   ./scripts/bump-version.sh auto [--allow-dirty]
 #       Rewrite version files from Conventional Commits; do not commit or tag.
+#       After auto, commit and tag those files yourself. Do not run a tagging
+#       mode next: the tree is dirty, and --allow-dirty would bump again.
 #   ./scripts/bump-version.sh patch|minor|major
 #   ./scripts/bump-version.sh <new-version> "Short changelog entry"
 #       Rewrite version files, commit, and create an annotated vX.Y.Z tag.
+#       Alternative to auto, not a follow-up step.
 #
 # Examples:
 #   ./scripts/bump-version.sh auto

@@ -146,7 +146,7 @@ The project uses `scripts/bump-version.sh` to automatically determine version bu
 ./scripts/bump-version.sh auto --allow-dirty
 ```
 
-`auto` determines the next version from Conventional Commits since the last tag, rewrites `VERSION`, `src/gentoo-um890pro-install.sh`, `docs/CHANGELOG.md`, and the supported-version table in `SECURITY.md` (when present), then exits **without committing or tagging**.
+`auto` determines the next version from Conventional Commits since the last tag, rewrites `VERSION`, `src/gentoo-um890pro-install.sh`, `docs/CHANGELOG.md`, and the supported-version table in `SECURITY.md` (when present), then exits **without committing or tagging**. After `auto`, commit and tag those files yourself. Do not run `patch` / `minor` / `major` or an explicit version on that dirty tree: tagging modes refuse uncommitted changes, and `--allow-dirty` would bump `VERSION` again or duplicate the changelog entry.
 
 ### Version Bump Rules
 
