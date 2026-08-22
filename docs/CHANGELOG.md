@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Replace stale entries in `docs/CODEBASE_TASK_PROPOSALS.md` with four current tasks: Blender `oslray` typo, `sci-libs/openvdb` package.use bug, Installation Guide path/`INSTALL_PROFILE` mismatch, and conventional-commit tests that duplicate the production validator. Distinguish wget’s remote `src/` URL from the local basename, and require aligning `bump-version.sh` skip logic with commit-lint before expecting `Apply suggestions from code review` to pass.
 - Document conventional-commit scopes actually used in issues and pull requests (`changelog`, `commit-lint`, `commits`, `docs`, `phase2`, `scripts`, `security`, `tests`, `workflows`, `bump-version`) in `docs/CONTRIBUTING.md`, with matching guidance for Copilot/Codex titles.
 - Expand `SECURITY.md` with vulnerability scope, report contents, response timelines, and safe harbor; prefer GitHub private advisories over unencrypted email; keep the supported-version table in sync from `bump-version.sh`.
 - Clarify in `AGENTS.md` that `bump-version.sh auto` only updates version files and does not commit or create tags; annotated `vX.Y.Z` tags are created only by `patch`/`minor`/`major` or an explicit version argument.
