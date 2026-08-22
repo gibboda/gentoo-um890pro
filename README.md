@@ -41,6 +41,8 @@ See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines on:
 - Pull request requirements
 - CI validation process
 
+Coding agents follow [`AGENTS.md`](AGENTS.md). Cursor-specific rules are in `.cursor/rules/`; Copilot and Codex overlays are in `.github/instructions/`.
+
 **Quick reference:**
 - `feat(scope): description` - New feature
 - `fix(scope): description` - Bug fix
@@ -269,7 +271,7 @@ Optional `REPO_PAT`: if you add a PAT secret named `REPO_PAT`, the release workf
 This repository uses Snyk for security scanning. The `.snyk` file configures which files and directories should be excluded from scanning:
 
 - Version control directories (`.git/`, `.github/`)
-- IDE directories (`.vscode/`)
+- IDE directories (`.vscode/`, `.cursor/`)
 - Backup files (`*.bak`, `*.backup`, `*.old`, `*.orig`)
 - Temporary files (`*.tmp`, `*.temp`, `*.swp`, `*.swo`, `*~`)
 - Build artifacts and common directories (`dist/`, `build/`, `node_modules/`, etc.)

@@ -1,17 +1,41 @@
 # AGENTS.md
 
-Shared instructions for coding agents working in this repository, including Cursor,
-GitHub Copilot, Claude, Codex, and other tools that consume `AGENTS.md`. This file
-is repository guidance, not a Cursor-only contract. Follow the sections that apply
-to the work you were asked to do.
+Shared instructions for every coding agent that works in this repository,
+including Cursor, Grok Build, GitHub Copilot, Claude, Codex, and other tools
+that consume `AGENTS.md`. This file is repository guidance, not a Cursor-only
+contract.
+
+## Instruction authority
+
+This file is authoritative for:
+
+- shared agent roles and escalation policy
+- cost and duplicate-AI policy
+- deterministic validation policy
+- repository-wide architecture and safety
+- testing requirements
+- change discipline
+
+Agent-specific overlays must not contradict this file:
+
+| Audience | Authoritative overlay |
+| --- | --- |
+| Cursor (IDE and Cloud) | `.cursor/rules/` |
+| GitHub Copilot | `.github/instructions/copilot.instructions.md` |
+| Codex | `.github/instructions/codex.instructions.md` |
+
+Conventional Commit types, scopes, version-bump rules, and the human
+contributor workflow are defined in `docs/CONTRIBUTING.md`. Do not copy
+Cursor-only or GitHub-agent-only instructions into this file.
 
 ## Multi-agent development policy
 
 ### Roles
 
 - Cursor Agent is the primary/default implementation agent.
-- Grok Build is the preferred secondary agent when available, if Cursor cannot
-  complete the work and a second implementation path is still warranted.
+- Grok Build is the preferred secondary implementation agent when available,
+  if Cursor cannot complete the work and a second implementation path is still
+  warranted.
 - GitHub Copilot, Codex, Claude, and other metered cloud agents are
   specialist/escalation resources. They must not be invoked automatically for
   routine work. If Grok Build is unavailable, an available specialist agent
@@ -72,11 +96,11 @@ default throughput. Do not assume unlimited tokens, premium requests, AI
 credits, or paid-agent capacity. Metered specialist agents are scarce
 resources, not parallel reviewers for every change.
 
-### Deterministic validation over AI review
+## Deterministic validation over AI review
 
 Prefer the repository's existing checks over asking another model to review:
 
-- `shellcheck` on tracked `*.sh` files (see **Lint / test / run** below)
+- `shellcheck` on tracked `*.sh` files (see **Testing** below)
 - the Bash tests under `tests/`
 - GitHub Actions (ShellCheck, commit-lint, version-check, version-consistency)
 - `scripts/bump-version.sh` and other repository validation scripts
@@ -91,14 +115,7 @@ an optional AI agent's quota must not block development when required
 deterministic validation passes. Required merge gates live in GitHub (Actions,
 rulesets, branch protection), not in a model's availability.
 
-### Agent-specific instruction files
-
-Keep this file useful to every consumer. Cursor-product settings belong in
-`.cursor/rules/` when they are IDE-only. Copilot and Codex PR-title rules live
-in `.github/instructions/`. Do not duplicate those files here, and do not add
-instructions that other agents cannot follow.
-
-## Repository environment
+## Repository architecture and safety
 
 This repository is a **Bash/POSIX shell project**: an automated Gentoo installer
 for a Minisforum EliteMini UM890 Pro, plus supporting developer tooling (version
@@ -108,11 +125,23 @@ manager / lockfile — the "dev environment" is just Bash plus `shellcheck`.
 ### Services
 
 There are no long-running services to start. Nothing needs to be launched in the
-background; work is driven entirely by one-off shell commands. Cursor Cloud and
-other ephemeral agent VMs follow the same rule: do not start extra daemons for
-this repo.
+background; work is driven entirely by one-off shell commands. Do not start
+extra daemons for this repo.
 
-### Lint / test / run
+### Running the installer (caution)
+
+`src/gentoo-um890pro-install.sh` is **destructive**: it wipes disks, requires
+`root`, a Gentoo live environment, and specific NVMe hardware. Do **not** run it
+in CI, an ephemeral agent VM, or any other non-target machine. To exercise
+its logic safely, source it with the final `main "$@"` line stripped and call
+individual functions (for example `resolve_profile`), which is exactly what
+`tests/test-install-profile-resolution.sh` does:
+```bash
+source <(sed '/^[[:space:]]*main "\$@"/d' src/gentoo-um890pro-install.sh)
+INSTALL_PROFILE=core resolve_profile
+```
+
+## Testing
 
 - **Lint** (matches the `ShellCheck` CI workflow): run `shellcheck` over every
   tracked shell script.
@@ -127,9 +156,9 @@ this repo.
   bash tests/test-bump-version.sh   # slower: creates temp git repos and runs many bump scenarios
   ```
 - **Version tooling**: `scripts/bump-version.sh` derives the repo root from its
-  own location, so it must stay under `scripts/`. Test it against a throwaway
-  git repo (copy the script into a temp `scripts/` dir) rather than running it
-  against this repo. Modes differ:
+  own location, so it must stay under `scripts/`. Test the script itself
+  against a throwaway git repo (copy it into a temp `scripts/` dir) rather
+  than running those script tests against this repo. Modes differ:
   - `auto` (and `auto --allow-dirty` on a dirty tree) rewrites `VERSION`,
     `docs/CHANGELOG.md`, the installer header, and the supported-version table
     in `SECURITY.md` (when that file exists), then **exits without committing
@@ -137,22 +166,15 @@ this repo.
   - `patch`/`minor`/`major` and `./scripts/bump-version.sh <version> "message"`
     also commit those files and create an annotated `vX.Y.Z` tag.
 
-### Running the installer (caution)
-
-`src/gentoo-um890pro-install.sh` is **destructive**: it wipes disks, requires
-`root`, a Gentoo live environment, and specific NVMe hardware. Do **not** run it
-in a Cursor Cloud VM, CI runner, or any other non-target machine. To exercise
-its logic safely, source it with the final `main "$@"` line stripped and call
-individual functions (for example `resolve_profile`), which is exactly what
-`tests/test-install-profile-resolution.sh` does:
-```bash
-source <(sed '/^[[:space:]]*main "\$@"/d' src/gentoo-um890pro-install.sh)
-INSTALL_PROFILE=core resolve_profile
-```
-
-### Commit conventions
+## Change discipline
 
 Commits and PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/)
-(`feat`, `fix`, `docs`, `refactor`, etc.) or the commit-lint CI will fail. See
-`docs/CONTRIBUTING.md`. User-visible changes generally require a
+(`feat`, `fix`, `docs`, `refactor`, etc.) or the commit-lint CI will fail.
+`docs/CONTRIBUTING.md` is authoritative for types, scopes, breaking-change
+markers, and version-bump thresholds. User-visible changes generally require a
 `## [Unreleased]` bullet in `docs/CHANGELOG.md`.
+
+Do not weaken testing, safety, Conventional Commit, PR-title, hardware,
+architecture, or validation requirements. Bot/automation PR titles have extra
+CI constraints; Copilot and Codex overlays spell those out without changing
+the shared format.

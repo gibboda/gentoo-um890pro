@@ -1,0 +1,24 @@
+---
+description: Cursor-only overlay for IDE and Cloud sessions in this repository
+alwaysApply: true
+---
+
+# Cursor-specific instructions
+
+`AGENTS.md` is authoritative for shared agent roles, escalation, cost policy,
+deterministic validation, architecture, safety, testing, and change discipline.
+This file adds Cursor-only behavior. Do not duplicate or override `AGENTS.md`.
+
+## Cursor Cloud and ephemeral environments
+
+This repository has no long-running services and nothing to launch in the
+background. Do not start extra daemons in a Cursor Cloud VM.
+
+`src/gentoo-um890pro-install.sh` is destructive. Do not run it in a Cursor
+Cloud VM. The Cloud environment is not a Gentoo live image and does not have
+the target Minisforum EliteMini UM890 Pro NVMe disks. Missing installer
+hardware is expected.
+
+Exercise installer logic only as documented in `AGENTS.md`: source the script
+with the final `main "$@"` line stripped, or run
+`tests/test-install-profile-resolution.sh`.

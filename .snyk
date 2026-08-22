@@ -16,6 +16,7 @@ exclude:
   
   # IDE and editor directories
   - .vscode/
+  - .cursor/
   
   # Backup files
   - '*.bak'
@@ -48,3 +49,4 @@ code:
   ignorePatterns:
     # Agent instruction files (not part of the main codebase)
     - '.github/instructions/**'
+    - '.cursor/rules/**'

@@ -2,6 +2,18 @@
 
 Thank you for your interest in contributing! This document provides guidelines for contributing to this project.
 
+## Agent instruction files
+
+Shared policy for every coding agent lives in [`AGENTS.md`](../AGENTS.md). That file is authoritative for agent roles (Cursor primary, Grok Build preferred secondary, other metered agents escalation-only), cost/duplicate-AI policy, deterministic validation, architecture, safety, testing, and change discipline.
+
+Agent-specific overlays must not contradict `AGENTS.md`:
+
+- Cursor: `.cursor/rules/`
+- GitHub Copilot: `.github/instructions/copilot.instructions.md`
+- Codex: `.github/instructions/codex.instructions.md`
+
+This file remains authoritative for Conventional Commit types, scopes, breaking-change markers, version-bump thresholds, and the human contributor workflow.
+
 ## Commit Message Format
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages. This standardized format enables automated version bumping and changelog generation.
